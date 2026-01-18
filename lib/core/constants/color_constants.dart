@@ -1,0 +1,14 @@
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
+
+class ColorConstant {
+  static const Color primaryColor = Color(0xFF0D0C18);
+  static const Color selectedTabColor = Color(0xFF161424);
+  static const Color singInTextColor = Color(0xFF11163F);
+  static const Color logInBtnColor = Color(0xFF4056B4);
+  static const Color redColor = Colors.red;
+  static const Color orangeColor = Colors.orange;
+  static const Color whiteColor = Colors.white;
+  static const Color addBtnGreenColor = Color(0xFF2BB24C);
+}
