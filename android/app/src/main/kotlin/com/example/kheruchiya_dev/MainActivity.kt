@@ -1,4 +1,4 @@
-package com.app.travel_crm
+package com.example.kheruchiya_dev
 
 import io.flutter.embedding.android.FlutterActivity
 
