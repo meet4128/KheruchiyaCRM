@@ -6,6 +6,7 @@ class DimensionConstant {
   static const double d0 = 0.0;
   static const double d0_03 = 0.03;
   static const double d0_1 = 0.1;
+  static const double d0_15 = 0.15;
   static const double d0_5 = 0.5;
   static const double d1 = 1.0;
   static const double d1_2 = 1.2;
@@ -52,6 +53,7 @@ class DimensionConstant {
   static const double d125 = 120.0;
   static const double d128 = 128.0;
   static const double d130 = 130.0;
+  static const double d133 = 133.0;
   static const double d150 = 150.0;
   static const double d160 = 160.0;
   static const double d180 = 180.0;
@@ -73,4 +75,7 @@ class DimensionConstant {
   /// info dd = device dimension
   static const double dd1400 = 1400.0;
   static const double dd700 = 700.0;
+
+  /// Int values
+  static const int i1 = 1;
 }

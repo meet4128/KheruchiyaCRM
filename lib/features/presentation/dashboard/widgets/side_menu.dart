@@ -86,33 +86,94 @@ class _SideMenuState extends State<SideMenu> with SingleTickerProviderStateMixin
                       const SizedBox(width: 12),
                       const Text(
                         StringConstant.myCRM,
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ],
                 ),
               ),
 
-              Divider(
-                color: Color(0xFF3D3551).withOpacity(0.5),
-                height: 1,
-                thickness: 1,
-              ),
+              Divider(color: Color(0xFF3D3551).withOpacity(0.5), height: 1, thickness: 1),
 
               // menu
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      _menuItem(context, Icons.dashboard, PathConstant.dashboardConstant, NavPage.dashboard, state),
-                      _menuItem(context, Icons.person_search, PathConstant.clientLeadsConstant, NavPage.clientLeads, state),
-                      _menuItem(context, Icons.work_outline, PathConstant.projectJobsConstant, NavPage.projectJobs, state),
-                      _menuItem(context, Icons.receipt_long, PathConstant.invoicesConstant, NavPage.invoices, state),
-                      _menuItem(context, Icons.payment, PathConstant.paymentsConstant, NavPage.payments, state),
-                      _menuItem(context, Icons.inventory_2, PathConstant.invoicesConstant, NavPage.inventory, state),
-                      _menuItem(context, Icons.group, PathConstant.teamConstant, NavPage.team, state),
-                      _menuItem(context, Icons.alarm, PathConstant.remindersConstant, NavPage.reminders, state),
-                      _menuItem(context, Icons.analytics, PathConstant.analysisConstant, NavPage.analysis, state),
+                      _menuItem(
+                        context,
+                        Icons.dashboard,
+                        PathConstant.dashboardConstant,
+                        NavPage.dashboard,
+                        state,
+                      ),
+                      _menuItem(
+                        context,
+                        Icons.person_search,
+                        PathConstant.inquiryManagementConstant,
+                        NavPage.inquiryManagement,
+                        state,
+                      ),
+                      _menuItem(
+                        context,
+                        Icons.person_search,
+                        PathConstant.clientLeadsConstant,
+                        NavPage.clientLeads,
+                        state,
+                      ),
+                      _menuItem(
+                        context,
+                        Icons.work_outline,
+                        PathConstant.projectJobsConstant,
+                        NavPage.projectJobs,
+                        state,
+                      ),
+                      _menuItem(
+                        context,
+                        Icons.receipt_long,
+                        PathConstant.invoicesConstant,
+                        NavPage.invoices,
+                        state,
+                      ),
+                      _menuItem(
+                        context,
+                        Icons.payment,
+                        PathConstant.paymentsConstant,
+                        NavPage.payments,
+                        state,
+                      ),
+                      _menuItem(
+                        context,
+                        Icons.inventory_2,
+                        PathConstant.invoicesConstant,
+                        NavPage.inventory,
+                        state,
+                      ),
+                      _menuItem(
+                        context,
+                        Icons.group,
+                        PathConstant.teamConstant,
+                        NavPage.team,
+                        state,
+                      ),
+                      _menuItem(
+                        context,
+                        Icons.alarm,
+                        PathConstant.remindersConstant,
+                        NavPage.reminders,
+                        state,
+                      ),
+                      _menuItem(
+                        context,
+                        Icons.analytics,
+                        PathConstant.analysisConstant,
+                        NavPage.analysis,
+                        state,
+                      ),
                     ],
                   ),
                 ),
@@ -124,7 +185,13 @@ class _SideMenuState extends State<SideMenu> with SingleTickerProviderStateMixin
     );
   }
 
-  Widget _menuItem(BuildContext context, IconData icon, String title, NavPage page, NavigationState state) {
+  Widget _menuItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    NavPage page,
+    NavigationState state,
+  ) {
     final selected = state.currentPage == page;
     final collapsed = effectiveCollapsed;
     return Material(

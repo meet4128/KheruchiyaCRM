@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 enum NavPage {
   dashboard,
+  inquiryManagement,
   clientLeads,
   inquiry,
   projectJobs,

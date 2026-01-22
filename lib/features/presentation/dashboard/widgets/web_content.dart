@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/inquiry_view.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/view/inquiry_management_screen.dart';
 import '../bloc/navigation_bloc.dart';
 import '../bloc/navigation_state.dart';
 import '../bloc/navigation_event.dart';
@@ -34,12 +35,15 @@ class WebContent extends StatelessWidget {
             return _reminders();
           case NavPage.analysis:
             return _analysis();
+          case NavPage.inquiryManagement:
+            return _inquiryManagement();
         }
       },
     );
   }
 
   Widget _dashboard() => _page(StringConstant.dashboard);
+  Widget _inquiryManagement() => const InquiryManagementScreen();
   Widget _clientLeads() => const InquiryView();
   Widget _inquiry() => const InquiryView();
   Widget _projectJobs() => _page(StringConstant.projectJobs);

@@ -28,6 +28,8 @@ String _pathFor(NavPage page) {
   switch (page) {
     case NavPage.dashboard:
       return PathConstant.dashboard;
+    case NavPage.inquiryManagement:
+      return PathConstant.inquiryManagement;
     case NavPage.clientLeads:
       return PathConstant.clientLeads;
     case NavPage.inquiry:
@@ -56,6 +58,8 @@ NavPage _pageFromPath(String path) {
       return NavPage.dashboard;
     case PathConstant.clientLeads:
       return NavPage.clientLeads;
+    case PathConstant.inquiryManagement:
+      return NavPage.inquiryManagement;
     case PathConstant.inquiryView:
       return NavPage.inquiry;
     case PathConstant.projectJobs:
@@ -98,6 +102,12 @@ GoRouter createRouter(NavigationBloc navBloc) {
             name: PathConstant.dashboard,
             pageBuilder: (context, state) => NoTransitionPage(child: DashboardPage()),
           ),
+          GoRoute(
+            path: PathConstant.inquiryManagement,
+            name: 'inquiryManagement',
+            pageBuilder: (context, state) => NoTransitionPage(child: InquiryManagementPage()),
+          ),
+
           GoRoute(
             path: PathConstant.clientLeads,
             name: 'clientLeads',
@@ -204,10 +214,11 @@ GoRouter createRouter(NavigationBloc navBloc) {
     final currentPath = _currentRouterLocation(router);
     final pathWithoutQuery = currentPath.split('?').first;
     final page = _pageFromPath(currentPath);
-    
+
     // Only sync if the path maps to a known NavPage (not a sub-route like air-ticket)
     final knownPaths = [
       PathConstant.dashboard,
+      PathConstant.inquiryManagement,
       PathConstant.clientLeads,
       PathConstant.inquiryView,
       PathConstant.projectJobs,
@@ -218,7 +229,7 @@ GoRouter createRouter(NavigationBloc navBloc) {
       PathConstant.reminders,
       PathConstant.analysis,
     ];
-    
+
     if (knownPaths.contains(pathWithoutQuery)) {
       // Only sync if the page actually changed to prevent unnecessary updates
       if (navBloc.state.currentPage != page) {
@@ -239,15 +250,16 @@ GoRouter createRouter(NavigationBloc navBloc) {
   navBloc.stream.listen((navState) {
     // Don't navigate if we're currently syncing from router (browser back/forward)
     if (_isSyncingFromRouter) return;
-    
+
     final desiredPath = _pathFor(navState.currentPage);
     final currentPath = _currentRouterLocation(router).split('?').first;
-    
+
     // Don't navigate if:
     // 1. Already on the desired path
     // 2. Current path is a sub-route (like air-ticket) - let browser handle it
     final isSubRoute = ![
       PathConstant.dashboard,
+      PathConstant.inquiryManagement,
       PathConstant.clientLeads,
       PathConstant.inquiryView,
       PathConstant.projectJobs,
@@ -258,7 +270,7 @@ GoRouter createRouter(NavigationBloc navBloc) {
       PathConstant.reminders,
       PathConstant.analysis,
     ].contains(currentPath);
-    
+
     if (currentPath != desiredPath && !isSubRoute) {
       // Use go() to change URL (works on web)
       router.go(desiredPath);
@@ -287,6 +299,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
 class PathConstant {
   static const String dashboard = '/';
   static const String clientLeads = '/client-leads';
+  static const String inquiryManagement = '/inquiry-management';
   static const String inquiryView = '/inquiry-view';
   static const String projectJobs = '/project-jobs';
   static const String invoices = '/invoices';
@@ -299,6 +312,7 @@ class PathConstant {
 
   static const String dashboardConstant = "Dashboard";
   static const String clientLeadsConstant = "Client Leads";
+  static const String inquiryManagementConstant = "Inquiry Management";
   static const String projectJobsConstant = "Project Jobs";
   static const String invoicesConstant = "Invoices";
   static const String paymentsConstant = "Payments";

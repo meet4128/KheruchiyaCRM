@@ -13,6 +13,7 @@ class StringConstant {
   static const String dashboard = 'Dashboard';
   static const String clientLeads = 'Client Leads';
   static const String inquiry = 'Inquiry';
+  static const String inquiryManagement = 'Inquiry Management';
   static const String projectJobs = 'Project Jobs';
   static const String invoices = 'Invoices';
   static const String payments = 'Payments';
