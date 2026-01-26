@@ -9,4 +9,9 @@ class AssetConstants {
   static const String icCall = '$basePath/ic_call.svg';
   static const String icMessageText = '$basePath/ic_message_text.svg';
   static const String icArrowRight = '$basePath/ic_arrow_right.svg';
+  static const String icCalendar = '$basePath/ic_calendar.svg';
+  static const String icLink = '$basePath/ic_link.svg';
+  static const String icRefresh = '$basePath/ic_refresh.svg';
+  static const String icSetting = '$basePath/ic_setting.svg';
+  static const String icUser = '$basePath/ic_user.svg';
 }

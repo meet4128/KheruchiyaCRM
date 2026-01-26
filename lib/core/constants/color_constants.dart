@@ -21,4 +21,7 @@ class ColorConstant {
   static const Color borderColorWhite30 = Color(0xFF595959);
   static const Color asteriskRedColor = Color(0xFFFF383C);
   static const Color qnaCard1BgColor = Color(0xFF311E30);
+  static const Color navyBlue = Color(0xFF1D2856);
+  static const Color purpleBrown = Color(0xFF432936);
+  static const Color purpleViolet = Color(0xFF431C39);
 }

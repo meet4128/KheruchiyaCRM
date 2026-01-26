@@ -247,4 +247,5 @@ class StringConstant {
   static const String addNewNotes = 'Add New Notes';
   static const String questions = 'Questions.';
   static const String answers = 'Answers';
+  static const String getPersonalDocumentDetails = 'Get Personal Document Details';
 }
