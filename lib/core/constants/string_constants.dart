@@ -3,6 +3,7 @@
 class StringConstant {
   // ========== General ==========
   static const String emptyString = '';
+  static const String asterisk = '*';
   static const String somethingWentWrong = 'Something went wrong!';
   static const String connectionTimeout = 'Connection timeout';
   static const String badResponse = 'Bad Response';
@@ -137,7 +138,8 @@ class StringConstant {
 
   // ========== Air Ticket Form Success/Error Messages ==========
   static const String airTicketSubmittedSuccessfully = 'Air ticket booking submitted successfully!';
-  static const String airTicketSubmissionFailed = 'Failed to submit air ticket booking. Please try again.';
+  static const String airTicketSubmissionFailed =
+      'Failed to submit air ticket booking. Please try again.';
 
   // ========== Flight Booking Types ==========
   static const String oneWay = 'One Way';
@@ -220,4 +222,29 @@ class StringConstant {
   static const String taxi = 'Taxi';
   static const String domesticPackage = 'Domestic Package';
   static const String internationalPackage = 'International Package';
+
+  // ========== Amendment Information ==========
+  static const String amendmentInformation = 'Amendment Information';
+  static const String amendmentType = 'Amendment Type';
+  static const String reIssue = 'Re-issue';
+  static const String amendmentID = 'Amendment ID';
+  static const String status = 'Status';
+  static const String amountCharged = 'Amount Charged';
+  static const String attachments = 'Attachments';
+  static const String raisedBy = 'Raised By';
+  static const String bookedBy = 'Booked By';
+  static const String assignedStaff = 'Assigned Staff';
+  static const String amendmentInvoice = 'Amendment Invoice';
+  static const String remarks = 'Remarks';
+  static const String generationTime = 'Generation Time';
+  static const String checklist = 'Checklist';
+  static const String nextTravelDate = 'Next Travel Date';
+  static const String processedTime = 'Processed Time';
+  static const String addNotes = 'Add Notes';
+  static const String text = 'Text';
+  static const String callAgent = 'Call Agent';
+  static const String qnaNotes = 'Q&A Notes';
+  static const String addNewNotes = 'Add New Notes';
+  static const String questions = 'Questions.';
+  static const String answers = 'Answers';
 }

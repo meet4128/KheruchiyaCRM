@@ -5,4 +5,8 @@ class AssetConstants {
   /// Icons
   static const String icRightArrow = '$basePath/ic_right_arrow.svg';
   static const String icRepeat = '$basePath/ic_repeat.svg';
+  static const String icUpRoundArrow = '$basePath/ic_up_round_arrow.svg';
+  static const String icCall = '$basePath/ic_call.svg';
+  static const String icMessageText = '$basePath/ic_message_text.svg';
+  static const String icArrowRight = '$basePath/ic_arrow_right.svg';
 }

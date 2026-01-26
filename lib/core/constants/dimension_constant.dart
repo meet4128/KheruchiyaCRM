@@ -46,6 +46,7 @@ class DimensionConstant {
   static const double d70 = 70.0;
   static const double d80 = 80.0;
   static const double d65 = 65.0;
+  static const double d90 = 90.0;
   static const double d97 = 97.0;
   static const double d100 = 100.0;
   static const double d115 = 115.0;
@@ -60,6 +61,7 @@ class DimensionConstant {
   static const double d200 = 200.0;
   static const double d220 = 220.0;
   static const double d240 = 240.0;
+  static const double d280 = 280.0;
   static const double d300 = 300.0;
   static const double d330 = 330.0;
   static const double d360 = 360.0;
@@ -78,4 +80,5 @@ class DimensionConstant {
 
   /// Int values
   static const int i1 = 1;
+  static const int i2 = 2;
 }
