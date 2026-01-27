@@ -32,7 +32,7 @@ class StringConstant {
   static const String inquiryForm = 'Inquiry Form';
   static const String inquiryFormTitle = 'INQUIRY FORM';
   static const String fillInFormForCustomerInquiry = 'Fill in the form for customer inquiry';
-  static const String fillFormForQuote = 'Fill form for a quote, help or to assist client';
+  static const String fillFormForQuote = 'Provide flight booking information';
   static const String letsTalkAboutClients = "Let's talk about our Client's ";
   static const String project = 'project.';
   static const String inquiryFormDescription =

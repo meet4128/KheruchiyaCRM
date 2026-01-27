@@ -53,8 +53,22 @@ class _AirTicketScreen extends StatelessWidget {
       },
       child: Scaffold(
         body: Container(
+          padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
-            gradient: AppTheme.gradientBackground,
+            color: AppTheme.colors(context).inputBackground,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppTheme.colors(context).secondary.withOpacity(0.2),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.5),
+                blurRadius: 24,
+                offset: const Offset(0, 12),
+                spreadRadius: 0,
+              ),
+            ],
           ),
           child: const AirTicketFormScreen(),
         ),

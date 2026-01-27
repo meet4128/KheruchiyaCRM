@@ -30,19 +30,24 @@ class AirTicketFormScreen extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isWide = constraints.maxWidth >= 1200;
-        final isTablet = constraints.maxWidth >= 768 && constraints.maxWidth < 1200;
+        final isTablet =
+            constraints.maxWidth >= 768 && constraints.maxWidth < 1200;
 
         return Column(
           children: [
             // TOP HEADER SECTION
             _TopHeaderSection(),
-            
+
             // MAIN CONTENT SECTION
             Expanded(
               child: SingleChildScrollView(
                 child: Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: isWide ? 80 : isTablet ? 40 : 24,
+                    horizontal: isWide
+                        ? 80
+                        : isTablet
+                        ? 40
+                        : 24,
                     vertical: isWide ? 60 : 40,
                   ),
                   child: Column(
@@ -58,7 +63,7 @@ class AirTicketFormScreen extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // BOTTOM FOOTER SECTION
             _BottomFooterSection(),
           ],
@@ -77,13 +82,10 @@ class _TopHeaderSection extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF1F1A2E),
-            Color(0xFF2A2338),
-          ],
+          colors: [Color(0xFF1F1A2E), Color(0xFF2A2338)],
         ),
       ),
       child: Padding(
@@ -160,17 +162,13 @@ class _AirTicketFormCard extends StatelessWidget {
             children: [
               const SizedBox(height: 8),
               // Booking Type Selector
-              FormFieldWrapper(
-                label: StringConstant.flightType,
-                isRequired: true,
-                child: BookingTypeSelector(
-                  selectedType: state.bookingType,
-                  onChanged: (AirTicketBookingType type) => context
-                      .read<AirTicketBloc>()
-                      .add(BookingTypeChanged(type)),
-                ),
+              BookingTypeSelector(
+                selectedType: state.bookingType,
+                onChanged: (AirTicketBookingType type) =>
+                    context.read<AirTicketBloc>().add(BookingTypeChanged(type)),
               ),
               const SizedBox(height: 22),
+
               // Flight Details Section (includes Traveller & Class)
               FlightDetailsSection(
                 from: state.from,
@@ -185,27 +183,23 @@ class _AirTicketFormCard extends StatelessWidget {
                 departureDateError: state.departureDateError,
                 returnDateError: state.returnDateError,
                 travellerCountError: state.travellerCountError,
-                onFromChanged: (value) => context
-                    .read<AirTicketBloc>()
-                    .add(FromLocationChanged(value)),
-                onToChanged: (value) => context
-                    .read<AirTicketBloc>()
-                    .add(ToLocationChanged(value)),
+                onFromChanged: (value) => context.read<AirTicketBloc>().add(
+                  FromLocationChanged(value),
+                ),
+                onToChanged: (value) =>
+                    context.read<AirTicketBloc>().add(ToLocationChanged(value)),
                 onDepartureDateChanged: (date) => context
                     .read<AirTicketBloc>()
                     .add(DepartureDateChanged(date)),
-                onReturnDateChanged: (date) => context
-                    .read<AirTicketBloc>()
-                    .add(ReturnDateChanged(date)),
-                onSwapLocations: () => context
-                    .read<AirTicketBloc>()
-                    .add(SwapLocations()),
+                onReturnDateChanged: (date) =>
+                    context.read<AirTicketBloc>().add(ReturnDateChanged(date)),
+                onSwapLocations: () =>
+                    context.read<AirTicketBloc>().add(SwapLocations()),
                 onTravellerCountChanged: (count) => context
                     .read<AirTicketBloc>()
                     .add(TravellerCountChanged(count)),
-                onClassTypeChanged: (type) => context
-                    .read<AirTicketBloc>()
-                    .add(ClassTypeChanged(type)),
+                onClassTypeChanged: (type) =>
+                    context.read<AirTicketBloc>().add(ClassTypeChanged(type)),
                 onAddAnotherField: () {
                   // TODO: Implement add another field functionality
                 },
@@ -217,9 +211,8 @@ class _AirTicketFormCard extends StatelessWidget {
                 isRequired: true,
                 child: VisaTypeSelector(
                   selectedType: state.visaType,
-                  onChanged: (VisaType type) => context
-                      .read<AirTicketBloc>()
-                      .add(VisaTypeChanged(type)),
+                  onChanged: (VisaType type) =>
+                      context.read<AirTicketBloc>().add(VisaTypeChanged(type)),
                   errorText: state.visaTypeError,
                 ),
               ),
@@ -232,23 +225,10 @@ class _AirTicketFormCard extends StatelessWidget {
                   hint: StringConstant.enterRemark,
                   value: state.remark,
                   errorText: state.remarkError,
-                  onChanged: (value) => context
-                      .read<AirTicketBloc>()
-                      .add(RemarkChanged(value)),
+                  onChanged: (value) =>
+                      context.read<AirTicketBloc>().add(RemarkChanged(value)),
                   maxLines: 3,
                 ),
-              ),
-              const SizedBox(height: 22),
-              // Priority and Follow-ups Section
-              _PriorityFollowUpsSection(
-                priority: state.priority,
-                followUpType: state.followUpType,
-                onPriorityChanged: (priority) => context
-                    .read<AirTicketBloc>()
-                    .add(PriorityChanged(priority)),
-                onFollowUpTypeChanged: (type) => context
-                    .read<AirTicketBloc>()
-                    .add(FollowUpTypeChanged(type)),
               ),
             ],
           ),
@@ -356,10 +336,7 @@ class _BottomFooterSection extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF1F1A2E),
-            Color(0xFF2A2338),
-          ],
+          colors: [Color(0xFF1F1A2E), Color(0xFF2A2338)],
         ),
       ),
       child: Row(
@@ -369,9 +346,7 @@ class _BottomFooterSection extends StatelessWidget {
           // Company name
           Text(
             StringConstant.emoDigital,
-            style: textStyles.bodySmall.copyWith(
-              color: colors.textSecondary,
-            ),
+            style: textStyles.bodySmall.copyWith(color: colors.textSecondary),
           ),
           // Submit button and version
           Row(
@@ -383,9 +358,9 @@ class _BottomFooterSection extends StatelessWidget {
                       AppButton(
                         text: StringConstant.submit,
                         onPressed: state.isValid && !state.isSubmitting
-                            ? () => context
-                                .read<AirTicketBloc>()
-                                .add(SubmitAirTicket())
+                            ? () => context.read<AirTicketBloc>().add(
+                                SubmitAirTicket(),
+                              )
                             : null,
                         isLoading: state.isSubmitting,
                       ),
@@ -432,33 +407,25 @@ class _ChecklistSectionWidget extends StatelessWidget {
           category: state.checklistCategory,
           inLoop: state.checklistInLoop,
           repeat: state.checklistRepeat,
-          onUserChanged: (value) => context
-              .read<AirTicketBloc>()
-              .add(ChecklistUserChanged(value)),
-          onDueDateChanged: (date) => context
-              .read<AirTicketBloc>()
-              .add(ChecklistDueDateChanged(date)),
+          onUserChanged: (value) =>
+              context.read<AirTicketBloc>().add(ChecklistUserChanged(value)),
+          onDueDateChanged: (date) =>
+              context.read<AirTicketBloc>().add(ChecklistDueDateChanged(date)),
           onPriorityChanged: (Priority priority) => context
               .read<AirTicketBloc>()
               .add(ChecklistPriorityChanged(priority)),
-          onCategoryChanged: (category) => context
-              .read<AirTicketBloc>()
-              .add(ChecklistCategoryChanged(category)),
-          onInLoopChanged: (inLoop) => context
-              .read<AirTicketBloc>()
-              .add(ChecklistInLoopChanged(inLoop)),
-          onRepeatChanged: (repeat) => context
-              .read<AirTicketBloc>()
-              .add(ChecklistRepeatChanged(repeat)),
-          onAddItem: () => context
-              .read<AirTicketBloc>()
-              .add(AddChecklistItem()),
-          onRemoveItem: (index) => context
-              .read<AirTicketBloc>()
-              .add(RemoveChecklistItem(index)),
-          onSubmit: () => context
-              .read<AirTicketBloc>()
-              .add(SubmitAirTicket()),
+          onCategoryChanged: (category) => context.read<AirTicketBloc>().add(
+            ChecklistCategoryChanged(category),
+          ),
+          onInLoopChanged: (inLoop) =>
+              context.read<AirTicketBloc>().add(ChecklistInLoopChanged(inLoop)),
+          onRepeatChanged: (repeat) =>
+              context.read<AirTicketBloc>().add(ChecklistRepeatChanged(repeat)),
+          onAddItem: () =>
+              context.read<AirTicketBloc>().add(AddChecklistItem()),
+          onRemoveItem: (index) =>
+              context.read<AirTicketBloc>().add(RemoveChecklistItem(index)),
+          onSubmit: () => context.read<AirTicketBloc>().add(SubmitAirTicket()),
           isSubmitting: state.isSubmitting,
           isValid: state.isValid,
         );
@@ -466,4 +433,3 @@ class _ChecklistSectionWidget extends StatelessWidget {
     );
   }
 }
-

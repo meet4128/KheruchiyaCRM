@@ -76,141 +76,160 @@ class FlightDetailsSection extends StatelessWidget {
             ? '$travellerCount Traveller${travellerCount > 1 ? 's' : ''}'
             : '';
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // From field
-          _LocationField(
-            label: StringConstant.from,
-            isRequired: true,
-            value: from.isNotEmpty ? from : StringConstant.defaultFromLocation,
-            sublabel: from.isNotEmpty ? '' : StringConstant.defaultAirportFrom,
-            errorText: fromError,
-            onTap: () {
-              // TODO: Open location picker
-            },
+    return Container(
+      padding:  EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.colors(context).inputBackground,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colors.secondary.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.5),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+            spreadRadius: 0,
           ),
-          const SizedBox(width: 12),
-          // Swap button
-          Padding(
-            padding: const EdgeInsets.only(top: 24),
-            child: AppSwapButton(
-              onSwap: onSwapLocations,
-              size: 40,
-              iconSize: 20,
+        ],
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // From field
+            _LocationField(
+              label: StringConstant.from,
+              isRequired: true,
+              value: from.isNotEmpty ? from : StringConstant.defaultFromLocation,
+              sublabel: from.isNotEmpty ? '' : StringConstant.defaultAirportFrom,
+              errorText: fromError,
+              onTap: () {
+                // TODO: Open location picker
+              },
             ),
-          ),
-          const SizedBox(width: 12),
-          // To field
-          _LocationField(
-            label: StringConstant.to,
-            isRequired: true,
-            value: to.isNotEmpty ? to : StringConstant.defaultToLocation,
-            sublabel: to.isNotEmpty ? '' : StringConstant.defaultAirportTo,
-            errorText: toError,
-            onTap: () {
-              // TODO: Open location picker
-            },
-          ),
-          const SizedBox(width: 12),
-          // Departure date
-          _DateField(
-            label: StringConstant.departure,
-            isRequired: true,
-            value: departureDate,
-            errorText: departureDateError,
-            onTap: () {
-              // Date picker will be handled by AppDatePicker
-            },
-            child: AppDatePicker(
-              hint: StringConstant.selectDepartureDate,
+            const SizedBox(width: 12),
+            // Swap button
+            Padding(
+              padding: const EdgeInsets.only(top: 24),
+              child: AppSwapButton(
+                onSwap: onSwapLocations,
+                size: 40,
+                iconSize: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            // To field
+            _LocationField(
+              label: StringConstant.to,
+              isRequired: true,
+              value: to.isNotEmpty ? to : StringConstant.defaultToLocation,
+              sublabel: to.isNotEmpty ? '' : StringConstant.defaultAirportTo,
+              errorText: toError,
+              onTap: () {
+                // TODO: Open location picker
+              },
+            ),
+            const SizedBox(width: 12),
+            // Departure date
+            _DateField(
+              label: StringConstant.departure,
+              isRequired: true,
               value: departureDate,
               errorText: departureDateError,
-              onChanged: onDepartureDateChanged,
-              firstDate: DateTime.now(),
-              dateFormat: _formatDate,
-            ),
-          ),
-          if (showReturnDate) ...[
-            const SizedBox(width: 12),
-            // Return date
-            _DateField(
-              label: StringConstant.returnLabel,
-              isRequired: false,
-              value: returnDate,
-              errorText: returnDateError,
               onTap: () {
                 // Date picker will be handled by AppDatePicker
               },
               child: AppDatePicker(
-                hint: StringConstant.selectReturnDate,
-                value: returnDate,
-                errorText: returnDateError,
-                onChangedNullable: onReturnDateChanged,
-                firstDate: departureDate ?? DateTime.now(),
+                hint: StringConstant.selectDepartureDate,
+                value: departureDate,
+                errorText: departureDateError,
+                onChanged: onDepartureDateChanged,
+                firstDate: DateTime.now(),
                 dateFormat: _formatDate,
               ),
             ),
-          ],
-          const SizedBox(width: 12),
-          // Traveller & Class
-          _TravellerClassField(
-            label: StringConstant.travellerAndClass,
-            isRequired: true,
-            value: travellerClassDisplay,
-            errorText: travellerCountError,
-            travellerCount: travellerCount,
-            classType: classType,
-            onTravellerChanged: onTravellerCountChanged,
-            onClassChanged: onClassTypeChanged,
-          ),
-          if (onAddAnotherField != null) ...[
+            if (showReturnDate) ...[
+              const SizedBox(width: 12),
+              // Return date
+              _DateField(
+                label: StringConstant.returnLabel,
+                isRequired: false,
+                value: returnDate,
+                errorText: returnDateError,
+                onTap: () {
+                  // Date picker will be handled by AppDatePicker
+                },
+                child: AppDatePicker(
+                  hint: StringConstant.selectReturnDate,
+                  value: returnDate,
+                  errorText: returnDateError,
+                  onChangedNullable: onReturnDateChanged,
+                  firstDate: departureDate ?? DateTime.now(),
+                  dateFormat: _formatDate,
+                ),
+              ),
+            ],
             const SizedBox(width: 12),
-            // Add another field button
-            Padding(
-              padding: const EdgeInsets.only(top: 24),
-              child: InkWell(
-                onTap: onAddAnotherField,
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color(0xFF8B5CF6),  // Purple
-                        Color(0xFFEC4899),  // Pink
+            // Traveller & Class
+            _TravellerClassField(
+              label: StringConstant.travellerAndClass,
+              isRequired: true,
+              value: travellerClassDisplay,
+              errorText: travellerCountError,
+              travellerCount: travellerCount,
+              classType: classType,
+              onTravellerChanged: onTravellerCountChanged,
+              onClassChanged: onClassTypeChanged,
+            ),
+            if (onAddAnotherField != null) ...[
+              const SizedBox(width: 12),
+              // Add another field button
+              Padding(
+                padding: const EdgeInsets.only(top: 24),
+                child: InkWell(
+                  onTap: onAddAnotherField,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color(0xFF8B5CF6),  // Purple
+                          Color(0xFFEC4899),  // Pink
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.add,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          StringConstant.addAnotherField,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.add,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        StringConstant.addAnotherField,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
                   ),
                 ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -285,16 +304,6 @@ class _LocationField extends StatelessWidget {
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: colors.inputBackground,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: errorText != null
-                      ? colors.error
-                      : colors.inputBorder,
-                  width: 1,
-                ),
-              ),
               child: Row(
                 children: [
                   if (isFromField) ...[
@@ -597,16 +606,6 @@ class _TravellerClassField extends StatelessWidget {
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: colors.inputBackground,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: errorText != null
-                      ? colors.error
-                      : colors.inputBorder,
-                  width: 1,
-                ),
-              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
