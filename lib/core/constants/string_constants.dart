@@ -248,4 +248,14 @@ class StringConstant {
   static const String questions = 'Questions.';
   static const String answers = 'Answers';
   static const String getPersonalDocumentDetails = 'Get Personal Document Details';
+  static const String inquiryInformation = 'Inquiry Information:';
+  static const String inquiryNumber = 'Inquiry Number:';
+  static const String inquiryGenerated = 'Inquiry Generated:';
+  static const String assignedTo = 'Assigned to:';
+  static const String allTicketBookings = 'All Ticket Bookings';
+  static const String allInvoices = 'All Invoices';
+  static const String moreOptions = 'More Options';
+  static const String priority = 'Priority:';
+  static const String statusColon = 'Status:';
+  static const String inProgress = 'In Progress';
 }
