@@ -311,9 +311,8 @@ class PathConstant {
   static const String airTicket = '/air-ticket';
 
   static const String dashboardConstant = "Dashboard";
-  static const String clientLeadsConstant = "Client Leads";
-  static const String inquiryManagementConstant = "Inquiry Management";
-  static const String projectJobsConstant = "Project Jobs";
+  static const String clientLeadsConstant = "Follow Up";
+  static const String inquiryManagementConstant = "New Inquiry";
   static const String invoicesConstant = "Invoices";
   static const String paymentsConstant = "Payments";
   static const String inventoryConstant = "Inventory";

@@ -3,15 +3,17 @@ import 'navigation_event.dart';
 
 class NavigationState extends Equatable {
   final NavPage currentPage;
+  final bool isDrawerOpen;
 
-  const NavigationState({required this.currentPage});
+  const NavigationState({this.currentPage=NavPage.dashboard, this.isDrawerOpen=true});
 
-  NavigationState copyWith({NavPage? currentPage}) {
+  NavigationState copyWith({NavPage? currentPage, bool? isDrawerOpen}) {
     return NavigationState(
       currentPage: currentPage ?? this.currentPage,
+      isDrawerOpen: isDrawerOpen ?? this.isDrawerOpen,
     );
   }
 
   @override
-  List<Object?> get props => [currentPage];
+  List<Object?> get props => [currentPage,isDrawerOpen];
 }

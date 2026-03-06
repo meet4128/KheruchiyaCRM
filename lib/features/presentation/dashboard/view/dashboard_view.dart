@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:travel_crm/features/presentation/dashboard/bloc/navigation_state.dart';
 import '../bloc/navigation_bloc.dart';
 import '../widgets/side_menu.dart';
 import '../widgets/web_content.dart';
@@ -25,13 +26,17 @@ class _DashboardLayout extends StatelessWidget {
       builder: (context, box) {
         final bool isCollapsed = box.maxWidth < 900;
 
-        return Scaffold(
-          body: Row(
-            children: [
-              SideMenu(isCollapsed: isCollapsed),
-              const Expanded(child: WebContent()),
-            ],
-          ),
+        return BlocBuilder<NavigationBloc,NavigationState>(
+          builder: (context,state) {
+            return Scaffold(
+              body: Row(
+                children: [
+                  SideMenu(isCollapsed: isCollapsed,state: state),
+                  const Expanded(child: WebContent()),
+                ],
+              ),
+            );
+          }
         );
       },
     );

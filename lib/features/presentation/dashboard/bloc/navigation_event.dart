@@ -34,3 +34,12 @@ class SyncPageFromRouteEvent extends NavigationEvent {
   @override
   List<Object?> get props => [page];
 }
+
+class OpenCloseDrawerEvent extends NavigationEvent {
+  final bool isDrawerOpen;
+
+  OpenCloseDrawerEvent(this.isDrawerOpen);
+
+  @override
+  List<Object?> get props => [isDrawerOpen];
+}

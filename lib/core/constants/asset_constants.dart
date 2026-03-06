@@ -14,4 +14,13 @@ class AssetConstants {
   static const String icRefresh = '$basePath/ic_refresh.svg';
   static const String icSetting = '$basePath/ic_setting.svg';
   static const String icUser = '$basePath/ic_user.svg';
+  static const String icCRMLogo = '$basePath/ic_crm_logo.svg';
+  static const String icAnalytics = '$basePath/ic_analytics.svg';
+  static const String icInventory = '$basePath/ic_inventory.svg';
+  static const String icInvoices = '$basePath/ic_invoices.svg';
+  static const String icInquiry = '$basePath/ic_new_inquiry.svg';
+  static const String icPayments = '$basePath/ic_payments.svg';
+  static const String icReminders = '$basePath/ic_reminders.svg';
+  static const String icTeams = '$basePath/ic_teams.svg';
+  static const String icDashboard = '$basePath/ic_dashboard.svg';
 }

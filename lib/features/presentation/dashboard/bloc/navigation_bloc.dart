@@ -15,5 +15,11 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
         emit(state.copyWith(currentPage: event.page));
       }
     });
+
+    on<OpenCloseDrawerEvent>((event, emit) {
+      if (event.isDrawerOpen != state.isDrawerOpen) {
+        emit(state.copyWith(isDrawerOpen: event.isDrawerOpen));
+      }
+    });
   }
 }

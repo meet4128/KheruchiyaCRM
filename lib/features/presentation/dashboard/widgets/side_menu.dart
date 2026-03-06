@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:travel_crm/core/constants/path_constants.dart';
-import 'package:travel_crm/core/constants/string_constants.dart';
+import 'package:travel_crm/core/theme/app_colors.dart';
+import '../../../../core/constants/asset_constants.dart';
 import '../bloc/navigation_bloc.dart';
 import '../bloc/navigation_event.dart';
 import '../bloc/navigation_state.dart';
 
 class SideMenu extends StatefulWidget {
   final bool isCollapsed;
-
-  const SideMenu({super.key, required this.isCollapsed});
+  final NavigationState state;
+  const SideMenu({super.key, required this.isCollapsed,required this.state});
 
   @override
   State<SideMenu> createState() => _SideMenuState();
@@ -52,9 +54,6 @@ class _SideMenuState extends State<SideMenu> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    final navBloc = context.watch<NavigationBloc>();
-    final state = navBloc.state;
-
     return MouseRegion(
       onEnter: (_) => _setHover(true),
       onExit: (_) => _setHover(false),
@@ -67,8 +66,8 @@ class _SideMenuState extends State<SideMenu> with SingleTickerProviderStateMixin
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF1A0B2E), // Deep dark purple
-              Color(0xFF2D1B4E), // Medium purple
+              AppColors.dark().primaryDark, // Deep dark purple
+              AppColors.dark().primaryMedium, // Medium purple
             ],
           ),
         ),
@@ -81,23 +80,31 @@ class _SideMenuState extends State<SideMenu> with SingleTickerProviderStateMixin
                 child: Row(
                   children: [
                     const SizedBox(width: 12),
-                    FlutterLogo(size: 36),
-                    if (!effectiveCollapsed) ...[
-                      const SizedBox(width: 12),
-                      const Text(
-                        StringConstant.myCRM,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    //FlutterLogo(size: 36),
+                    GestureDetector(
+                      onTap: (){
+                        context.read<NavigationBloc>().add(OpenCloseDrawerEvent(false));
+                      },
+                      child: SvgPicture.asset(
+                        AssetConstants.icCRMLogo,
                       ),
-                    ],
+                    ),
+                    // if (!effectiveCollapsed) ...[
+                    //   const SizedBox(width: 12),
+                    //   const Text(
+                    //     StringConstant.myCRM,
+                    //     style: TextStyle(
+                    //       color: Colors.white,
+                    //       fontSize: 18,
+                    //       fontWeight: FontWeight.bold,
+                    //     ),
+                    //   ),
+                    // ],
                   ],
                 ),
               ),
 
-              Divider(color: Color(0xFF3D3551).withOpacity(0.5), height: 1, thickness: 1),
+              Divider(color: AppColors.dark().borderPrimary.withOpacity(0.5), height: 1, thickness: 1),
 
               // menu
               Expanded(
@@ -106,73 +113,66 @@ class _SideMenuState extends State<SideMenu> with SingleTickerProviderStateMixin
                     children: [
                       _menuItem(
                         context,
-                        Icons.dashboard,
+                        AssetConstants.icDashboard,
                         PathConstant.dashboardConstant,
                         NavPage.dashboard,
-                        state,
+                        widget.state,
                       ),
                       _menuItem(
                         context,
-                        Icons.person_search,
+                        AssetConstants.icInquiry,
                         PathConstant.inquiryManagementConstant,
                         NavPage.inquiryManagement,
-                        state,
+                        widget.state,
                       ),
                       _menuItem(
                         context,
-                        Icons.person_search,
+                        AssetConstants.icInquiry,
                         PathConstant.clientLeadsConstant,
                         NavPage.clientLeads,
-                        state,
+                        widget.state,
                       ),
                       _menuItem(
                         context,
-                        Icons.work_outline,
-                        PathConstant.projectJobsConstant,
-                        NavPage.projectJobs,
-                        state,
-                      ),
-                      _menuItem(
-                        context,
-                        Icons.receipt_long,
+                        AssetConstants.icInvoices,
                         PathConstant.invoicesConstant,
                         NavPage.invoices,
-                        state,
+                        widget.state,
                       ),
                       _menuItem(
                         context,
-                        Icons.payment,
+                        AssetConstants.icPayments,
                         PathConstant.paymentsConstant,
                         NavPage.payments,
-                        state,
+                        widget.state,
                       ),
                       _menuItem(
                         context,
-                        Icons.inventory_2,
-                        PathConstant.invoicesConstant,
+                        AssetConstants.icInventory,
+                        PathConstant.inventoryConstant,
                         NavPage.inventory,
-                        state,
+                        widget.state,
                       ),
                       _menuItem(
                         context,
-                        Icons.group,
+                        AssetConstants.icTeams,
                         PathConstant.teamConstant,
                         NavPage.team,
-                        state,
+                        widget.state,
                       ),
                       _menuItem(
                         context,
-                        Icons.alarm,
+                        AssetConstants.icReminders,
                         PathConstant.remindersConstant,
                         NavPage.reminders,
-                        state,
+                        widget.state,
                       ),
                       _menuItem(
                         context,
-                        Icons.analytics,
+                        AssetConstants.icAnalytics,
                         PathConstant.analysisConstant,
                         NavPage.analysis,
-                        state,
+                        widget.state,
                       ),
                     ],
                   ),
@@ -187,7 +187,7 @@ class _SideMenuState extends State<SideMenu> with SingleTickerProviderStateMixin
 
   Widget _menuItem(
     BuildContext context,
-    IconData icon,
+    String assetName,
     String title,
     NavPage page,
     NavigationState state,
@@ -195,27 +195,26 @@ class _SideMenuState extends State<SideMenu> with SingleTickerProviderStateMixin
     final selected = state.currentPage == page;
     final collapsed = effectiveCollapsed;
     return Material(
-      color: selected ? Color(0xFF4A2C6B).withOpacity(0.5) : Colors.transparent,
+      color: selected ? AppColors.dark().primaryLight.withOpacity(0.5) : Colors.transparent,
       child: InkWell(
-        onTap: () => context.read<NavigationBloc>().add(ChangePageEvent(page)),
+        onTap: (){
+          context.read<NavigationBloc>().add(ChangePageEvent(page));
+        },
         child: SizedBox(
           height: 56,
           child: Row(
             children: [
               const SizedBox(width: 12),
-              Icon(icon, color: Colors.white),
+              SvgPicture.asset(
+                assetName,
+                width: 20,
+                  height: 20,
+              ),
               if (!collapsed) ...[
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(title, style: const TextStyle(color: Colors.white)),
+                  child: Text(title, style:  TextStyle(color: selected?Colors.white:AppColors.dark().textSecondary)),
                 ),
-                if (selected)
-                  const Padding(
-                    padding: EdgeInsets.only(right: 12.0),
-                    child: Icon(Icons.chevron_right, color: Colors.white70),
-                  )
-                else
-                  const SizedBox(width: 12),
               ],
             ],
           ),
