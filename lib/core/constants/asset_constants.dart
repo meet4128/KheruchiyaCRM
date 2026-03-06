@@ -23,4 +23,6 @@ class AssetConstants {
   static const String icReminders = '$basePath/ic_reminders.svg';
   static const String icTeams = '$basePath/ic_teams.svg';
   static const String icDashboard = '$basePath/ic_dashboard.svg';
+  static const String icRedUpArrow = '$basePath/ic_red_up_arrow.svg';
+  static const String icTimer = '$basePath/ic_timer.svg';
 }

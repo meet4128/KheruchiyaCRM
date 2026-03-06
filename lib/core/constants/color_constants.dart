@@ -8,6 +8,7 @@ class ColorConstant {
   static const Color inquiryManagementBgColor = Color(0xFF210D20);
   static const Color singInTextColor = Color(0xFF11163F);
   static const Color logInBtnColor = Color(0xFF4056B4);
+  static const Color inquiryInfoTxtColor = Color(0xFF6155F5);
   static const Color redColor = Colors.red;
   static const Color orangeColor = Colors.orange;
   static const Color whiteColor = Colors.white;
