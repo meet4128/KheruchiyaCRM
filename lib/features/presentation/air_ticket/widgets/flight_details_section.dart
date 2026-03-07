@@ -182,21 +182,22 @@ class FlightDetailsSection extends StatelessWidget {
                   onSelected: onDepartureDateChanged,
                 ),
               ),
-              // Return (always visible, can be blank)
-              _DateField(
-                label: StringConstant.returnLabel,
-                isRequired: false,
-                value: returnDate,
-                errorText: returnDateError,
-                dateFormat: _formatDate,
-                hint: '',
-                onTap: () => _showDatePicker(
-                  context,
-                  initialDate: returnDate ?? departureDate ?? DateTime.now(),
-                  firstDate: departureDate ?? DateTime.now(),
-                  onSelectedNullable: onReturnDateChanged,
+              // Return — only for Round Trip (mandatory; same date selection as Departure)
+              if (bookingType == AirTicketBookingType.roundTrip)
+                _DateField(
+                  label: StringConstant.returnLabel,
+                  isRequired: true,
+                  value: returnDate,
+                  errorText: returnDateError,
+                  dateFormat: _formatDate,
+                  hint: StringConstant.selectReturnDate,
+                  onTap: () => _showDatePicker(
+                    context,
+                    initialDate: returnDate ?? departureDate ?? DateTime.now(),
+                    firstDate: departureDate ?? DateTime.now(),
+                    onSelectedNullable: onReturnDateChanged,
+                  ),
                 ),
-              ),
               // Traveller & Class (first segment only per design)
               if (showTravellerClass)
                 _TravellerClassField(

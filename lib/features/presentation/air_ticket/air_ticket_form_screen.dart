@@ -260,45 +260,47 @@ class _AirTicketFormCard extends StatelessWidget {
         onTravellerCountChanged: (c) => bloc.add(TravellerCountChanged(c)),
         onClassTypeChanged: (t) => bloc.add(ClassTypeChanged(t)),
         showTravellerClass: true,
-        showAddAnotherCity: totalSegments == 1,
-        onAddAnotherField: totalSegments == 1 ? () => bloc.add(AddFlightSegment()) : null,
+        showAddAnotherCity: state.bookingType == AirTicketBookingType.multiCity && totalSegments == 1,
+        onAddAnotherField: state.bookingType == AirTicketBookingType.multiCity && totalSegments == 1 ? () => bloc.add(AddFlightSegment()) : null,
         addAnotherButtonLabel: StringConstant.addAnotherCity,
       ),
     );
 
-    // Extra segments (from flightSegments)
-    for (var i = 0; i < state.flightSegments.length; i++) {
-      final seg = state.flightSegments[i];
-      final isLast = i == state.flightSegments.length - 1;
-      list.add(const SizedBox(height: 16));
-      list.add(
-        FlightDetailsSection(
-          from: seg.from,
-          to: seg.to,
-          departureDate: seg.departureDate,
-          returnDate: seg.returnDate,
-          bookingType: state.bookingType,
-          travellerCount: state.travellerCount,
-          classType: state.classType,
-          fromError: null,
-          toError: null,
-          departureDateError: null,
-          returnDateError: null,
-          travellerCountError: null,
-          onFromChanged: (v) => bloc.add(SegmentFromChanged(i, v)),
-          onToChanged: (v) => bloc.add(SegmentToChanged(i, v)),
-          onDepartureDateChanged: (d) => bloc.add(SegmentDepartureDateChanged(i, d)),
-          onReturnDateChanged: (d) => bloc.add(SegmentReturnDateChanged(i, d)),
-          onSwapLocations: () => bloc.add(SegmentSwapLocations(i)),
-          onTravellerCountChanged: null,
-          onClassTypeChanged: null,
-          showTravellerClass: false,
-          showAddAnotherCity: isLast,
-          onAddAnotherField: isLast ? () => bloc.add(AddFlightSegment()) : null,
-          addAnotherButtonLabel: StringConstant.addAnotherCity,
-          onRemove: () => bloc.add(RemoveFlightSegment(i)),
-        ),
-      );
+    // Extra segments (only for Multi City)
+    if (state.bookingType == AirTicketBookingType.multiCity) {
+      for (var i = 0; i < state.flightSegments.length; i++) {
+        final seg = state.flightSegments[i];
+        final isLast = i == state.flightSegments.length - 1;
+        list.add(const SizedBox(height: 16));
+        list.add(
+          FlightDetailsSection(
+            from: seg.from,
+            to: seg.to,
+            departureDate: seg.departureDate,
+            returnDate: seg.returnDate,
+            bookingType: state.bookingType,
+            travellerCount: state.travellerCount,
+            classType: state.classType,
+            fromError: null,
+            toError: null,
+            departureDateError: null,
+            returnDateError: null,
+            travellerCountError: null,
+            onFromChanged: (v) => bloc.add(SegmentFromChanged(i, v)),
+            onToChanged: (v) => bloc.add(SegmentToChanged(i, v)),
+            onDepartureDateChanged: (d) => bloc.add(SegmentDepartureDateChanged(i, d)),
+            onReturnDateChanged: (d) => bloc.add(SegmentReturnDateChanged(i, d)),
+            onSwapLocations: () => bloc.add(SegmentSwapLocations(i)),
+            onTravellerCountChanged: null,
+            onClassTypeChanged: null,
+            showTravellerClass: false,
+            showAddAnotherCity: isLast,
+            onAddAnotherField: isLast ? () => bloc.add(AddFlightSegment()) : null,
+            addAnotherButtonLabel: StringConstant.addAnotherCity,
+            onRemove: () => bloc.add(RemoveFlightSegment(i)),
+          ),
+        );
+      }
     }
 
     return list;
