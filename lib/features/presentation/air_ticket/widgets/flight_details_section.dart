@@ -73,6 +73,17 @@ class FlightDetailsSection extends StatelessWidget {
     StringConstant.first,
   ];
 
+  /// Parses stored airport string "CODE - City|Airport Name" into (value, sublabel).
+  static ({String value, String sublabel}) _airportDisplay(String raw, String defaultValue, String defaultSublabel) {
+    if (raw.isEmpty) return (value: defaultValue, sublabel: defaultSublabel);
+    final i = raw.indexOf('|');
+    if (i < 0) return (value: raw, sublabel: '');
+    return (
+      value: raw.substring(0, i).trim(),
+      sublabel: raw.substring(i + 1).trim(),
+    );
+  }
+
   static Future<void> _showDatePicker(
     BuildContext context, {
     required DateTime initialDate,
@@ -138,8 +149,8 @@ class FlightDetailsSection extends StatelessWidget {
               _LocationField(
                 label: StringConstant.from,
                 isRequired: true,
-                value: from.isNotEmpty ? from : StringConstant.defaultFromLocation,
-                sublabel: from.isNotEmpty ? '' : StringConstant.defaultAirportFrom,
+                value: _airportDisplay(from, StringConstant.defaultFromLocation, StringConstant.defaultAirportFrom).value,
+                sublabel: _airportDisplay(from, StringConstant.defaultFromLocation, StringConstant.defaultAirportFrom).sublabel,
                 errorText: fromError,
                 showBorder: true,
                 onSelectAirport: onFromChanged,
@@ -150,8 +161,8 @@ class FlightDetailsSection extends StatelessWidget {
               _LocationField(
                 label: StringConstant.to,
                 isRequired: true,
-                value: to.isNotEmpty ? to : StringConstant.defaultToLocation,
-                sublabel: to.isNotEmpty ? '' : StringConstant.defaultAirportTo,
+                value: _airportDisplay(to, StringConstant.defaultToLocation, StringConstant.defaultAirportTo).value,
+                sublabel: _airportDisplay(to, StringConstant.defaultToLocation, StringConstant.defaultAirportTo).sublabel,
                 errorText: toError,
                 showBorder: true,
                 onSelectAirport: onToChanged,

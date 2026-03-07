@@ -207,9 +207,12 @@ class _AirportPickerWidgetState extends State<AirportPickerWidget> {
                   final line2 = [airport.city, airport.country]
                       .where((s) => s.isNotEmpty)
                       .join(', ');
-                  final displayText = '${airport.code} — ${airport.name}';
+                  // Pass "CODE - City|Airport Name" so location field shows value + sublabel
+                  final valuePart = '${airport.code} - ${airport.city}';
+                  final sublabelPart = airport.name;
+                  final payload = '$valuePart|$sublabelPart';
                   return InkWell(
-                    onTap: () => widget.onSelect(displayText),
+                    onTap: () => widget.onSelect(payload),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
