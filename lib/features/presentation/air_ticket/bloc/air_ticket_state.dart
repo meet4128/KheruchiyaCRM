@@ -3,6 +3,7 @@ import '../models/booking_type.dart';
 import '../models/priority.dart';
 import '../models/visa_type.dart';
 import '../models/checklist_item.dart';
+import '../models/flight_segment.dart';
 import 'air_ticket_event.dart';
 
 /// Submission status enum for air ticket form
@@ -34,6 +35,7 @@ class AirTicketState extends Equatable {
     this.checklistInLoop = false,
     this.checklistRepeat = false,
     this.checklistItems = const [],
+    this.flightSegments = const [],
     this.fromError,
     this.toError,
     this.departureDateError,
@@ -70,6 +72,9 @@ class AirTicketState extends Equatable {
 
   // Checklist items list
   final List<ChecklistItem> checklistItems;
+
+  // Additional flight segments (segment 0 = from/to/departureDate/returnDate above)
+  final List<FlightSegment> flightSegments;
 
   // Validation errors
   final String? fromError;
@@ -148,6 +153,7 @@ class AirTicketState extends Equatable {
     bool? checklistInLoop,
     bool? checklistRepeat,
     List<ChecklistItem>? checklistItems,
+    List<FlightSegment>? flightSegments,
     String? fromError,
     String? toError,
     String? departureDateError,
@@ -186,6 +192,7 @@ class AirTicketState extends Equatable {
       checklistInLoop: checklistInLoop ?? this.checklistInLoop,
       checklistRepeat: checklistRepeat ?? this.checklistRepeat,
       checklistItems: checklistItems ?? this.checklistItems,
+      flightSegments: flightSegments ?? this.flightSegments,
       fromError: clearFromError
           ? null
           : (fromError ?? (from != null ? null : this.fromError)),
@@ -239,6 +246,7 @@ class AirTicketState extends Equatable {
         checklistInLoop,
         checklistRepeat,
         checklistItems,
+        flightSegments,
         fromError,
         toError,
         departureDateError,

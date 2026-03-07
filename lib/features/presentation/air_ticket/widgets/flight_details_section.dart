@@ -29,6 +29,10 @@ class FlightDetailsSection extends StatelessWidget {
     this.onTravellerCountChanged,
     this.onClassTypeChanged,
     this.onAddAnotherField,
+    this.showTravellerClass = true,
+    this.showAddAnotherCity = false,
+    this.addAnotherButtonLabel,
+    this.onRemove,
   });
 
   final String from;
@@ -51,6 +55,14 @@ class FlightDetailsSection extends StatelessWidget {
   final ValueChanged<int>? onTravellerCountChanged;
   final ValueChanged<String>? onClassTypeChanged;
   final VoidCallback? onAddAnotherField;
+  /// When true, show Traveller & Class in this section (typically first segment only).
+  final bool showTravellerClass;
+  /// When true, show Add another City/field button (typically last segment only).
+  final bool showAddAnotherCity;
+  /// Label for add button when [showAddAnotherCity] is true (e.g. "Add another City").
+  final String? addAnotherButtonLabel;
+  /// When non-null, show a delete button to remove this segment (extra segments only).
+  final VoidCallback? onRemove;
 
   static const List<int> travellerCounts = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   static const List<String> classTypes = [
@@ -172,20 +184,25 @@ class FlightDetailsSection extends StatelessWidget {
                   onSelectedNullable: onReturnDateChanged,
                 ),
               ),
-              // Traveller & Class
-              _TravellerClassField(
-                label: StringConstant.travellerAndClass,
-                isRequired: true,
-                value: travellerClassDisplay,
-                errorText: travellerCountError,
-                travellerCount: travellerCount,
-                classType: classType,
-                onTravellerChanged: onTravellerCountChanged,
-                onClassChanged: onClassTypeChanged,
-                showBorder: true,
-              ),
-              if (onAddAnotherField != null)
-                _AddAnotherFieldButton(onTap: onAddAnotherField!),
+              // Traveller & Class (first segment only per design)
+              if (showTravellerClass)
+                _TravellerClassField(
+                  label: StringConstant.travellerAndClass,
+                  isRequired: true,
+                  value: travellerClassDisplay,
+                  errorText: travellerCountError,
+                  travellerCount: travellerCount,
+                  classType: classType,
+                  onTravellerChanged: onTravellerCountChanged,
+                  onClassChanged: onClassTypeChanged,
+                  showBorder: true,
+                ),
+              if (showAddAnotherCity && onAddAnotherField != null)
+                _AddAnotherFieldButton(
+                  onTap: onAddAnotherField!,
+                  label: addAnotherButtonLabel ?? StringConstant.addAnotherField,
+                ),
+              if (onRemove != null) _RemoveSegmentButton(onRemove: onRemove!),
             ],
           ),
         ),
@@ -265,11 +282,51 @@ class _SwapSegment extends StatelessWidget {
   }
 }
 
-/// Add another field button (purple-to-dark-purple gradient)
+/// Delete segment button (trash icon) for extra flight segments
+class _RemoveSegmentButton extends StatelessWidget {
+  const _RemoveSegmentButton({required this.onRemove});
+
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      child: Align(
+        alignment: Alignment.center,
+        child: Material(
+          color: Colors.transparent,
+          child: IconButton(
+            onPressed: onRemove,
+            icon: Icon(
+              Icons.delete_outline,
+              color: colors.textSecondary,
+              size: 22,
+            ),
+            tooltip: 'Remove this segment',
+            style: IconButton.styleFrom(
+              backgroundColor: colors.inputBackground.withOpacity(0.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Add another field/city button (purple gradient)
 class _AddAnotherFieldButton extends StatelessWidget {
-  const _AddAnotherFieldButton({required this.onTap});
+  const _AddAnotherFieldButton({
+    required this.onTap,
+    this.label,
+  });
 
   final VoidCallback onTap;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
@@ -295,21 +352,21 @@ class _AddAnotherFieldButton extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.add, color: Colors.white, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    StringConstant.addAnotherField,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.add, color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        label ?? StringConstant.addAnotherField,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
             ),
           ),
         ),

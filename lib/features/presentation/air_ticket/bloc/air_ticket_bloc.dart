@@ -4,6 +4,7 @@ import 'air_ticket_event.dart';
 import 'air_ticket_state.dart';
 import '../models/booking_type.dart';
 import '../models/checklist_item.dart';
+import '../models/flight_segment.dart';
 
 /// BLoC for managing Air Ticket form state
 /// Handles all form field changes, validation, and submission
@@ -33,6 +34,13 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     on<SubmitAirTicket>(_onSubmitAirTicket);
     on<ResetAirTicketForm>(_onResetForm);
     on<SwapLocations>(_onSwapLocations);
+    on<AddFlightSegment>(_onAddFlightSegment);
+    on<SegmentFromChanged>(_onSegmentFromChanged);
+    on<SegmentToChanged>(_onSegmentToChanged);
+    on<SegmentDepartureDateChanged>(_onSegmentDepartureDateChanged);
+    on<SegmentReturnDateChanged>(_onSegmentReturnDateChanged);
+    on<SegmentSwapLocations>(_onSegmentSwapLocations);
+    on<RemoveFlightSegment>(_onRemoveFlightSegment);
   }
 
   // ========== Form Field Event Handlers ==========
@@ -288,7 +296,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
 
   // ========== Form Action Event Handlers ==========
 
-  /// Handle swap locations event
+  /// Handle swap locations event (segment 0)
   void _onSwapLocations(
     SwapLocations event,
     Emitter<AirTicketState> emit,
@@ -304,6 +312,92 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
       fromError: fromError,
       toError: toError,
     ));
+  }
+
+  /// Handle add flight segment (Add another City)
+  void _onAddFlightSegment(
+    AddFlightSegment event,
+    Emitter<AirTicketState> emit,
+  ) {
+    final updated = [...state.flightSegments, FlightSegment.defaultSegment];
+    emit(state.copyWith(flightSegments: updated));
+  }
+
+  /// Handle segment from changed (extra segments only; index 0-based in flightSegments)
+  void _onSegmentFromChanged(
+    SegmentFromChanged event,
+    Emitter<AirTicketState> emit,
+  ) {
+    if (event.segmentIndex < 0 ||
+        event.segmentIndex >= state.flightSegments.length) return;
+    final list = List<FlightSegment>.from(state.flightSegments);
+    list[event.segmentIndex] =
+        list[event.segmentIndex].copyWith(from: event.from);
+    emit(state.copyWith(flightSegments: list));
+  }
+
+  /// Handle segment to changed
+  void _onSegmentToChanged(
+    SegmentToChanged event,
+    Emitter<AirTicketState> emit,
+  ) {
+    if (event.segmentIndex < 0 ||
+        event.segmentIndex >= state.flightSegments.length) return;
+    final list = List<FlightSegment>.from(state.flightSegments);
+    list[event.segmentIndex] = list[event.segmentIndex].copyWith(to: event.to);
+    emit(state.copyWith(flightSegments: list));
+  }
+
+  /// Handle segment departure date changed
+  void _onSegmentDepartureDateChanged(
+    SegmentDepartureDateChanged event,
+    Emitter<AirTicketState> emit,
+  ) {
+    if (event.segmentIndex < 0 ||
+        event.segmentIndex >= state.flightSegments.length) return;
+    final list = List<FlightSegment>.from(state.flightSegments);
+    list[event.segmentIndex] = list[event.segmentIndex]
+        .copyWith(departureDate: event.departureDate);
+    emit(state.copyWith(flightSegments: list));
+  }
+
+  /// Handle segment return date changed
+  void _onSegmentReturnDateChanged(
+    SegmentReturnDateChanged event,
+    Emitter<AirTicketState> emit,
+  ) {
+    if (event.segmentIndex < 0 ||
+        event.segmentIndex >= state.flightSegments.length) return;
+    final list = List<FlightSegment>.from(state.flightSegments);
+    list[event.segmentIndex] =
+        list[event.segmentIndex].copyWith(returnDate: event.returnDate);
+    emit(state.copyWith(flightSegments: list));
+  }
+
+  /// Handle segment swap locations
+  void _onSegmentSwapLocations(
+    SegmentSwapLocations event,
+    Emitter<AirTicketState> emit,
+  ) {
+    if (event.segmentIndex < 0 ||
+        event.segmentIndex >= state.flightSegments.length) return;
+    final seg = state.flightSegments[event.segmentIndex];
+    final list = List<FlightSegment>.from(state.flightSegments);
+    list[event.segmentIndex] =
+        seg.copyWith(from: seg.to, to: seg.from);
+    emit(state.copyWith(flightSegments: list));
+  }
+
+  /// Handle remove flight segment (extra segments only)
+  void _onRemoveFlightSegment(
+    RemoveFlightSegment event,
+    Emitter<AirTicketState> emit,
+  ) {
+    if (event.segmentIndex < 0 ||
+        event.segmentIndex >= state.flightSegments.length) return;
+    final list = List<FlightSegment>.from(state.flightSegments);
+    list.removeAt(event.segmentIndex);
+    emit(state.copyWith(flightSegments: list));
   }
 
   /// Handle reset form event

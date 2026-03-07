@@ -229,12 +229,84 @@ class ResetAirTicketForm extends AirTicketEvent {
   List<Object> get props => [];
 }
 
-/// Event fired when locations are swapped
+/// Event fired when locations are swapped (segment 0)
 class SwapLocations extends AirTicketEvent {
   const SwapLocations();
 
   @override
   List<Object> get props => [];
+}
+
+/// Event fired when user adds another flight segment (Add another City)
+class AddFlightSegment extends AirTicketEvent {
+  const AddFlightSegment();
+
+  @override
+  List<Object> get props => [];
+}
+
+/// Event fired when from location changes for an extra segment (index 0 = first extra)
+class SegmentFromChanged extends AirTicketEvent {
+  const SegmentFromChanged(this.segmentIndex, this.from);
+
+  final int segmentIndex;
+  final String from;
+
+  @override
+  List<Object> get props => [segmentIndex, from];
+}
+
+/// Event fired when to location changes for an extra segment
+class SegmentToChanged extends AirTicketEvent {
+  const SegmentToChanged(this.segmentIndex, this.to);
+
+  final int segmentIndex;
+  final String to;
+
+  @override
+  List<Object> get props => [segmentIndex, to];
+}
+
+/// Event fired when departure date changes for an extra segment
+class SegmentDepartureDateChanged extends AirTicketEvent {
+  const SegmentDepartureDateChanged(this.segmentIndex, this.departureDate);
+
+  final int segmentIndex;
+  final DateTime departureDate;
+
+  @override
+  List<Object> get props => [segmentIndex, departureDate];
+}
+
+/// Event fired when return date changes for an extra segment
+class SegmentReturnDateChanged extends AirTicketEvent {
+  const SegmentReturnDateChanged(this.segmentIndex, this.returnDate);
+
+  final int segmentIndex;
+  final DateTime? returnDate;
+
+  @override
+  List<Object?> get props => [segmentIndex, returnDate];
+}
+
+/// Event fired when locations are swapped in an extra segment
+class SegmentSwapLocations extends AirTicketEvent {
+  const SegmentSwapLocations(this.segmentIndex);
+
+  final int segmentIndex;
+
+  @override
+  List<Object> get props => [segmentIndex];
+}
+
+/// Event fired when user removes an extra flight segment (index 0-based in flightSegments)
+class RemoveFlightSegment extends AirTicketEvent {
+  const RemoveFlightSegment(this.segmentIndex);
+
+  final int segmentIndex;
+
+  @override
+  List<Object> get props => [segmentIndex];
 }
 
 

@@ -9,6 +9,7 @@ import 'package:travel_crm/core/widgets/form_field_wrapper.dart';
 import 'package:travel_crm/features/presentation/air_ticket/bloc/air_ticket_bloc.dart';
 import 'package:travel_crm/features/presentation/air_ticket/bloc/air_ticket_event.dart';
 import 'package:travel_crm/features/presentation/air_ticket/bloc/air_ticket_state.dart';
+import 'package:travel_crm/features/presentation/air_ticket/models/flight_segment.dart';
 import 'package:travel_crm/features/presentation/air_ticket/models/booking_type.dart';
 import 'package:travel_crm/features/presentation/air_ticket/models/priority.dart';
 import 'package:travel_crm/features/presentation/air_ticket/models/visa_type.dart';
@@ -226,8 +227,84 @@ class _AirTicketFormSectionHeader extends StatelessWidget {
   }
 }
 
-/// Air Ticket Form Card — matches screenshot: no inner title, flight type, details row, visa, remark.
+/// Air Ticket Form Card — matches screenshot: flight type, multiple bordered flight-detail sections, visa, remark.
 class _AirTicketFormCard extends StatelessWidget {
+  /// Builds one FlightDetailsSection per segment; each has its own border. First segment has Traveller & Class; last has Add another City.
+  static List<Widget> _buildFlightDetailsSections(
+    BuildContext context,
+    AirTicketState state,
+  ) {
+    final bloc = context.read<AirTicketBloc>();
+    final totalSegments = 1 + state.flightSegments.length;
+    final list = <Widget>[];
+
+    // Segment 0 (main state)
+    list.add(
+      FlightDetailsSection(
+        from: state.from,
+        to: state.to,
+        departureDate: state.departureDate,
+        returnDate: state.returnDate,
+        bookingType: state.bookingType,
+        travellerCount: state.travellerCount,
+        classType: state.classType,
+        fromError: state.fromError,
+        toError: state.toError,
+        departureDateError: state.departureDateError,
+        returnDateError: state.returnDateError,
+        travellerCountError: state.travellerCountError,
+        onFromChanged: (v) => bloc.add(FromLocationChanged(v)),
+        onToChanged: (v) => bloc.add(ToLocationChanged(v)),
+        onDepartureDateChanged: (d) => bloc.add(DepartureDateChanged(d)),
+        onReturnDateChanged: (d) => bloc.add(ReturnDateChanged(d)),
+        onSwapLocations: () => bloc.add(SwapLocations()),
+        onTravellerCountChanged: (c) => bloc.add(TravellerCountChanged(c)),
+        onClassTypeChanged: (t) => bloc.add(ClassTypeChanged(t)),
+        showTravellerClass: true,
+        showAddAnotherCity: totalSegments == 1,
+        onAddAnotherField: totalSegments == 1 ? () => bloc.add(AddFlightSegment()) : null,
+        addAnotherButtonLabel: StringConstant.addAnotherCity,
+      ),
+    );
+
+    // Extra segments (from flightSegments)
+    for (var i = 0; i < state.flightSegments.length; i++) {
+      final seg = state.flightSegments[i];
+      final isLast = i == state.flightSegments.length - 1;
+      list.add(const SizedBox(height: 16));
+      list.add(
+        FlightDetailsSection(
+          from: seg.from,
+          to: seg.to,
+          departureDate: seg.departureDate,
+          returnDate: seg.returnDate,
+          bookingType: state.bookingType,
+          travellerCount: state.travellerCount,
+          classType: state.classType,
+          fromError: null,
+          toError: null,
+          departureDateError: null,
+          returnDateError: null,
+          travellerCountError: null,
+          onFromChanged: (v) => bloc.add(SegmentFromChanged(i, v)),
+          onToChanged: (v) => bloc.add(SegmentToChanged(i, v)),
+          onDepartureDateChanged: (d) => bloc.add(SegmentDepartureDateChanged(i, d)),
+          onReturnDateChanged: (d) => bloc.add(SegmentReturnDateChanged(i, d)),
+          onSwapLocations: () => bloc.add(SegmentSwapLocations(i)),
+          onTravellerCountChanged: null,
+          onClassTypeChanged: null,
+          showTravellerClass: false,
+          showAddAnotherCity: isLast,
+          onAddAnotherField: isLast ? () => bloc.add(AddFlightSegment()) : null,
+          addAnotherButtonLabel: StringConstant.addAnotherCity,
+          onRemove: () => bloc.add(RemoveFlightSegment(i)),
+        ),
+      );
+    }
+
+    return list;
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AirTicketBloc, AirTicketState>(
@@ -247,41 +324,8 @@ class _AirTicketFormCard extends StatelessWidget {
               ),
               const SizedBox(height: 22),
 
-              // Flight Details Section (From, To, Departure, Return, Traveller & Class, Add another field)
-              FlightDetailsSection(
-                from: state.from,
-                to: state.to,
-                departureDate: state.departureDate,
-                returnDate: state.returnDate,
-                bookingType: state.bookingType,
-                travellerCount: state.travellerCount,
-                classType: state.classType,
-                fromError: state.fromError,
-                toError: state.toError,
-                departureDateError: state.departureDateError,
-                returnDateError: state.returnDateError,
-                travellerCountError: state.travellerCountError,
-                onFromChanged: (value) => context.read<AirTicketBloc>().add(
-                  FromLocationChanged(value),
-                ),
-                onToChanged: (value) =>
-                    context.read<AirTicketBloc>().add(ToLocationChanged(value)),
-                onDepartureDateChanged: (date) => context
-                    .read<AirTicketBloc>()
-                    .add(DepartureDateChanged(date)),
-                onReturnDateChanged: (date) =>
-                    context.read<AirTicketBloc>().add(ReturnDateChanged(date)),
-                onSwapLocations: () =>
-                    context.read<AirTicketBloc>().add(SwapLocations()),
-                onTravellerCountChanged: (count) => context
-                    .read<AirTicketBloc>()
-                    .add(TravellerCountChanged(count)),
-                onClassTypeChanged: (type) =>
-                    context.read<AirTicketBloc>().add(ClassTypeChanged(type)),
-                onAddAnotherField: () {
-                  // TODO: Implement add another field functionality
-                },
-              ),
+              // Flight Details Sections: one per segment, each with its own border (per screenshot)
+              ..._buildFlightDetailsSections(context, state),
               const SizedBox(height: 22),
               // Type of Visa Selection (Visitor Visa, Student Visa, PR, Work Permit)
               FormFieldWrapper(

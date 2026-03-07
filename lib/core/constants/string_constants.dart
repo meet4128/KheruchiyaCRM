@@ -205,6 +205,7 @@ class StringConstant {
   // ========== Buttons & Actions ==========
   static const String submit = 'Submit';
   static const String addAnotherField = 'Add another field';
+  static const String addAnotherCity = 'Add another City';
   static const String optForFullRefund = 'Opt for full refund.';
 
   // ========== Tooltips ==========
