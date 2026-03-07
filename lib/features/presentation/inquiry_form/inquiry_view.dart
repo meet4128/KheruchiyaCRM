@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:travel_crm/core/constants/path_constants.dart';
 import 'package:travel_crm/core/theme/app_theme.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/bloc/inquiry_bloc.dart';
+import 'package:travel_crm/features/presentation/inquiry_form/bloc/inquiry_event.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/bloc/inquiry_state.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/inquiry_form_screen.dart';
 
@@ -23,12 +26,21 @@ class _InquiryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocListener<InquiryBloc, InquiryState>(
-      listenWhen: (previous, current) =>
-          previous.status != current.status &&
-          (current.status == InquirySubmissionStatus.success ||
-              current.status == InquirySubmissionStatus.failure),
+      listenWhen: (previous, current) {
+        if (current.pendingNavigateToAirTicket && !previous.pendingNavigateToAirTicket) {
+          return true;
+        }
+        return previous.status != current.status &&
+            (current.status == InquirySubmissionStatus.success ||
+                current.status == InquirySubmissionStatus.failure);
+      },
       listener: (context, state) {
         final colors = AppTheme.colors(context);
+        if (state.pendingNavigateToAirTicket) {
+          context.read<InquiryBloc>().add(ClearPendingNavigateToAirTicket());
+          context.go(PathConstant.airTicket, extra: state);
+          return;
+        }
         if (state.successMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

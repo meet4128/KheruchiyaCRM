@@ -44,10 +44,13 @@ class AirTicketState extends Equatable {
     this.visaTypeError,
     this.remarkError,
     this.showValidationMessages = false,
-    this.status = AirTicketSubmissionStatus.idle,
+    this.submissionStatus = AirTicketSubmissionStatus.idle,
     this.successMessage,
-    this.errorMessage,
+    this.submissionError,
   });
+
+  /// Initial state for the air ticket form.
+  static AirTicketState get initial => const AirTicketState();
 
   // Form field values
   final AirTicketBookingType? bookingType;
@@ -87,9 +90,9 @@ class AirTicketState extends Equatable {
 
   // UI state
   final bool showValidationMessages;
-  final AirTicketSubmissionStatus status;
+  final AirTicketSubmissionStatus submissionStatus;
   final String? successMessage;
-  final String? errorMessage;
+  final String? submissionError;
 
   /// Check if form has any validation errors
   bool get hasErrors =>
@@ -102,10 +105,10 @@ class AirTicketState extends Equatable {
       remarkError != null;
 
   /// Check if form is submitting
-  bool get isSubmitting => status == AirTicketSubmissionStatus.submitting;
+  bool get isSubmitting => submissionStatus == AirTicketSubmissionStatus.submitting;
 
   /// Check if form submission was successful
-  bool get isSuccess => status == AirTicketSubmissionStatus.success;
+  bool get isSuccess => submissionStatus == AirTicketSubmissionStatus.success;
 
   /// Check if form is valid (no errors and all required fields filled)
   /// This is computed from state - UI remains dumb
@@ -162,9 +165,9 @@ class AirTicketState extends Equatable {
     String? visaTypeError,
     String? remarkError,
     bool? showValidationMessages,
-    AirTicketSubmissionStatus? status,
+    AirTicketSubmissionStatus? submissionStatus,
     String? successMessage,
-    String? errorMessage,
+    String? submissionError,
     bool clearFromError = false,
     bool clearToError = false,
     bool clearDepartureDateError = false,
@@ -220,9 +223,9 @@ class AirTicketState extends Equatable {
           : (remarkError ?? (remark != null ? null : this.remarkError)),
       showValidationMessages:
           showValidationMessages ?? this.showValidationMessages,
-      status: status ?? this.status,
+      submissionStatus: submissionStatus ?? this.submissionStatus,
       successMessage: successMessage ?? this.successMessage,
-      errorMessage: errorMessage ?? this.errorMessage,
+      submissionError: submissionError ?? this.submissionError,
     );
   }
 
@@ -255,9 +258,9 @@ class AirTicketState extends Equatable {
         visaTypeError,
         remarkError,
         showValidationMessages,
-        status,
+        submissionStatus,
         successMessage,
-        errorMessage,
+        submissionError,
       ];
 }
 

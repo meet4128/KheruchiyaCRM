@@ -40,7 +40,10 @@ class SharedPrefUtils {
 
 class SharedPrefUtilsKeys {
   static String isLoggedIn = 'isLoggedIn';
+  /// Access token (JWT) sent as Bearer on API requests.
   static String userToken = 'userToken';
+  /// Refresh token used to obtain a new access token on 401.
+  static String refreshToken = 'refreshToken';
   static String userName = 'userName';
   static String isRememberMe = 'isRememberMe';
   static String setControlPermissions = 'setControlPermissions';

@@ -49,6 +49,7 @@ dependencies:
   country_code_picker: ^3.4.1
   flutter_svg: ^2.2.3
   file_picker: ^8.1.6
+  loading_overlay: ^0.5.0
 
 dev_dependencies:
   flutter_test:

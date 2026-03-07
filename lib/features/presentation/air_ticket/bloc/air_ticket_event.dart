@@ -1,7 +1,8 @@
 import 'package:equatable/equatable.dart';
+import '../../inquiry_form/bloc/inquiry_state.dart';
 import '../models/booking_type.dart';
-import '../models/visa_type.dart';
 import '../models/priority.dart';
+import '../models/visa_type.dart';
 
 /// Base class for all Air Ticket events
 abstract class AirTicketEvent extends Equatable {
@@ -213,12 +214,15 @@ class RemoveChecklistItem extends AirTicketEvent {
 
 // ========== Form Action Events ==========
 
-/// Event fired when air ticket form is submitted
+/// Event fired when air ticket form is submitted.
+/// [inquiryState] should be set by the UI from context.read<InquiryBloc>().state when both forms are on the same page.
 class SubmitAirTicket extends AirTicketEvent {
-  const SubmitAirTicket();
+  const SubmitAirTicket({this.inquiryState});
+
+  final InquiryState? inquiryState;
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [inquiryState];
 }
 
 /// Event fired when form is reset

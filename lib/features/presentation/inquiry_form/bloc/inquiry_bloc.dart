@@ -16,6 +16,8 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
     on<EmailChanged>(_onEmailChanged);
     on<AddressChanged>(_onAddressChanged);
     on<BookingTypeChanged>(_onBookingTypeChanged);
+    on<TypeOfClientChanged>(_onTypeOfClientChanged);
+    on<ClearPendingNavigateToAirTicket>(_onClearPendingNavigateToAirTicket);
     on<ReferenceNameChanged>(_onReferenceNameChanged);
     on<ReferenceNumberChanged>(_onReferenceNumberChanged);
     on<PhoneDialCodeChanged>(_onPhoneDialCodeChanged);
@@ -116,16 +118,58 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
     ));
   }
 
-  /// Handle booking type changed event
+  /// Handle booking type changed event (typeOfBooking).
+  /// When user selects Flight, run full form validation; only allow navigate if valid.
   void _onBookingTypeChanged(
     BookingTypeChanged event,
     Emitter<InquiryState> emit,
   ) {
-    emit(state.copyWith(
+    final nextState = state.copyWith(
       bookingType: event.bookingType,
       bookingTypeError: null,
       clearBookingTypeError: true,
-    ));
+      pendingNavigateToAirTicket: false,
+    );
+    if (event.bookingType == BookingType.flight) {
+      final errors = _validateAllForState(nextState);
+      final hasErrors = errors.values.any((e) => e != null);
+      if (hasErrors) {
+        emit(nextState.copyWith(
+          titleError: errors[InquiryField.title],
+          firstNameError: errors[InquiryField.firstName],
+          lastNameError: errors[InquiryField.lastName],
+          phoneError: errors[InquiryField.phoneNumber],
+          emailError: errors[InquiryField.email],
+          addressError: errors[InquiryField.address],
+          bookingTypeError: errors[InquiryField.bookingType],
+          referenceNameError: errors[InquiryField.referenceName],
+          referenceNumberError: errors[InquiryField.referenceNumber],
+          clientBehaviourError: errors[InquiryField.clientBehaviour],
+          showValidationMessages: true,
+          pendingNavigateToAirTicket: false,
+        ));
+      } else {
+        emit(nextState.copyWith(pendingNavigateToAirTicket: true));
+      }
+    } else {
+      emit(nextState);
+    }
+  }
+
+  /// Clears the pending-navigate flag after listener has performed navigation.
+  void _onClearPendingNavigateToAirTicket(
+    ClearPendingNavigateToAirTicket event,
+    Emitter<InquiryState> emit,
+  ) {
+    emit(state.copyWith(pendingNavigateToAirTicket: false));
+  }
+
+  /// Handle type of client changed event (typeOfClient — independent from typeOfBooking)
+  void _onTypeOfClientChanged(
+    TypeOfClientChanged event,
+    Emitter<InquiryState> emit,
+  ) {
+    emit(state.copyWith(typeOfClient: event.typeOfClient));
   }
 
   /// Handle reference name changed event
@@ -320,21 +364,26 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
 
   /// Validate all fields
   Map<InquiryField, String?> _validateAll() {
+    return _validateAllForState(state);
+  }
+
+  /// Validate all fields for a given state (e.g. before navigate to air ticket).
+  Map<InquiryField, String?> _validateAllForState(InquiryState s) {
     return {
-      InquiryField.title: _validateTitle(state.title),
-      InquiryField.firstName: _validateFirstName(state.firstName),
-      InquiryField.lastName: _validateLastName(state.lastName),
-      InquiryField.phoneNumber: _validatePhone(state.phoneNumber),
-      InquiryField.email: _validateEmail(state.email),
-      InquiryField.address: _validateAddress(state.address),
-      InquiryField.bookingType: state.bookingType == null
+      InquiryField.title: _validateTitle(s.title),
+      InquiryField.firstName: _validateFirstName(s.firstName),
+      InquiryField.lastName: _validateLastName(s.lastName),
+      InquiryField.phoneNumber: _validatePhone(s.phoneNumber),
+      InquiryField.email: _validateEmail(s.email),
+      InquiryField.address: _validateAddress(s.address),
+      InquiryField.bookingType: s.bookingType == null
           ? StringConstant.typeOfBookingRequired
           : null,
-      InquiryField.referenceName: _validateReferenceName(state.referenceName),
+      InquiryField.referenceName: _validateReferenceName(s.referenceName),
       InquiryField.referenceNumber:
-          _validateReferenceNumber(state.referenceNumber),
+          _validateReferenceNumber(s.referenceNumber),
       InquiryField.clientBehaviour:
-          _validateClientBehaviour(state.clientBehaviour),
+          _validateClientBehaviour(s.clientBehaviour),
     };
   }
 

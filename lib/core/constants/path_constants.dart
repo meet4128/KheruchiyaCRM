@@ -157,7 +157,9 @@ GoRouter createRouter(NavigationBloc navBloc) {
           GoRoute(
             path: PathConstant.airTicket,
             name: 'airTicket',
-            pageBuilder: (context, state) => NoTransitionPage(child: AirTicketViewPage()),
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: AirTicketViewPage(initialInquiryState: state.extra),
+            ),
           ),
         ],
       ),

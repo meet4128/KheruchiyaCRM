@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:loading_overlay/loading_overlay.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/theme/app_theme.dart';
 import 'package:travel_crm/core/widgets/app_button.dart';
@@ -9,6 +11,7 @@ import 'package:travel_crm/core/widgets/form_field_wrapper.dart';
 import 'package:travel_crm/features/presentation/air_ticket/bloc/air_ticket_bloc.dart';
 import 'package:travel_crm/features/presentation/air_ticket/bloc/air_ticket_event.dart';
 import 'package:travel_crm/features/presentation/air_ticket/bloc/air_ticket_state.dart';
+import 'package:travel_crm/features/presentation/inquiry_form/bloc/inquiry_state.dart';
 import 'package:travel_crm/features/presentation/air_ticket/models/flight_segment.dart';
 import 'package:travel_crm/features/presentation/air_ticket/models/booking_type.dart';
 import 'package:travel_crm/features/presentation/air_ticket/models/priority.dart';
@@ -24,56 +27,71 @@ import '../../../core/widgets/app_dropdown.dart';
 /// Air Ticket Form Screen - Main content area
 /// Renders header, form card, and checklist section
 class AirTicketFormScreen extends StatelessWidget {
-  const AirTicketFormScreen({super.key});
+  const AirTicketFormScreen({super.key, this.inquirySnapshot});
+
+  /// Inquiry form data from previous screen (when user came via Flight selection).
+  final InquiryState? inquirySnapshot;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isWide = constraints.maxWidth >= 1200;
-        final isTablet =
-            constraints.maxWidth >= 768 && constraints.maxWidth < 1200;
-
-        return Column(
-          children: [
-            // MAIN CONTENT SECTION (Inquiry Form bar, Air Ticket Form bar, form card, checklist)
-            Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isWide
-                        ? 80
-                        : isTablet
-                        ? 40
-                        : 24,
-                    vertical: isWide ? 60 : 40,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 1. Inquiry Form section header (title + subtitle + chevron)
-                      _SectionHeaderBar(
-                        title: StringConstant.inquiryForm,
-                        subtitle: StringConstant.fillInFormForCustomerInquiry,
-                        trailing: _ChevronCircleIcon(),
-                      ),
-                      const SizedBox(height: 16),
-                      // 2. Air Ticket Form section (no card/border — on dark background)
-                      _AirTicketFormSectionHeader(),
-                      const SizedBox(height: 16),
-                      // 3. Air Ticket Form Card
-                      _AirTicketFormCard(),
-                      const SizedBox(height: 32),
-                      // 4. Checklist Section
-                      _ChecklistSectionWidget(),
-                    ],
-                  ),
-                ),
-              ),
+    return BlocBuilder<AirTicketBloc, AirTicketState>(
+      builder: (context, state) {
+        final colors = AppTheme.colors(context);
+        return LoadingOverlay(
+          isLoading: state.submissionStatus == AirTicketSubmissionStatus.submitting,
+          color: colors.backgroundDark.withOpacity(0.6),
+          progressIndicator: Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(colors.secondary),
             ),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth >= 1200;
+              final isTablet =
+                  constraints.maxWidth >= 768 && constraints.maxWidth < 1200;
 
-
-          ],
+              return Column(
+                children: [
+                  // MAIN CONTENT SECTION (Inquiry Form bar, Air Ticket Form bar, form card, checklist)
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isWide
+                              ? 80
+                              : isTablet
+                                  ? 40
+                                  : 24,
+                          vertical: isWide ? 60 : 40,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 1. Inquiry Form section header (title + subtitle + chevron)
+                            _SectionHeaderBar(
+                              title: StringConstant.inquiryForm,
+                              subtitle: StringConstant.fillInFormForCustomerInquiry,
+                              trailing: _ChevronCircleIcon(),
+                            ),
+                            const SizedBox(height: 16),
+                            // 2. Air Ticket Form section (no card/border — on dark background)
+                            _AirTicketFormSectionHeader(),
+                            const SizedBox(height: 16),
+                            // 3. Air Ticket Form Card
+                            _AirTicketFormCard(),
+                            const SizedBox(height: 32),
+                            // 4. Checklist Section
+                            _ChecklistSectionWidget(inquirySnapshot: inquirySnapshot),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         );
       },
     );
@@ -445,6 +463,10 @@ class _PriorityFollowUpsSection extends StatelessWidget {
 
 /// Checklist Section Widget
 class _ChecklistSectionWidget extends StatelessWidget {
+  const _ChecklistSectionWidget({this.inquirySnapshot});
+
+  final InquiryState? inquirySnapshot;
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AirTicketBloc, AirTicketState>(
@@ -475,7 +497,10 @@ class _ChecklistSectionWidget extends StatelessWidget {
               context.read<AirTicketBloc>().add(AddChecklistItem()),
           onRemoveItem: (index) =>
               context.read<AirTicketBloc>().add(RemoveChecklistItem(index)),
-          onSubmit: () => context.read<AirTicketBloc>().add(SubmitAirTicket()),
+          onSubmit: () {
+            debugPrint('[AirTicket Form] Submit pressed — building request and sending (see body params below).');
+            context.read<AirTicketBloc>().add(SubmitAirTicket(inquiryState: inquirySnapshot));
+          },
           isSubmitting: state.isSubmitting,
           isValid: state.isValid,
         );

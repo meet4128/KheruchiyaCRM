@@ -90,10 +90,14 @@ class AnalysisPage extends StatelessWidget {
 }
 
 class AirTicketViewPage extends StatelessWidget {
-  const AirTicketViewPage({super.key});
+  const AirTicketViewPage({super.key, this.initialInquiryState});
+
+  /// Inquiry form data passed when navigating from inquiry form (e.g. after selecting Flight).
+  final Object? initialInquiryState;
 
   @override
-  Widget build(BuildContext context) => const AirTicketView();
+  Widget build(BuildContext context) =>
+      AirTicketView(initialInquiryState: initialInquiryState);
 }
 
 Widget _page(String title) {

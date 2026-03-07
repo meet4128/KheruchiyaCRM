@@ -1,5 +1,16 @@
+import 'dart:convert';
+import 'dart:developer' as developer;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
+import 'package:travel_crm/core/models/inquiry/airport_code_model.dart';
+import 'package:travel_crm/core/models/inquiry/air_ticket_request.dart';
+import 'package:travel_crm/core/models/inquiry/create_inquiry_request.dart';
+import 'package:travel_crm/core/models/inquiry/flight_segment_request.dart';
+import 'package:travel_crm/core/models/inquiry/phone_number_model.dart';
+import 'package:travel_crm/data/repositories/inquiry_repository.dart';
+import '../../inquiry_form/bloc/inquiry_state.dart';
 import 'air_ticket_event.dart';
 import 'air_ticket_state.dart';
 import '../models/booking_type.dart';
@@ -9,7 +20,9 @@ import '../models/flight_segment.dart';
 /// BLoC for managing Air Ticket form state
 /// Handles all form field changes, validation, and submission
 class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
-  AirTicketBloc() : super(const AirTicketState()) {
+  AirTicketBloc({
+    required this.inquiryRepository,
+  }) : super(AirTicketState.initial) {
     // Register event handlers
     on<AirTicketInitialized>(_onInitialized);
     on<BookingTypeChanged>(_onBookingTypeChanged);
@@ -42,6 +55,8 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     on<SegmentSwapLocations>(_onSegmentSwapLocations);
     on<RemoveFlightSegment>(_onRemoveFlightSegment);
   }
+
+  final InquiryRepository inquiryRepository;
 
   // ========== Form Field Event Handlers ==========
 
@@ -434,39 +449,161 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
         visaTypeError: errors['visaType'],
         remarkError: errors['remark'],
         showValidationMessages: true,
-        status: AirTicketSubmissionStatus.idle,
-        errorMessage: null,
+        submissionStatus: AirTicketSubmissionStatus.idle,
+        submissionError: null,
         successMessage: null,
       ));
       return;
     }
 
-    // All validations passed - start submission
     emit(state.copyWith(
-      status: AirTicketSubmissionStatus.submitting,
-      errorMessage: null,
-      successMessage: null,
+      submissionStatus: AirTicketSubmissionStatus.submitting,
     ));
 
     try {
-      // Simulate API call using Future.delayed
-      // TODO: Replace with actual API call when ready
-      await Future.delayed(const Duration(seconds: 2));
-
-      // Simulate successful API response
+      final request = _buildCreateInquiryRequest(state, event.inquiryState);
+      final payload = request.toJson();
+      final bodyJson = const JsonEncoder.withIndent('  ').convert(payload);
+      developer.log('CreateInquiry POST payload:\n$bodyJson', name: 'AirTicketBloc');
+      debugPrint('[AirTicket Submit] Request body params:\n$bodyJson');
+      await inquiryRepository.createInquiry(request);
       emit(state.copyWith(
-        status: AirTicketSubmissionStatus.success,
-        successMessage: StringConstant.airTicketSubmittedSuccessfully,
-        errorMessage: null,
+        submissionStatus: AirTicketSubmissionStatus.success,
       ));
     } catch (e) {
-      // Handle API error
+      final message = e is Exception ? e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '') : e.toString();
       emit(state.copyWith(
-        status: AirTicketSubmissionStatus.failure,
-        errorMessage: StringConstant.airTicketSubmissionFailed,
-        successMessage: null,
+        submissionStatus: AirTicketSubmissionStatus.failure,
+        submissionError: message.isEmpty ? 'Submission failed' : message,
       ));
     }
+  }
+
+  /// Parses stored airport string "CODE - City|Airport Name" to (code, city).
+  ({String code, String city}) _parseAirport(String raw) {
+    final valuePart = raw.contains('|') ? raw.split('|').first.trim() : raw;
+    final dash = valuePart.indexOf(' - ');
+    if (dash < 0) return (code: valuePart, city: valuePart);
+    return (
+      code: valuePart.substring(0, dash).trim(),
+      city: valuePart.substring(dash + 3).trim(),
+    );
+  }
+
+  String _bookingTypeToApi(AirTicketBookingType? type) {
+    if (type == null) return 'ONE_WAY';
+    switch (type) {
+      case AirTicketBookingType.oneWay:
+        return 'ONE_WAY';
+      case AirTicketBookingType.roundTrip:
+        return 'ROUND_TRIP';
+      case AirTicketBookingType.multiCity:
+        return 'MULTI_CITY';
+    }
+  }
+
+  String _toIso8601(DateTime? date) {
+    if (date == null) return '';
+    return date.toUtc().toIso8601String();
+  }
+
+  CreateInquiryRequest _buildCreateInquiryRequest(
+    AirTicketState state,
+    dynamic inquiryState,
+  ) {
+    final from = _parseAirport(state.from);
+    final to = _parseAirport(state.to);
+
+    final firstSegment = FlightSegmentRequest(
+      from: AirportCodeModel(code: from.code, city: from.city),
+      to: AirportCodeModel(code: to.code, city: to.city),
+      departureDate: _toIso8601(state.departureDate),
+      returnDate: state.returnDate != null ? _toIso8601(state.returnDate) : null,
+      travellerCount: state.travellerCount,
+      travelClass: state.classType.isNotEmpty ? state.classType : 'Economy',
+    );
+
+    final segments = <FlightSegmentRequest>[firstSegment];
+    for (final seg in state.flightSegments) {
+      final segFrom = _parseAirport(seg.from);
+      final segTo = _parseAirport(seg.to);
+      segments.add(FlightSegmentRequest(
+        from: AirportCodeModel(code: segFrom.code, city: segFrom.city),
+        to: AirportCodeModel(code: segTo.code, city: segTo.city),
+        departureDate: seg.departureDate != null ? _toIso8601(seg.departureDate) : '',
+        returnDate: seg.returnDate != null ? _toIso8601(seg.returnDate) : null,
+        travellerCount: state.travellerCount,
+        travelClass: state.classType.isNotEmpty ? state.classType : 'Economy',
+      ));
+    }
+
+    final airTicket = AirTicketRequest(
+      bookingType: _bookingTypeToApi(state.bookingType),
+      flightSegments: segments,
+      typeOfVisa: state.visaType?.label ?? '',
+      remark: state.remark,
+    );
+
+    final title = _inquiryTitle(inquiryState);
+    final fullName = _inquiryFullName(inquiryState);
+    final phoneDialCode = _inquiryPhoneDialCode(inquiryState);
+    final phoneNumber = _inquiryPhoneNumber(inquiryState);
+    final email = _inquiryEmail(inquiryState);
+    final address = _inquiryAddress(inquiryState);
+    final refDialCode = _inquiryReferenceDialCode(inquiryState);
+    final refNumber = _inquiryReferenceNumber(inquiryState);
+    final referenceName = _inquiryReferenceName(inquiryState);
+    final clientBehaviour = _inquiryClientBehaviour(inquiryState);
+    final typeOfBooking = _inquiryTypeOfBooking(inquiryState);
+    final typeOfClient = _inquiryTypeOfClient(inquiryState);
+
+    return CreateInquiryRequest(
+      title: title,
+      phoneNumber: PhoneNumberModel(countryCode: phoneDialCode, number: phoneNumber),
+      fullName: fullName,
+      email: email,
+      typeOfClient: typeOfClient,
+      address: address,
+      referenceNumber: PhoneNumberModel(countryCode: refDialCode, number: refNumber),
+      referenceName: referenceName,
+      clientBehaviour: clientBehaviour,
+      typeOfBooking: typeOfBooking,
+      status: 'PENDING',
+      airTicket: airTicket,
+      checklist: [],
+    );
+  }
+
+  String _inquiryTitle(dynamic s) => _getInquiryField(s, (InquiryState i) => i.title);
+  String _inquiryFullName(dynamic s) =>
+      s is InquiryState ? '${s.firstName} ${s.lastName}'.trim() : '';
+  String _inquiryPhoneDialCode(dynamic s) =>
+      _getInquiryField(s, (InquiryState i) => i.phoneDialCode, defaultVal: '+91');
+  String _inquiryPhoneNumber(dynamic s) =>
+      _getInquiryField(s, (InquiryState i) => i.phoneNumber);
+  String _inquiryEmail(dynamic s) => _getInquiryField(s, (InquiryState i) => i.email);
+  String _inquiryAddress(dynamic s) => _getInquiryField(s, (InquiryState i) => i.address);
+  String _inquiryReferenceDialCode(dynamic s) =>
+      _getInquiryField(s, (InquiryState i) => i.referenceDialCode, defaultVal: '+91');
+  String _inquiryReferenceNumber(dynamic s) =>
+      _getInquiryField(s, (InquiryState i) => i.referenceNumber);
+  String _inquiryReferenceName(dynamic s) =>
+      _getInquiryField(s, (InquiryState i) => i.referenceName);
+  String _inquiryClientBehaviour(dynamic s) =>
+      _getInquiryField(s, (InquiryState i) => i.clientBehaviour);
+  String _inquiryTypeOfBooking(dynamic s) =>
+      _getInquiryField(s, (InquiryState i) => i.bookingType?.label ?? '');
+  String _inquiryTypeOfClient(dynamic s) =>
+      _getInquiryField(s, (InquiryState i) => i.typeOfClient?.label ?? '');
+
+  String _getInquiryField(
+    dynamic inquiryState,
+    String Function(InquiryState) get, {
+    String defaultVal = '',
+  }) {
+    if (inquiryState is! InquiryState) return defaultVal;
+    final value = get(inquiryState as InquiryState);
+    return value.trim().isEmpty ? defaultVal : value.trim();
   }
 
   // ========== Validation Methods ==========

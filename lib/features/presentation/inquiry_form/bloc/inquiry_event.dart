@@ -102,7 +102,7 @@ class AddressChanged extends InquiryEvent {
   List<Object> get props => [address];
 }
 
-/// Event fired when booking type changes
+/// Event fired when booking type changes (typeOfBooking field)
 class BookingTypeChanged extends InquiryEvent {
   const BookingTypeChanged(this.bookingType);
 
@@ -110,6 +110,16 @@ class BookingTypeChanged extends InquiryEvent {
 
   @override
   List<Object> get props => [bookingType];
+}
+
+/// Event fired when type of client changes (typeOfClient field — independent from typeOfBooking)
+class TypeOfClientChanged extends InquiryEvent {
+  const TypeOfClientChanged(this.typeOfClient);
+
+  final BookingType typeOfClient;
+
+  @override
+  List<Object> get props => [typeOfClient];
 }
 
 /// Event fired when reference name changes
@@ -184,6 +194,14 @@ class InquiryFieldChanged extends InquiryEvent {
 
   @override
   List<Object> get props => [field, value];
+}
+
+/// Clears the pending-navigate flag after the listener has navigated to air ticket.
+class ClearPendingNavigateToAirTicket extends InquiryEvent {
+  const ClearPendingNavigateToAirTicket();
+
+  @override
+  List<Object> get props => [];
 }
 
 /// Legacy event for booking type changes (use BookingTypeChanged instead)

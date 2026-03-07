@@ -277,30 +277,32 @@ class ChecklistSection extends StatelessWidget {
                   Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: isValid && !isSubmitting ? onSubmit : null,
+                  onTap: !isSubmitting ? onSubmit : null,
                   borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                        colors: [
-                          colors.secondary,
-                          colors.secondary.withOpacity(0.85),
-                          Color(0xFFEC4899),
+                  child: Opacity(
+                    opacity: isSubmitting ? 0.7 : 1,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            colors.secondary,
+                            colors.secondary.withOpacity(0.85),
+                            Color(0xFFEC4899),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colors.secondary.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colors.secondary.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: isSubmitting
+                      child: isSubmitting
                         ? SizedBox(
                             width: 24,
                             height: 24,
@@ -316,6 +318,7 @@ class ChecklistSection extends StatelessWidget {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                    ),
                   ),
                 ),
               ),

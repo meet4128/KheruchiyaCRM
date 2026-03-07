@@ -2,8 +2,6 @@ import 'dart:math' show sin;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:travel_crm/core/constants/path_constants.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/theme/app_theme.dart';
 import 'package:travel_crm/core/widgets/app_dropdown.dart';
@@ -451,14 +449,11 @@ class _InquiryFormCard extends StatelessWidget {
                                   hintText: StringConstant.selectRole,
                                   items: BookingType.values,
                                   itemLabel: (type) => type.label,
-                                  value: state.bookingType,
-                                  errorText: state.bookingTypeError,
+                                  value: state.typeOfClient,
+                                  errorText: null,
                                   onChanged: (value) {
                                     if (value != null) {
-                                      context.read<InquiryBloc>().add(BookingTypeChanged(value));
-                                      if (value == BookingType.flight) {
-                                        context.go(PathConstant.airTicket);
-                                      }
+                                      context.read<InquiryBloc>().add(TypeOfClientChanged(value));
                                     }
                                   },
                                 ),
@@ -627,9 +622,8 @@ class _BottomFooterSection extends StatelessWidget {
                               onChanged: (value) {
                                 if (value != null) {
                                   context.read<InquiryBloc>().add(BookingTypeChanged(value));
-                                  if (value == BookingType.flight) {
-                                    context.go(PathConstant.airTicket);
-                                  }
+                                  // Navigation to air ticket (when Flight) happens in InquiryView
+                                  // after validation passes via pendingNavigateToAirTicket.
                                 }
                               },
                             ),
