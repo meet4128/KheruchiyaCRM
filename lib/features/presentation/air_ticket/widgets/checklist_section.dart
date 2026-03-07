@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:travel_crm/core/constants/asset_constants.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/theme/app_theme.dart';
 import 'package:travel_crm/core/widgets/app_date_picker.dart';
@@ -195,7 +197,7 @@ class ChecklistSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          // Bottom row: Repeat checkbox, three icons, ellipsis, Submit button
+          // Bottom row: Repeat checkbox, three icons (left) | vertical dots + Submit (right, grouped)
           Row(
             children: [
               Checkbox(
@@ -214,28 +216,51 @@ class ChecklistSection extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               IconButton(
-                icon: Icon(Icons.remove_circle_outline, color: colors.textSecondary, size: 22),
+                icon: SvgPicture.asset(
+                  AssetConstants.icLink,
+                  width: 30,
+                  height: 30,
+                  colorFilter: ColorFilter.mode(colors.textSecondary, BlendMode.srcIn),
+                ),
                 onPressed: () {},
-                tooltip: 'Remove',
+                tooltip: 'Forward',
               ),
               IconButton(
-                icon: Icon(Icons.access_time, color: colors.textSecondary, size: 22),
+                icon: SvgPicture.asset(
+                  AssetConstants.icClock,
+                  width: 30,
+                  height: 30,
+                  colorFilter: ColorFilter.mode(colors.textSecondary, BlendMode.srcIn),
+                ),
                 onPressed: () {},
                 tooltip: StringConstant.time,
               ),
               IconButton(
-                icon: Icon(Icons.volume_off, color: colors.textSecondary, size: 22),
+                icon: SvgPicture.asset(
+                  AssetConstants.icMicrophoneSlash,
+                  width: 30,
+                  height: 30,
+                  colorFilter: ColorFilter.mode(colors.textSecondary, BlendMode.srcIn),
+                ),
                 onPressed: () {},
                 tooltip: 'Mute',
               ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: Icon(Icons.more_vert, color: colors.textSecondary, size: 22),
-                onPressed: () {},
-                tooltip: 'More',
-              ),
               const Spacer(),
-              Material(
+              // Vertical dots directly adjacent to Submit button (match screenshot)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.more_vert, color: colors.textSecondary, size: 22),
+                    onPressed: () {},
+                    tooltip: 'More',
+                    padding: const EdgeInsets.all(8),
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    style: IconButton.styleFrom(
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                  Material(
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: isValid && !isSubmitting ? onSubmit : null,
@@ -279,6 +304,8 @@ class ChecklistSection extends StatelessWidget {
                           ),
                   ),
                 ),
+              ),
+                ],
               ),
             ],
           ),
