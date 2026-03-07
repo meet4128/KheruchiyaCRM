@@ -72,8 +72,7 @@ class AirTicketFormScreen extends StatelessWidget {
               ),
             ),
 
-            // BOTTOM FOOTER SECTION
-            _BottomFooterSection(),
+
           ],
         );
       },
@@ -438,79 +437,6 @@ class _PriorityFollowUpsSection extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// Bottom footer section with company name, version, and submit button
-class _BottomFooterSection extends StatelessWidget {
-  const _BottomFooterSection();
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppTheme.colors(context);
-    final textStyles = AppTheme.textStyles(context);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1F1A2E), Color(0xFF2A2338)],
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Company name
-          Text(
-            StringConstant.emoDigital,
-            style: textStyles.bodySmall.copyWith(color: colors.textSecondary),
-          ),
-          // Submit button and version
-          Row(
-            children: [
-              BlocBuilder<AirTicketBloc, AirTicketState>(
-                builder: (context, state) {
-                  return Row(
-                    children: [
-                      AppButton(
-                        text: StringConstant.submit,
-                        onPressed: state.isValid && !state.isSubmitting
-                            ? () => context.read<AirTicketBloc>().add(
-                                SubmitAirTicket(),
-                              )
-                            : null,
-                        isLoading: state.isSubmitting,
-                      ),
-                      const SizedBox(width: 12),
-                      IconButton(
-                        icon: Icon(
-                          Icons.more_vert,
-                          color: colors.textSecondary,
-                        ),
-                        onPressed: () {
-                          // TODO: Implement menu
-                        },
-                      ),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(width: 24),
-              Text(
-                StringConstant.version,
-                style: textStyles.bodySmall.copyWith(
-                  color: colors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }
