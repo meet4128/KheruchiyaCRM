@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/theme/app_theme.dart';
 import 'package:travel_crm/core/widgets/airport_picker/airport_picker.dart';
 import '../models/booking_type.dart';
+import 'traveller_class_picker_cubit.dart';
 
 /// Flight details section widget
 /// Contains From, To, Departure Date, Return Date, Traveller & Class in a single row
@@ -661,9 +663,6 @@ class _TravellerClassField extends StatelessWidget {
 
   void _showSelectionBottomSheet(BuildContext context) {
     final colors = AppTheme.colors(context);
-    final textStyles = AppTheme.textStyles(context);
-    int selectedTravellerCount = travellerCount;
-    String selectedClassType = classType;
 
     showModalBottomSheet(
       context: context,
@@ -671,136 +670,19 @@ class _TravellerClassField extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Select Traveller & Class',
-                    style: textStyles.heading3.copyWith(
-                      color: colors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Traveller Count Section
-                  Text(
-                    'Number of Travellers',
-                    style: textStyles.formLabel.copyWith(
-                      color: colors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: travellerCounts.map((count) {
-                      final isSelected = count == selectedTravellerCount;
-                      return InkWell(
-                        onTap: () {
-                          setState(() {
-                            selectedTravellerCount = count;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isSelected ? colors.secondary : colors.inputBackground,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: isSelected ? colors.secondary : colors.inputBorder,
-                            ),
-                          ),
-                          child: Text(
-                            '$count',
-                            style: TextStyle(
-                              color: isSelected ? colors.textOnPrimary : colors.textPrimary,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-                  // Class Type Section
-                  Text(
-                    'Class Type',
-                    style: textStyles.formLabel.copyWith(
-                      color: colors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: classTypes.map((type) {
-                      final isSelected = type == selectedClassType;
-                      return InkWell(
-                        onTap: () {
-                          setState(() {
-                            selectedClassType = type;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isSelected ? colors.secondary : colors.inputBackground,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: isSelected ? colors.secondary : colors.inputBorder,
-                            ),
-                          ),
-                          child: Text(
-                            type,
-                            style: TextStyle(
-                              color: isSelected ? colors.textOnPrimary : colors.textPrimary,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-                  // Apply Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (onTravellerChanged != null) {
-                          onTravellerChanged!(selectedTravellerCount);
-                        }
-                        if (onClassChanged != null) {
-                          onClassChanged!(selectedClassType);
-                        }
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colors.secondary,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        'Apply',
-                        style: TextStyle(
-                          color: colors.textOnPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
+      builder: (BuildContext sheetContext) {
+        return BlocProvider(
+          create: (_) => TravellerClassPickerCubit(
+            initialTravellerCount: travellerCount,
+            initialClassType: classType,
+          ),
+          child: _TravellerClassSheetContent(
+            onApply: (t, c) {
+              onTravellerChanged?.call(t);
+              onClassChanged?.call(c);
+              Navigator.pop(sheetContext);
+            },
+          ),
         );
       },
     );
@@ -885,6 +767,139 @@ class _TravellerClassField extends StatelessWidget {
       content,
       colors.borderSecondary,
       showBorder: showBorder,
+    );
+  }
+}
+
+/// Bottom sheet content for Traveller & Class selection; uses [TravellerClassPickerCubit], no setState.
+class _TravellerClassSheetContent extends StatelessWidget {
+  const _TravellerClassSheetContent({required this.onApply});
+
+  final void Function(int travellerCount, String classType) onApply;
+
+  static const List<int> _travellerCounts = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  static const List<String> _classTypes = [
+    StringConstant.economy,
+    StringConstant.business,
+    StringConstant.first,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
+    final textStyles = AppTheme.textStyles(context);
+
+    return BlocBuilder<TravellerClassPickerCubit, TravellerClassPickerState>(
+      builder: (context, state) {
+        final cubit = context.read<TravellerClassPickerCubit>();
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Select Traveller & Class',
+                style: textStyles.heading3.copyWith(
+                  color: colors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Number of Travellers',
+                style: textStyles.formLabel.copyWith(
+                  color: colors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _travellerCounts.map((count) {
+                  final isSelected = count == state.travellerCount;
+                  return InkWell(
+                    onTap: () => cubit.selectTravellerCount(count),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isSelected ? colors.secondary : colors.inputBackground,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isSelected ? colors.secondary : colors.inputBorder,
+                        ),
+                      ),
+                      child: Text(
+                        '$count',
+                        style: TextStyle(
+                          color: isSelected ? colors.textOnPrimary : colors.textPrimary,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Class Type',
+                style: textStyles.formLabel.copyWith(
+                  color: colors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _classTypes.map((type) {
+                  final isSelected = type == state.classType;
+                  return InkWell(
+                    onTap: () => cubit.selectClassType(type),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isSelected ? colors.secondary : colors.inputBackground,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isSelected ? colors.secondary : colors.inputBorder,
+                        ),
+                      ),
+                      child: Text(
+                        type,
+                        style: TextStyle(
+                          color: isSelected ? colors.textOnPrimary : colors.textPrimary,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => onApply(state.travellerCount, state.classType),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colors.secondary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Apply',
+                    style: TextStyle(
+                      color: colors.textOnPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
