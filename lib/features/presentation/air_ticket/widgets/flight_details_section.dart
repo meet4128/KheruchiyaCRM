@@ -289,8 +289,8 @@ class _AddAnotherFieldButton extends StatelessWidget {
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                   colors: [
-                    Color(0xFF8B5CF6),
-                    Color(0xFF6D28D9),
+                    Color(0xFF8B5CF6), // deep purple
+                    Color(0xFFEC4899), // magenta/pink
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),

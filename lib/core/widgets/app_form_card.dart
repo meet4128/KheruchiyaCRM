@@ -10,6 +10,7 @@ class AppFormCard extends StatelessWidget {
     this.padding,
     this.title,
     this.subtitle,
+    this.borderGlow = false,
   });
 
   /// Child widget (typically form fields)
@@ -24,6 +25,9 @@ class AppFormCard extends StatelessWidget {
   /// Optional subtitle text
   final String? subtitle;
 
+  /// When true, adds a thin glowing purple outline (box shadow)
+  final bool borderGlow;
+
   @override
   Widget build(BuildContext context) {
     final colors = AppTheme.colors(context);
@@ -33,20 +37,27 @@ class AppFormCard extends StatelessWidget {
       width: double.infinity,
       padding: padding ?? const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF1F1A2E), // Slightly lighter than background
-              Color(0xFF2A2338), // Medium light purple
+              Color(0xFF1F1A2E),
+              Color(0xFF2A2338),
             ],
           ),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: colors.secondary.withOpacity(0.2),
+            color: colors.secondary.withOpacity(borderGlow ? 0.5 : 0.2),
             width: 1,
           ),
           boxShadow: [
+            if (borderGlow)
+              BoxShadow(
+                color: colors.secondary.withOpacity(0.25),
+                blurRadius: 12,
+                spreadRadius: 0,
+                offset: Offset.zero,
+              ),
             BoxShadow(
               color: Colors.black.withOpacity(0.5),
               blurRadius: 24,

@@ -112,17 +112,17 @@ class _PillButton<T> extends StatelessWidget {
 
     return InkWell(
       onTap: enabled ? onTap : null,
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
-              ? colors.secondary
+              ? colors.secondary.withOpacity(0.25)
               : colors.inputBackground.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
-                ? colors.secondary
+                ? colors.secondary.withOpacity(0.8)
                 : colors.borderSecondary.withOpacity(0.5),
             width: 1,
           ),
@@ -131,10 +131,23 @@ class _PillButton<T> extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (showCheckmark && isSelected) ...[
-              Icon(
-                Icons.check,
-                size: 18,
-                color: colors.textOnPrimary,
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: colors.secondary.withOpacity(0.9),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: colors.secondary,
+                    width: 1,
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.check,
+                  size: 12,
+                  color: colors.textOnPrimary,
+                ),
               ),
               const SizedBox(width: 8),
             ],
@@ -142,7 +155,7 @@ class _PillButton<T> extends StatelessWidget {
               label,
               style: textStyles.labelLarge.copyWith(
                 color: isSelected
-                    ? colors.textOnPrimary
+                    ? colors.textPrimary
                     : (enabled ? colors.textPrimary : colors.textTertiary),
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),

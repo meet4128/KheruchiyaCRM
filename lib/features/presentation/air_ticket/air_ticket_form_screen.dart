@@ -148,20 +148,20 @@ class _TopHeaderSection extends StatelessWidget {
   }
 }
 
-/// Air Ticket Form Card
+/// Air Ticket Form Card — matches screenshot: no inner title, flight type, details row, visa, remark.
 class _AirTicketFormCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<AirTicketBloc, AirTicketState>(
       builder: (context, state) {
         return AppFormCard(
-          title: StringConstant.airTicketFormTitle,
-          subtitle: StringConstant.fillFormForQuote,
+          title: null,
+          subtitle: null,
+          borderGlow: true,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 8),
-              // Booking Type Selector
+              // Flight Type Selection (One Way, Round Trip, Multi City)
               BookingTypeSelector(
                 selectedType: state.bookingType,
                 onChanged: (AirTicketBookingType type) =>
@@ -169,7 +169,7 @@ class _AirTicketFormCard extends StatelessWidget {
               ),
               const SizedBox(height: 22),
 
-              // Flight Details Section (includes Traveller & Class)
+              // Flight Details Section (From, To, Departure, Return, Traveller & Class, Add another field)
               FlightDetailsSection(
                 from: state.from,
                 to: state.to,
@@ -205,10 +205,10 @@ class _AirTicketFormCard extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 22),
-              // Visa Type Selector
+              // Type of Visa Selection (Visitor Visa, Student Visa, PR, Work Permit)
               FormFieldWrapper(
                 label: StringConstant.typeOfVisa,
-                isRequired: true,
+                isRequired: false,
                 child: VisaTypeSelector(
                   selectedType: state.visaType,
                   onChanged: (VisaType type) =>
@@ -227,7 +227,7 @@ class _AirTicketFormCard extends StatelessWidget {
                   errorText: state.remarkError,
                   onChanged: (value) =>
                       context.read<AirTicketBloc>().add(RemarkChanged(value)),
-                  maxLines: 3,
+                  maxLines: 1,
                 ),
               ),
             ],
