@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:travel_crm/core/constants/asset_constants.dart';
@@ -30,9 +31,13 @@ class ChecklistSection extends StatelessWidget {
     required this.onAddItem,
     required this.onRemoveItem,
     required this.onSubmit,
+    this.onAttachmentPicked,
     this.isSubmitting = false,
     this.isValid = false,
   });
+
+  /// Called when user attaches a document (PDF or image) via the link icon.
+  final void Function(PlatformFile file)? onAttachmentPicked;
 
   final List<ChecklistItem> items;
   final String user;
@@ -215,15 +220,24 @@ class ChecklistSection extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              IconButton(
-                icon: SvgPicture.asset(
-                  AssetConstants.icLink,
-                  width: 30,
-                  height: 30,
-                  colorFilter: ColorFilter.mode(colors.textSecondary, BlendMode.srcIn),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _pickAttachment(context),
+                  borderRadius: BorderRadius.circular(24),
+                  child: Tooltip(
+                    message: 'Attach document (PDF or image)',
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: SvgPicture.asset(
+                        AssetConstants.icLink,
+                        width: 30,
+                        height: 30,
+                        colorFilter: ColorFilter.mode(colors.textSecondary, BlendMode.srcIn),
+                      ),
+                    ),
+                  ),
                 ),
-                onPressed: () {},
-                tooltip: 'Forward',
               ),
               IconButton(
                 icon: SvgPicture.asset(
@@ -312,6 +326,48 @@ class ChecklistSection extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Opens file picker for PDF or image only; calls [onAttachmentPicked] if provided.
+  static const List<String> _allowedAttachmentExtensions = [
+    'pdf',
+    'jpg',
+    'jpeg',
+    'png',
+    'gif',
+    'webp',
+    'bmp',
+  ];
+
+  Future<void> _pickAttachment(BuildContext context) async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    try {
+      // Call pickFiles immediately (no await before this) so on web the file dialog
+      // is triggered in the same user gesture and not blocked by the browser.
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: _allowedAttachmentExtensions,
+      );
+      if (!context.mounted) return;
+      if (result == null || result.files.isEmpty) return;
+      final file = result.files.first;
+      onAttachmentPicked?.call(file);
+      if (context.mounted) {
+        messenger?.showSnackBar(
+          SnackBar(content: Text('Attached: ${file.name}')),
+        );
+      }
+    } catch (e, st) {
+      if (context.mounted) {
+        messenger?.showSnackBar(
+          SnackBar(
+            content: Text('Could not open file picker: $e'),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
+      debugPrint('ChecklistSection._pickAttachment error: $e\n$st');
+    }
   }
 }
 
