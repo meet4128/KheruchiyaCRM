@@ -23,6 +23,7 @@ class InquiryState extends Equatable {
     this.referenceName = '',
     this.referenceDialCode = '+91',
     this.referenceNumber = '',
+    this.clientBehaviour = '',
     this.titleError,
     this.firstNameError,
     this.lastNameError,
@@ -32,6 +33,7 @@ class InquiryState extends Equatable {
     this.bookingTypeError,
     this.referenceNameError,
     this.referenceNumberError,
+    this.clientBehaviourError,
     this.showValidationMessages = false,
     this.status = InquirySubmissionStatus.idle,
     this.successMessage,
@@ -50,6 +52,7 @@ class InquiryState extends Equatable {
   final String referenceName;
   final String referenceDialCode;
   final String referenceNumber;
+  final String clientBehaviour;
 
   // Validation errors
   final String? titleError;
@@ -61,6 +64,7 @@ class InquiryState extends Equatable {
   final String? bookingTypeError;
   final String? referenceNameError;
   final String? referenceNumberError;
+  final String? clientBehaviourError;
 
   // UI state
   final bool showValidationMessages;
@@ -78,7 +82,8 @@ class InquiryState extends Equatable {
       addressError != null ||
       bookingTypeError != null ||
       referenceNameError != null ||
-      referenceNumberError != null;
+      referenceNumberError != null ||
+      clientBehaviourError != null;
 
   /// Check if form is submitting
   bool get isSubmitting => status == InquirySubmissionStatus.submitting;
@@ -98,13 +103,14 @@ class InquiryState extends Equatable {
     // Second check: All required fields are filled
     if (title.trim().isEmpty) return false;
     if (firstName.trim().isEmpty) return false;
-    if (lastName.trim().isEmpty) return false;
+    // lastName optional when using single Full Name field
     if (phoneNumber.trim().isEmpty) return false;
     if (email.trim().isEmpty) return false;
     if (address.trim().isEmpty) return false;
     if (bookingType == null) return false;
     if (referenceName.trim().isEmpty) return false;
     if (referenceNumber.trim().isEmpty) return false;
+    if (clientBehaviour.trim().isEmpty) return false;
     
     // All checks passed - form is valid
     return true;
@@ -121,6 +127,7 @@ class InquiryState extends Equatable {
         InquiryField.bookingType: bookingTypeError,
         InquiryField.referenceName: referenceNameError,
         InquiryField.referenceNumber: referenceNumberError,
+        InquiryField.clientBehaviour: clientBehaviourError,
       };
 
   /// Create a copy of the state with updated values
@@ -136,6 +143,7 @@ class InquiryState extends Equatable {
     String? referenceName,
     String? referenceDialCode,
     String? referenceNumber,
+    String? clientBehaviour,
     String? titleError,
     String? firstNameError,
     String? lastNameError,
@@ -158,6 +166,8 @@ class InquiryState extends Equatable {
     bool clearBookingTypeError = false,
     bool clearReferenceNameError = false,
     bool clearReferenceNumberError = false,
+    bool clearClientBehaviourError = false,
+    String? clientBehaviourError,
   }) {
     return InquiryState(
       title: title ?? this.title,
@@ -171,6 +181,7 @@ class InquiryState extends Equatable {
       referenceName: referenceName ?? this.referenceName,
       referenceDialCode: referenceDialCode ?? this.referenceDialCode,
       referenceNumber: referenceNumber ?? this.referenceNumber,
+      clientBehaviour: clientBehaviour ?? this.clientBehaviour,
       titleError: clearTitleError
           ? null
           : (titleError ?? (title != null ? null : this.titleError)),
@@ -202,6 +213,10 @@ class InquiryState extends Equatable {
           ? null
           : (referenceNumberError ??
               (referenceNumber != null ? null : this.referenceNumberError)),
+      clientBehaviourError: clearClientBehaviourError
+          ? null
+          : (clientBehaviourError ??
+              (clientBehaviour != null ? null : this.clientBehaviourError)),
       showValidationMessages:
           showValidationMessages ?? this.showValidationMessages,
       status: status ?? this.status,
@@ -223,6 +238,7 @@ class InquiryState extends Equatable {
         referenceName,
         referenceDialCode,
         referenceNumber,
+        clientBehaviour,
         titleError,
         firstNameError,
         lastNameError,
@@ -232,6 +248,7 @@ class InquiryState extends Equatable {
         bookingTypeError,
         referenceNameError,
         referenceNumberError,
+        clientBehaviourError,
         showValidationMessages,
         status,
         successMessage,

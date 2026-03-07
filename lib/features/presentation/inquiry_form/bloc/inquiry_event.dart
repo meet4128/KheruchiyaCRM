@@ -23,6 +23,7 @@ enum InquiryField {
   bookingType,
   referenceName,
   referenceNumber,
+  clientBehaviour,
 }
 
 /// Base class for all Inquiry events
@@ -149,6 +150,16 @@ class ReferenceDialCodeChanged extends InquiryEvent {
 
   @override
   List<Object> get props => [dialCode];
+}
+
+/// Event fired when client behaviour changes
+class ClientBehaviourChanged extends InquiryEvent {
+  const ClientBehaviourChanged(this.clientBehaviour);
+
+  final String clientBehaviour;
+
+  @override
+  List<Object> get props => [clientBehaviour];
 }
 
 /// Event fired when inquiry form is submitted

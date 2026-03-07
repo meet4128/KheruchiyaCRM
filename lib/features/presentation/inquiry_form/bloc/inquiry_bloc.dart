@@ -20,6 +20,7 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
     on<ReferenceNumberChanged>(_onReferenceNumberChanged);
     on<PhoneDialCodeChanged>(_onPhoneDialCodeChanged);
     on<ReferenceDialCodeChanged>(_onReferenceDialCodeChanged);
+    on<ClientBehaviourChanged>(_onClientBehaviourChanged);
     on<SubmitInquiry>(_onSubmitInquiry);
     
     // Support for legacy event (for backward compatibility)
@@ -169,6 +170,19 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
     emit(state.copyWith(referenceDialCode: event.dialCode));
   }
 
+  /// Handle client behaviour changed event
+  void _onClientBehaviourChanged(
+    ClientBehaviourChanged event,
+    Emitter<InquiryState> emit,
+  ) {
+    final error = _validateClientBehaviour(event.clientBehaviour);
+    emit(state.copyWith(
+      clientBehaviour: event.clientBehaviour,
+      clientBehaviourError: error,
+      clearClientBehaviourError: error == null,
+    ));
+  }
+
   /// Handle submit inquiry event
   /// Validates all fields and simulates API submission
   void _onSubmitInquiry(
@@ -196,6 +210,7 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
         bookingTypeError: errors[InquiryField.bookingType],
         referenceNameError: errors[InquiryField.referenceName],
         referenceNumberError: errors[InquiryField.referenceNumber],
+        clientBehaviourError: errors[InquiryField.clientBehaviour],
         showValidationMessages: true,
         status: InquirySubmissionStatus.idle,
         errorMessage: null,
@@ -264,6 +279,9 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
       case InquiryField.referenceNumber:
         add(ReferenceNumberChanged(event.value));
         break;
+      case InquiryField.clientBehaviour:
+        add(ClientBehaviourChanged(event.value));
+        break;
       case InquiryField.bookingType:
         // Handled separately
         break;
@@ -315,6 +333,8 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
       InquiryField.referenceName: _validateReferenceName(state.referenceName),
       InquiryField.referenceNumber:
           _validateReferenceNumber(state.referenceNumber),
+      InquiryField.clientBehaviour:
+          _validateClientBehaviour(state.clientBehaviour),
     };
   }
 
@@ -326,10 +346,10 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
     return null;
   }
 
-  /// Validate first name
+  /// Validate first name (used as Full Name when single field)
   String? _validateFirstName(String value) {
     if (value.trim().isEmpty) {
-      return StringConstant.firstNameRequired;
+      return StringConstant.fullNameRequired;
     }
     if (value.trim().length < 2) {
       return StringConstant.firstNameMinLength;
@@ -337,14 +357,8 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
     return null;
   }
 
-  /// Validate last name
+  /// Validate last name (optional when using single Full Name field)
   String? _validateLastName(String value) {
-    if (value.trim().isEmpty) {
-      return StringConstant.lastNameRequired;
-    }
-    if (value.trim().length < 2) {
-      return StringConstant.lastNameMinLength;
-    }
     return null;
   }
 
@@ -410,6 +424,14 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
     }
     if (trimmed.length < 6 || trimmed.length > 15) {
       return StringConstant.referenceNumberLength;
+    }
+    return null;
+  }
+
+  /// Validate client behaviour
+  String? _validateClientBehaviour(String value) {
+    if (value.trim().isEmpty) {
+      return StringConstant.clientBehaviourRequired;
     }
     return null;
   }

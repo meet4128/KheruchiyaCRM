@@ -50,6 +50,10 @@ class StringConstant {
   static const String referenceName = 'Reference Name';
   static const String referenceNumber = 'Reference Number';
   static const String typeOfBooking = 'Type of Booking';
+  static const String fullName = 'Full Name';
+  static const String typeOfClient = 'Type of Client';
+  static const String clientBehaviour = 'Client Behaviour';
+  static const String referenceNameLabel = 'Refrence Name'; // Display label as in design
 
   // ========== Inquiry Form Hints ==========
   static const String enterTitle = 'Enter title';
@@ -60,6 +64,8 @@ class StringConstant {
   static const String enterAddress = 'Enter address';
   static const String enterReferenceName = 'Enter reference name';
   static const String enterReferenceNumber = 'Enter reference number';
+  static const String enterFullName = 'Enter full name';
+  static const String enterClientBehaviour = 'Enter client behaviour';
   static const String selectRole = 'Select Role';
 
   // ========== Inquiry Form Validation Messages ==========
@@ -81,6 +87,8 @@ class StringConstant {
   static const String referenceNumberRequired = 'Reference number is required';
   static const String referenceNumberDigitsOnly = 'Reference number must contain only digits';
   static const String referenceNumberLength = 'Reference number must be between 6 and 15 digits';
+  static const String fullNameRequired = 'Full name is required';
+  static const String clientBehaviourRequired = 'Client behaviour is required';
 
   // ========== Inquiry Form Success/Error Messages ==========
   static const String inquirySubmittedSuccessfully = 'Inquiry submitted successfully!';

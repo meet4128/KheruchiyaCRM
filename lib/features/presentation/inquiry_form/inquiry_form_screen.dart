@@ -217,7 +217,7 @@ class _InquiryFormCard extends StatelessWidget {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 1. Title (full width)
+                        // 1. Title* (full width)
                         _FormFieldWrapper(
                           label: StringConstant.title,
                           isRequired: true,
@@ -231,41 +231,7 @@ class _InquiryFormCard extends StatelessWidget {
                         ),
                         SizedBox(height: fieldGap),
 
-                        // 2. First Name + Last Name (always in one row)
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _FormFieldWrapper(
-                                label: StringConstant.firstName,
-                                isRequired: true,
-                                child: AppTextField(
-                                  hint: StringConstant.enterFirstName,
-                                  value: state.firstName,
-                                  errorText: state.firstNameError,
-                                  onChanged: (value) =>
-                                      context.read<InquiryBloc>().add(FirstNameChanged(value)),
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: fieldGap),
-                            Expanded(
-                              child: _FormFieldWrapper(
-                                label: StringConstant.lastName,
-                                isRequired: true,
-                                child: AppTextField(
-                                  hint: StringConstant.enterLastName,
-                                  value: state.lastName,
-                                  errorText: state.lastNameError,
-                                  onChanged: (value) =>
-                                      context.read<InquiryBloc>().add(LastNameChanged(value)),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: fieldGap),
-
-                        // 3. Phone Number + Email (always in one row)
+                        // 2. Phone Number* | Full Name* (one row)
                         Row(
                           children: [
                             Expanded(
@@ -302,8 +268,33 @@ class _InquiryFormCard extends StatelessWidget {
                             SizedBox(width: fieldGap),
                             Expanded(
                               child: _FormFieldWrapper(
-                                label: StringConstant.email,
+                                label: StringConstant.fullName,
                                 isRequired: true,
+                                child: AppTextField(
+                                  hint: StringConstant.enterFullName,
+                                  value: [state.firstName, state.lastName].where((s) => s.isNotEmpty).join(' ').trim(),
+                                  errorText: state.firstNameError ?? state.lastNameError,
+                                  onChanged: (value) {
+                                    final parts = value.trim().split(RegExp(r'\s+'));
+                                    final first = parts.isNotEmpty ? parts.first : '';
+                                    final last = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+                                    context.read<InquiryBloc>().add(FirstNameChanged(first));
+                                    context.read<InquiryBloc>().add(LastNameChanged(last));
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: fieldGap),
+
+                        // 3. E-mail | Type of Client* (one row)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _FormFieldWrapper(
+                                label: StringConstant.email,
+                                isRequired: false,
                                 child: AppTextField(
                                   hint: StringConstant.enterEmail,
                                   keyboardType: TextInputType.emailAddress,
@@ -314,11 +305,33 @@ class _InquiryFormCard extends StatelessWidget {
                                 ),
                               ),
                             ),
+                            SizedBox(width: fieldGap),
+                            Expanded(
+                              child: _FormFieldWrapper(
+                                label: StringConstant.typeOfClient,
+                                isRequired: true,
+                                child: AppDropdown<BookingType>(
+                                  hintText: StringConstant.selectRole,
+                                  items: BookingType.values,
+                                  itemLabel: (type) => type.label,
+                                  value: state.bookingType,
+                                  errorText: state.bookingTypeError,
+                                  onChanged: (value) {
+                                    if (value != null) {
+                                      context.read<InquiryBloc>().add(BookingTypeChanged(value));
+                                      if (value == BookingType.flight) {
+                                        context.go(PathConstant.airTicket);
+                                      }
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                         SizedBox(height: fieldGap),
 
-                        // 4. Address (full width)
+                        // 4. Address* (full width)
                         _FormFieldWrapper(
                           label: StringConstant.address,
                           isRequired: true,
@@ -334,23 +347,9 @@ class _InquiryFormCard extends StatelessWidget {
                         ),
                         SizedBox(height: fieldGap),
 
-                        // 5. Reference Name + Reference Number (always in one row)
+                        // 5. Reference Number* | Refrence Name* (one row)
                         Row(
                           children: [
-                            Expanded(
-                              child: _FormFieldWrapper(
-                                label: StringConstant.referenceName,
-                                isRequired: true,
-                                child: AppTextField(
-                                  hint: StringConstant.enterReferenceName,
-                                  value: state.referenceName,
-                                  errorText: state.referenceNameError,
-                                  onChanged: (value) =>
-                                      context.read<InquiryBloc>().add(ReferenceNameChanged(value)),
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: fieldGap),
                             Expanded(
                               child: _FormFieldWrapper(
                                 label: StringConstant.referenceNumber,
@@ -382,7 +381,37 @@ class _InquiryFormCard extends StatelessWidget {
                                 ),
                               ),
                             ),
+                            SizedBox(width: fieldGap),
+                            Expanded(
+                              child: _FormFieldWrapper(
+                                label: StringConstant.referenceNameLabel,
+                                isRequired: true,
+                                child: AppTextField(
+                                  hint: StringConstant.enterReferenceName,
+                                  value: state.referenceName,
+                                  errorText: state.referenceNameError,
+                                  onChanged: (value) =>
+                                      context.read<InquiryBloc>().add(ReferenceNameChanged(value)),
+                                ),
+                              ),
+                            ),
                           ],
+                        ),
+                        SizedBox(height: fieldGap),
+
+                        // 6. Client Behaviour* (full width)
+                        _FormFieldWrapper(
+                          label: StringConstant.clientBehaviour,
+                          isRequired: true,
+                          child: AppTextField(
+                            hint: StringConstant.enterClientBehaviour,
+                            maxLines: 2,
+                            minLines: 2,
+                            value: state.clientBehaviour,
+                            errorText: state.clientBehaviourError,
+                            onChanged: (value) =>
+                                context.read<InquiryBloc>().add(ClientBehaviourChanged(value)),
+                          ),
                         ),
                       ],
                     );
@@ -407,7 +436,7 @@ class _BottomFooterSection extends StatelessWidget {
         final isWide = constraints.maxWidth >= 1200;
         final horizontalPadding = isWide ? 80.0 : 40.0;
         final gap = isWide ? 60.0 : 40.0;
-        
+
         // Calculate form card width: (total width - horizontal padding * 2 - gap) / 2
         final totalWidth = constraints.maxWidth;
         final formCardWidth = (totalWidth - horizontalPadding * 2 - gap) / 2;
@@ -461,7 +490,6 @@ class _BottomFooterSection extends StatelessWidget {
                               onChanged: (value) {
                                 if (value != null) {
                                   context.read<InquiryBloc>().add(BookingTypeChanged(value));
-                                  // Navigate to air ticket view when flight booking is selected
                                   if (value == BookingType.flight) {
                                     context.go(PathConstant.airTicket);
                                   }
@@ -475,7 +503,7 @@ class _BottomFooterSection extends StatelessWidget {
                   ),
                 ],
               ),
-              
+
               // Bottom row: Company name and Version
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
