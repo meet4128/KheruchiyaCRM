@@ -32,12 +32,17 @@ class StringConstant {
   // ========== Inquiry Form ==========
   static const String inquiryForm = 'Inquiry Form';
   static const String inquiryFormTitle = 'INQUIRY FORM';
-  static const String fillInFormForCustomerInquiry = 'Fill in the form for customer inquiry';
-  static const String fillFormForQuote = 'Provide flight booking information';
-  static const String letsTalkAboutClients = "Let's talk about our Client's ";
-  static const String project = 'project.';
+  static const String fillInFormForCustomerInquiry = 'Fill in the form for customer inquiry.';
+  static const String newInquiry = 'New Inquiry';
+  static const String search = 'Search';
+  static const String lightMode = 'Light Mode';
+  static const String defaultUserName = 'Riyan Doe';
+  static const String fillFormForQuote =
+      'Fill form for a quote, help or to assist client';
+  static const String letsTalkAboutClients = "Let's talk about our\n";
+  static const String project = "Client's project.";
   static const String inquiryFormDescription =
-      'We are here to help you with your travel needs. Fill out the inquiry form below and our team will get back to you as soon as possible. We look forward to working with you on your next adventure.';
+      "We'll create high-quality linkable content and build at least 40 high-authority link to each asset. Bring the way for you to grow your website & improve skills.";
   static const String selectType = 'Select type';
 
   // ========== Inquiry Form Fields ==========
@@ -199,7 +204,6 @@ class StringConstant {
 
   // ========== Buttons & Actions ==========
   static const String submit = 'Submit';
-  static const String search = 'Search';
   static const String addAnotherField = 'Add another field';
   static const String optForFullRefund = 'Opt for full refund.';
 

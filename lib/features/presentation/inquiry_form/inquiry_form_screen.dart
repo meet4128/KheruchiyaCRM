@@ -1,3 +1,4 @@
+import 'dart:math' show sin;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,10 +30,9 @@ class InquiryFormScreen extends StatelessWidget {
 
         return Column(
           children: [
-            // TOP HEADER SECTION
+            // TOP HEADER (New Inquiry, search, light mode, user)
             _TopHeaderSection(),
-            
-            // MAIN CONTENT SECTION
+            // MAIN CONTENT SECTION (includes Inquiry Form title + left/right content)
             Expanded(
               child: isMobile
                   ? SingleChildScrollView(
@@ -40,6 +40,8 @@ class InquiryFormScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          _ContentTitleSection(),
+                          const SizedBox(height: 32),
                           _LeftTextSection(),
                           const SizedBox(height: 32),
                           _InquiryFormCard(),
@@ -52,19 +54,24 @@ class InquiryFormScreen extends StatelessWidget {
                           horizontal: isWide ? 80 : 40,
                           vertical: isWide ? 60 : 40,
                         ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // LEFT SECTION (vertically centered with form card)
-                            Expanded(
-                              flex: 1,
-                              child: _LeftTextSection(),
-                            ),
-                            SizedBox(width: isWide ? 60 : 40),
-                            // RIGHT SECTION
-                            Expanded(
-                              flex: 1,
-                              child: _InquiryFormCard(),
+                            _ContentTitleSection(),
+                            SizedBox(height: isWide ? 40 : 32),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  flex: 45,
+                                  child: _LeftTextSection(),
+                                ),
+                                SizedBox(width: isWide ? 60 : 40),
+                                Expanded(
+                                  flex: 55,
+                                  child: _InquiryFormCard(),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -81,7 +88,7 @@ class InquiryFormScreen extends StatelessWidget {
   }
 }
 
-/// Top header section with title and arrow icon
+/// Top header: menu + "New Inquiry" on left; search, light mode, icons, user on right
 class _TopHeaderSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -94,55 +101,184 @@ class _TopHeaderSection extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF1F1A2E), // Match form card gradient start
-            Color(0xFF2A2338), // Match form card gradient end
+            Color(0xFF1F1A2E),
+            Color(0xFF2A2338),
+            Color(0xFF352040), // Slight reddish-purple
           ],
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Left: Title and subtitle
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  StringConstant.inquiryForm,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: colors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  StringConstant.fillInFormForCustomerInquiry,
-                  style: textStyles.bodySmall.copyWith(
+            Text(
+              StringConstant.newInquiry,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: colors.textPrimary,
+              ),
+            ),
+            const Spacer(),
+            // Search bar
+            SizedBox(
+              width: 200,
+              child: TextField(
+                style: textStyles.bodySmall.copyWith(color: colors.textPrimary),
+                decoration: InputDecoration(
+                  hintText: StringConstant.search,
+                  hintStyle: textStyles.bodySmall.copyWith(
                     color: colors.textSecondary,
                   ),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.1),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
-              ],
+              ),
             ),
-            // Right: Arrow icon
+            const SizedBox(width: 12),
+            // Light Mode toggle
             Container(
-              width: 32,
-              height: 32,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: colors.inputBackground,
-                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(24),
               ),
-              child: Icon(
-                Icons.keyboard_arrow_down,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.light_mode, color: colors.textPrimary, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    StringConstant.lightMode,
+                    style: textStyles.bodySmall.copyWith(
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            IconButton(
+              icon: Icon(Icons.notifications_outlined, color: colors.textPrimary),
+              onPressed: () {},
+            ),
+            IconButton(
+              icon: Icon(Icons.person_outline, color: colors.textPrimary),
+              onPressed: () {},
+            ),
+            const SizedBox(width: 8),
+            Text(
+              StringConstant.defaultUserName,
+              style: textStyles.bodySmall.copyWith(
                 color: colors.textPrimary,
-                size: 20,
+                fontWeight: FontWeight.w500,
               ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.keyboard_arrow_down,
+              color: colors.textPrimary,
+              size: 20,
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Blue wavy line separator below header
+class _WavySeparatorLine extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(double.infinity, 12),
+      painter: _WavyLinePainter(),
+    );
+  }
+}
+
+class _WavyLinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF4A90D9)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+    const amplitude = 3.0;
+    const frequency = 0.05;
+    path.moveTo(0, size.height / 2);
+
+    for (double x = 0; x <= size.width; x++) {
+      final y = size.height / 2 + amplitude * sin(x * frequency * 6.28);
+      path.lineTo(x, y);
+    }
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Content title: "Inquiry Form" + subtitle + arrow (used inside main content section)
+class _ContentTitleSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
+    final textStyles = AppTheme.textStyles(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                StringConstant.inquiryForm,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: colors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                StringConstant.fillInFormForCustomerInquiry,
+                style: textStyles.bodySmall.copyWith(
+                  color: colors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: colors.inputBackground,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.keyboard_arrow_down,
+              color: colors.textPrimary,
+              size: 22,
+            ),
+          ),
+        ],
       ),
     );
   }
