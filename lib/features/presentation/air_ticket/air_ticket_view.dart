@@ -56,11 +56,7 @@ class _AirTicketScreen extends StatelessWidget {
           padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: AppTheme.colors(context).inputBackground,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppTheme.colors(context).secondary.withOpacity(0.2),
-              width: 1,
-            ),
+
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.5),
