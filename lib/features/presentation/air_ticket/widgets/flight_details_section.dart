@@ -240,7 +240,7 @@ Widget _segmentBorder(Widget child, Color borderColor, {bool showBorder = true})
   );
 }
 
-/// Square swap icon segment (light grey border)
+/// Swap segment: vertical divider with T-junction (horizontal line at top) and white rounded swap button centered on the line.
 class _SwapSegment extends StatelessWidget {
   const _SwapSegment({required this.onSwap});
 
@@ -249,35 +249,78 @@ class _SwapSegment extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppTheme.colors(context);
-    return _segmentBorder(
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onSwap,
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: colors.borderSecondary.withOpacity(0.5),
-                  width: 1,
-                ),
-                borderRadius: BorderRadius.circular(8),
-              ),
+    final dividerColor = colors.borderSecondary.withOpacity(0.5);
+    const segmentWidth = 56.0;
+
+    return SizedBox(
+      width: segmentWidth,
+      child: Column(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          // Horizontal gray line at top (T-junction with vertical)
+          Container(
+            height: 1,
+            width: double.infinity,
+            color: dividerColor,
+          ),
+          // Vertical divider with swap button centered on it
+          Expanded(
+            child: Stack(
               alignment: Alignment.center,
-              child: Icon(
-                Icons.swap_horiz,
-                size: 20,
-                color: colors.textSecondary,
-              ),
+              children: [
+                // Vertical gray divider line (full height, centered)
+                Center(
+                  child: Container(
+                    width: 1,
+                    color: dividerColor,
+                  ),
+                ),
+                // White rounded button with two-way arrows centered on the line
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: onSwap,
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      alignment: Alignment.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.arrow_forward,
+                            size: 14,
+                            color: Colors.grey.shade700,
+                          ),
+                          const SizedBox(height: 2),
+                          Icon(
+                            Icons.arrow_back,
+                            size: 14,
+                            color: Colors.grey.shade700,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
+        ],
       ),
-      colors.borderSecondary,
     );
   }
 }
