@@ -2,6 +2,7 @@ import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:travel_crm/core/constants/dimension_constant.dart';
+import 'package:travel_crm/core/theme/app_theme.dart';
 import 'package:travel_crm/core/widgets/dial_code_picker/bloc/dial_code_picker_bloc.dart';
 
 const Color _kDialogBackground = Color(0xFF161424);
@@ -36,6 +37,7 @@ class DialCodePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
     final effectiveTextStyle =
         textStyle ?? const TextStyle(color: Colors.white, fontSize: 14);
 
@@ -46,7 +48,7 @@ class DialCodePicker extends StatelessWidget {
         borderRadius: BorderRadius.circular(DimensionConstant.d12),
         child: Container(
           decoration: BoxDecoration(
-            color: backgroundColor ?? _kDialogBackground,
+            color: backgroundColor ?? colors.inputBackground,
             borderRadius: BorderRadius.circular(DimensionConstant.d12),
             border: Border.all(color: Colors.white12),
           ),
