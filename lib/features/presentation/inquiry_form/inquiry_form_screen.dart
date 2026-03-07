@@ -278,8 +278,9 @@ class _InquiryFormCard extends StatelessWidget {
                                       builder: (context, state) {
                                         return DialCodePicker(
                                           dialCode: state.phoneDialCode,
-                                          onChanged: (code) =>
-                                              context.read<InquiryBloc>().add(PhoneDialCodeChanged(code)),
+                                          onChanged: (code) {
+                                            context.read<InquiryBloc>().add(PhoneDialCodeChanged(code));
+                                          },
                                         );
                                       },
                                     ),
