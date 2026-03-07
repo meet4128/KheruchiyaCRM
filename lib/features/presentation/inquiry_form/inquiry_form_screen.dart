@@ -51,8 +51,8 @@ class InquiryFormScreen extends StatelessWidget {
                   : SingleChildScrollView(
                       child: Padding(
                         padding: EdgeInsets.symmetric(
-                          horizontal: isWide ? 80 : 40,
-                          vertical: isWide ? 60 : 40,
+                          horizontal: isWide ? 60 : 30,
+                          vertical: isWide ? 40 : 20,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,7 +108,7 @@ class _TopHeaderSection extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         child: Row(
           children: [
             Text(
@@ -239,7 +239,7 @@ class _ContentTitleSection extends StatelessWidget {
     final textStyles = AppTheme.textStyles(context);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,7 +251,7 @@ class _ContentTitleSection extends StatelessWidget {
               Text(
                 StringConstant.inquiryForm,
                 style: TextStyle(
-                  fontSize: 28,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: colors.textPrimary,
                 ),
@@ -345,6 +345,7 @@ class _InquiryFormCard extends StatelessWidget {
         return AppFormCard(
           title: StringConstant.inquiryFormTitle,
           subtitle: StringConstant.fillFormForQuote,
+          centerTitle: true,
           child: Form(
                 child: LayoutBuilder(
                   builder: (context, constraints) {

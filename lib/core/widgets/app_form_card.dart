@@ -11,6 +11,7 @@ class AppFormCard extends StatelessWidget {
     this.title,
     this.subtitle,
     this.borderGlow = false,
+    this.centerTitle = false,
   });
 
   /// Child widget (typically form fields)
@@ -27,6 +28,9 @@ class AppFormCard extends StatelessWidget {
 
   /// When true, adds a thin glowing purple outline (box shadow)
   final bool borderGlow;
+
+  /// When true, title and subtitle are centered in the form
+  final bool centerTitle;
 
   @override
   Widget build(BuildContext context) {
@@ -72,23 +76,35 @@ class AppFormCard extends StatelessWidget {
         children: [
           // Title and subtitle if provided
           if (title != null || subtitle != null) ...[
-            if (title != null)
-              Text(
-                title!,
-                style: textStyles.heading3.copyWith(
-                  color: colors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
+            SizedBox(
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment:
+                    centerTitle ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (title != null)
+                    Text(
+                      title!,
+                      textAlign: centerTitle ? TextAlign.center : null,
+                      style: textStyles.heading3.copyWith(
+                        color: colors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  if (subtitle != null) ...[
+                    if (title != null) const SizedBox(height: 8),
+                    Text(
+                      subtitle!,
+                      textAlign: centerTitle ? TextAlign.center : null,
+                      style: textStyles.bodyMedium.copyWith(
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            if (subtitle != null) ...[
-              if (title != null) const SizedBox(height: 8),
-              Text(
-                subtitle!,
-                style: textStyles.bodyMedium.copyWith(
-                  color: colors.textSecondary,
-                ),
-              ),
-            ],
+            ),
             const SizedBox(height: 32),
           ],
           // Child content

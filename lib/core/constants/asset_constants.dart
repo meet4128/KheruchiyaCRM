@@ -15,6 +15,7 @@ class AssetConstants {
   static const String icSetting = '$basePath/ic_setting.svg';
   static const String icUser = '$basePath/ic_user.svg';
   static const String icCRMLogo = '$basePath/ic_crm_logo.svg';
+  static const String icCRMLogoNew = '$basePath/ic_crm_logo_new.png';
   static const String icAnalytics = '$basePath/ic_analytics.svg';
   static const String icInventory = '$basePath/ic_inventory.svg';
   static const String icInvoices = '$basePath/ic_invoices.svg';

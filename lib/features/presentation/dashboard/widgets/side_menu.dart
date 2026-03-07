@@ -85,8 +85,8 @@ class _SideMenuState extends State<SideMenu> with SingleTickerProviderStateMixin
                       onTap: (){
                         context.read<NavigationBloc>().add(OpenCloseDrawerEvent(false));
                       },
-                      child: SvgPicture.asset(
-                        AssetConstants.icCRMLogo,
+                      child: Image.asset(
+                        AssetConstants.icCRMLogoNew,
                       ),
                     ),
                     // if (!effectiveCollapsed) ...[
