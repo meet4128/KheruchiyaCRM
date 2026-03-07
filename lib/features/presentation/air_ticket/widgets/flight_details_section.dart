@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/theme/app_theme.dart';
-import 'package:travel_crm/core/widgets/app_date_picker.dart';
-import 'package:travel_crm/core/widgets/app_dropdown.dart';
-import 'package:travel_crm/core/widgets/app_swap_button.dart';
-import 'package:travel_crm/core/widgets/app_text_field.dart';
-import 'package:travel_crm/core/widgets/form_field_wrapper.dart';
+import 'package:travel_crm/core/widgets/airport_picker/airport_picker.dart';
 import '../models/booking_type.dart';
 
 /// Flight details section widget
@@ -63,172 +59,135 @@ class FlightDetailsSection extends StatelessWidget {
     StringConstant.first,
   ];
 
+  static Future<void> _showDatePicker(
+    BuildContext context, {
+    required DateTime initialDate,
+    required DateTime firstDate,
+    ValueChanged<DateTime>? onSelected,
+    ValueChanged<DateTime?>? onSelectedNullable,
+  }) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: DateTime(firstDate.year + 2, 12, 31),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: AppTheme.colors(context).secondary,
+              onPrimary: AppTheme.colors(context).textOnPrimary,
+              surface: AppTheme.colors(context).surface,
+              onSurface: AppTheme.colors(context).textPrimary,
+            ),
+            dialogBackgroundColor: AppTheme.colors(context).backgroundMedium,
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      onSelected?.call(picked);
+      onSelectedNullable?.call(picked);
+    } else {
+      onSelectedNullable?.call(null);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = AppTheme.colors(context);
-    final textStyles = AppTheme.textStyles(context);
-    final showReturnDate = bookingType == AirTicketBookingType.roundTrip;
 
     // Format traveller and class display
     final travellerClassDisplay = classType.isNotEmpty
         ? '$travellerCount Traveller${travellerCount > 1 ? 's' : ''}, $classType'
         : travellerCount > 0
             ? '$travellerCount Traveller${travellerCount > 1 ? 's' : ''}'
-            : '';
+            : StringConstant.defaultTraveller;
 
     return Container(
-      padding:  EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppTheme.colors(context).inputBackground,
+        color: colors.inputBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colors.secondary.withOpacity(0.2),
+          color: colors.borderSecondary.withOpacity(0.3),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.5),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-            spreadRadius: 0,
-          ),
-        ],
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // From field
-            _LocationField(
-              label: StringConstant.from,
-              isRequired: true,
-              value: from.isNotEmpty ? from : StringConstant.defaultFromLocation,
-              sublabel: from.isNotEmpty ? '' : StringConstant.defaultAirportFrom,
-              errorText: fromError,
-              onTap: () {
-                // TODO: Open location picker
-              },
-            ),
-            const SizedBox(width: 12),
-            // Swap button
-            Padding(
-              padding: const EdgeInsets.only(top: 24),
-              child: AppSwapButton(
-                onSwap: onSwapLocations,
-                size: 40,
-                iconSize: 20,
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // From
+              _LocationField(
+                label: StringConstant.from,
+                isRequired: true,
+                value: from.isNotEmpty ? from : StringConstant.defaultFromLocation,
+                sublabel: from.isNotEmpty ? '' : StringConstant.defaultAirportFrom,
+                errorText: fromError,
+                showBorder: true,
+                onSelectAirport: onFromChanged,
               ),
-            ),
-            const SizedBox(width: 12),
-            // To field
-            _LocationField(
-              label: StringConstant.to,
-              isRequired: true,
-              value: to.isNotEmpty ? to : StringConstant.defaultToLocation,
-              sublabel: to.isNotEmpty ? '' : StringConstant.defaultAirportTo,
-              errorText: toError,
-              onTap: () {
-                // TODO: Open location picker
-              },
-            ),
-            const SizedBox(width: 12),
-            // Departure date
-            _DateField(
-              label: StringConstant.departure,
-              isRequired: true,
-              value: departureDate,
-              errorText: departureDateError,
-              onTap: () {
-                // Date picker will be handled by AppDatePicker
-              },
-              child: AppDatePicker(
-                hint: StringConstant.selectDepartureDate,
+              // Swap (square with light grey border)
+              _SwapSegment(onSwap: onSwapLocations),
+              // To
+              _LocationField(
+                label: StringConstant.to,
+                isRequired: true,
+                value: to.isNotEmpty ? to : StringConstant.defaultToLocation,
+                sublabel: to.isNotEmpty ? '' : StringConstant.defaultAirportTo,
+                errorText: toError,
+                showBorder: true,
+                onSelectAirport: onToChanged,
+              ),
+              // Departure
+              _DateField(
+                label: StringConstant.departure,
+                isRequired: true,
                 value: departureDate,
                 errorText: departureDateError,
-                onChanged: onDepartureDateChanged,
-                firstDate: DateTime.now(),
                 dateFormat: _formatDate,
+                hint: StringConstant.selectDepartureDate,
+                onTap: () => _showDatePicker(
+                  context,
+                  initialDate: departureDate ?? DateTime.now(),
+                  firstDate: DateTime.now(),
+                  onSelected: onDepartureDateChanged,
+                ),
               ),
-            ),
-            if (showReturnDate) ...[
-              const SizedBox(width: 12),
-              // Return date
+              // Return (always visible, can be blank)
               _DateField(
                 label: StringConstant.returnLabel,
                 isRequired: false,
                 value: returnDate,
                 errorText: returnDateError,
-                onTap: () {
-                  // Date picker will be handled by AppDatePicker
-                },
-                child: AppDatePicker(
-                  hint: StringConstant.selectReturnDate,
-                  value: returnDate,
-                  errorText: returnDateError,
-                  onChangedNullable: onReturnDateChanged,
+                dateFormat: _formatDate,
+                hint: '',
+                onTap: () => _showDatePicker(
+                  context,
+                  initialDate: returnDate ?? departureDate ?? DateTime.now(),
                   firstDate: departureDate ?? DateTime.now(),
-                  dateFormat: _formatDate,
+                  onSelectedNullable: onReturnDateChanged,
                 ),
               ),
-            ],
-            const SizedBox(width: 12),
-            // Traveller & Class
-            _TravellerClassField(
-              label: StringConstant.travellerAndClass,
-              isRequired: true,
-              value: travellerClassDisplay,
-              errorText: travellerCountError,
-              travellerCount: travellerCount,
-              classType: classType,
-              onTravellerChanged: onTravellerCountChanged,
-              onClassChanged: onClassTypeChanged,
-            ),
-            if (onAddAnotherField != null) ...[
-              const SizedBox(width: 12),
-              // Add another field button
-              Padding(
-                padding: const EdgeInsets.only(top: 24),
-                child: InkWell(
-                  onTap: onAddAnotherField,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF8B5CF6),  // Purple
-                          Color(0xFFEC4899),  // Pink
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.add,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          StringConstant.addAnotherField,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              // Traveller & Class
+              _TravellerClassField(
+                label: StringConstant.travellerAndClass,
+                isRequired: true,
+                value: travellerClassDisplay,
+                errorText: travellerCountError,
+                travellerCount: travellerCount,
+                classType: classType,
+                onTravellerChanged: onTravellerCountChanged,
+                onClassChanged: onClassTypeChanged,
+                showBorder: true,
               ),
+              if (onAddAnotherField != null)
+                _AddAnotherFieldButton(onTap: onAddAnotherField!),
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -247,7 +206,120 @@ class FlightDetailsSection extends StatelessWidget {
   }
 }
 
-/// Location field widget that displays airport code and full name
+/// Segment with light grey right border
+Widget _segmentBorder(Widget child, Color borderColor, {bool showBorder = true}) {
+  return Container(
+    decoration: showBorder
+        ? BoxDecoration(
+            border: Border(
+              right: BorderSide(
+                color: borderColor.withOpacity(0.4),
+                width: 1,
+              ),
+            ),
+          )
+        : null,
+    child: child,
+  );
+}
+
+/// Square swap icon segment (light grey border)
+class _SwapSegment extends StatelessWidget {
+  const _SwapSegment({required this.onSwap});
+
+  final VoidCallback onSwap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
+    return _segmentBorder(
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onSwap,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: colors.borderSecondary.withOpacity(0.5),
+                  width: 1,
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.swap_horiz,
+                size: 20,
+                color: colors.textSecondary,
+              ),
+            ),
+          ),
+        ),
+      ),
+      colors.borderSecondary,
+    );
+  }
+}
+
+/// Add another field button (purple-to-dark-purple gradient)
+class _AddAnotherFieldButton extends StatelessWidget {
+  const _AddAnotherFieldButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Align(
+        alignment: Alignment.center,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    Color(0xFF8B5CF6),
+                    Color(0xFF6D28D9),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.add, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    StringConstant.addAnotherField,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Location field widget that displays airport code and full name.
+/// When [onSelectAirport] is set, tap opens airport picker dialog and calls it with selected value.
 class _LocationField extends StatelessWidget {
   const _LocationField({
     required this.label,
@@ -255,7 +327,9 @@ class _LocationField extends StatelessWidget {
     required this.sublabel,
     this.isRequired = false,
     this.errorText,
+    this.showBorder = false,
     this.onTap,
+    this.onSelectAirport,
   });
 
   final String label;
@@ -263,131 +337,193 @@ class _LocationField extends StatelessWidget {
   final String sublabel;
   final bool isRequired;
   final String? errorText;
+  final bool showBorder;
   final VoidCallback? onTap;
+  final ValueChanged<String>? onSelectAirport;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppTheme.colors(context);
     final textStyles = AppTheme.textStyles(context);
-    final isFromField = label == StringConstant.from;
 
-    return SizedBox(
+    final content = SizedBox(
       width: 200,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Label
-          Row(
-            children: [
-              Text(
-                label,
-                style: textStyles.formLabel.copyWith(
-                  color: colors.textPrimary,
-                ),
-              ),
-              if (isRequired) ...[
-                const SizedBox(width: 4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
                 Text(
-                  '*',
+                  label,
                   style: textStyles.formLabel.copyWith(
-                    color: colors.error,
+                    color: colors.textSecondary,
+                    fontSize: 12,
                   ),
                 ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Value container
-          InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  if (isFromField) ...[
-                    Icon(
-                      Icons.flight_takeoff,
-                      size: 18,
-                      color: colors.textSecondary,
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          value,
-                          style: textStyles.formInput.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colors.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (sublabel.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            sublabel,
-                            style: textStyles.bodySmall.copyWith(
-                              color: colors.textSecondary,
-                              fontSize: 12,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
+                if (isRequired) ...[
+                  const SizedBox(width: 4),
+                  Text(
+                    '*',
+                    style: textStyles.formLabel.copyWith(
+                      color: colors.error,
+                      fontSize: 12,
                     ),
                   ),
                 ],
+              ],
+            ),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: onSelectAirport != null
+                  ? () => showAirportPicker(
+                        context,
+                        onSelect: onSelectAirport!,
+                      )
+                  : onTap,
+              borderRadius: BorderRadius.circular(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    value,
+                    style: textStyles.formInput.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colors.textPrimary,
+                      fontSize: 14,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (sublabel.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      sublabel,
+                      style: textStyles.bodySmall.copyWith(
+                        color: colors.textSecondary,
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
               ),
             ),
-          ),
-          if (errorText != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              errorText!,
-              style: textStyles.formError.copyWith(
-                color: colors.error,
+            if (errorText != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                errorText!,
+                style: textStyles.formError.copyWith(
+                  color: colors.error,
+                  fontSize: 12,
+                ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
+    );
+
+    return _segmentBorder(
+      content,
+      colors.borderSecondary,
+      showBorder: showBorder,
     );
   }
 }
 
-/// Date field widget that displays formatted date
+/// Date field widget: label + value/hint, tap opens date picker
 class _DateField extends StatelessWidget {
   const _DateField({
     required this.label,
     required this.value,
-    required this.child,
+    required this.dateFormat,
+    required this.hint,
+    required this.onTap,
     this.isRequired = false,
     this.errorText,
-    this.onTap,
   });
 
   final String label;
   final DateTime? value;
-  final Widget child;
+  final String Function(DateTime) dateFormat;
+  final String hint;
+  final VoidCallback onTap;
   final bool isRequired;
   final String? errorText;
-  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 180,
-      child: FormFieldWrapper(
-        label: label,
-        isRequired: isRequired,
-        child: child,
+    final colors = AppTheme.colors(context);
+    final textStyles = AppTheme.textStyles(context);
+    final displayText = value != null ? dateFormat(value!) : (hint.isNotEmpty ? hint : '');
+
+    final content = SizedBox(
+      width: 160,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Text(
+                  label,
+                  style: textStyles.formLabel.copyWith(
+                    color: colors.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+                if (isRequired) ...[
+                  const SizedBox(width: 4),
+                  Text(
+                    '*',
+                    style: textStyles.formLabel.copyWith(
+                      color: colors.error,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(8),
+              child: Text(
+                displayText,
+                style: textStyles.formInput.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: value != null ? colors.textPrimary : colors.textSecondary,
+                  fontSize: 14,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (errorText != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                errorText!,
+                style: textStyles.formError.copyWith(
+                  color: colors.error,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
+    );
+
+    return _segmentBorder(
+      content,
+      colors.borderSecondary,
+      showBorder: true,
     );
   }
 }
@@ -401,6 +537,7 @@ class _TravellerClassField extends StatelessWidget {
     required this.classType,
     this.isRequired = false,
     this.errorText,
+    this.showBorder = false,
     this.onTravellerChanged,
     this.onClassChanged,
   });
@@ -411,6 +548,7 @@ class _TravellerClassField extends StatelessWidget {
   final String classType;
   final bool isRequired;
   final String? errorText;
+  final bool showBorder;
   final ValueChanged<int>? onTravellerChanged;
   final ValueChanged<String>? onClassChanged;
 
@@ -573,47 +711,48 @@ class _TravellerClassField extends StatelessWidget {
     final colors = AppTheme.colors(context);
     final textStyles = AppTheme.textStyles(context);
 
-    return SizedBox(
+    final content = SizedBox(
       width: 220,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Label
-          Row(
-            children: [
-              Text(
-                label,
-                style: textStyles.formLabel.copyWith(
-                  color: colors.textPrimary,
-                ),
-              ),
-              if (isRequired) ...[
-                const SizedBox(width: 4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
                 Text(
-                  '*',
+                  label,
                   style: textStyles.formLabel.copyWith(
-                    color: colors.error,
+                    color: colors.textSecondary,
+                    fontSize: 12,
                   ),
                 ),
+                if (isRequired) ...[
+                  const SizedBox(width: 4),
+                  Text(
+                    '*',
+                    style: textStyles.formLabel.copyWith(
+                      color: colors.error,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ],
-            ],
-          ),
-          const SizedBox(height: 8),
-          // Value container - single display with dropdown
-          InkWell(
-            onTap: () => _showSelectionBottomSheet(context),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: () => _showSelectionBottomSheet(context),
+              borderRadius: BorderRadius.circular(8),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: Text(
-                      value.isNotEmpty ? value : '1 Traveller, Economy',
+                      value.isNotEmpty ? value : StringConstant.defaultTraveller,
                       style: textStyles.formInput.copyWith(
+                        fontWeight: FontWeight.w600,
                         color: colors.textPrimary,
+                        fontSize: 14,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -627,18 +766,25 @@ class _TravellerClassField extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-          if (errorText != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              errorText!,
-              style: textStyles.formError.copyWith(
-                color: colors.error,
+            if (errorText != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                errorText!,
+                style: textStyles.formError.copyWith(
+                  color: colors.error,
+                  fontSize: 12,
+                ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
+    );
+
+    return _segmentBorder(
+      content,
+      colors.borderSecondary,
+      showBorder: showBorder,
     );
   }
 }
