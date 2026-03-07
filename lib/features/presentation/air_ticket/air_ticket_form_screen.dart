@@ -35,10 +35,7 @@ class AirTicketFormScreen extends StatelessWidget {
 
         return Column(
           children: [
-            // TOP HEADER SECTION
-            _TopHeaderSection(),
-
-            // MAIN CONTENT SECTION
+            // MAIN CONTENT SECTION (Inquiry Form bar, Air Ticket Form bar, form card, checklist)
             Expanded(
               child: SingleChildScrollView(
                 child: Padding(
@@ -53,10 +50,20 @@ class AirTicketFormScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Form Card
+                      // 1. Inquiry Form section header (title + subtitle + chevron)
+                      _SectionHeaderBar(
+                        title: StringConstant.inquiryForm,
+                        subtitle: StringConstant.fillInFormForCustomerInquiry,
+                        trailing: _ChevronCircleIcon(),
+                      ),
+                      const SizedBox(height: 16),
+                      // 2. Air Ticket Form section (no card/border — on dark background)
+                      _AirTicketFormSectionHeader(),
+                      const SizedBox(height: 16),
+                      // 3. Air Ticket Form Card
                       _AirTicketFormCard(),
                       const SizedBox(height: 32),
-                      // Checklist Section
+                      // 4. Checklist Section
                       _ChecklistSectionWidget(),
                     ],
                   ),
@@ -73,77 +80,148 @@ class AirTicketFormScreen extends StatelessWidget {
   }
 }
 
-/// Top header section with title and arrow icon
-class _TopHeaderSection extends StatelessWidget {
+/// Reusable section header bar: dark card with title, subtitle, and optional trailing (e.g. contact + chevron).
+class _SectionHeaderBar extends StatelessWidget {
+  const _SectionHeaderBar({
+    required this.title,
+    required this.subtitle,
+    required this.trailing,
+  });
+
+  final String title;
+  final String subtitle;
+  final Widget trailing;
+
   @override
   Widget build(BuildContext context) {
     final colors = AppTheme.colors(context);
     final textStyles = AppTheme.textStyles(context);
 
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [Color(0xFF1F1A2E), Color(0xFF2A2338)],
         ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colors.borderSecondary.withOpacity(0.3),
+          width: 1,
+        ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: textStyles.bodySmall.copyWith(
+                  color: colors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          trailing,
+        ],
+      ),
+    );
+  }
+}
+
+/// Circular icon with downward chevron (for collapsible section).
+class _ChevronCircleIcon extends StatelessWidget {
+  const _ChevronCircleIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: colors.inputBackground,
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.keyboard_arrow_down,
+        color: colors.textPrimary,
+        size: 20,
+      ),
+    );
+  }
+}
+
+/// Air Ticket Form section header: no card/border, text directly on dark background.
+/// Left: title + subtitle. Right: "You can reach us anytime via " + blue email.
+class _AirTicketFormSectionHeader extends StatelessWidget {
+  const _AirTicketFormSectionHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
+    final textStyles = AppTheme.textStyles(context);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Left: Title and subtitle
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  StringConstant.airTicketForm,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: colors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  StringConstant.provideFlightBookingInformation,
-                  style: textStyles.bodySmall.copyWith(
-                    color: colors.textSecondary,
-                  ),
-                ),
-              ],
+            Text(
+              StringConstant.airTicketForm,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: colors.textPrimary,
+              ),
             ),
-            // Right: Contact info and arrow icon
-            Row(
-              children: [
-                Text(
-                  StringConstant.youCanReachUsAnytime,
-                  style: textStyles.bodySmall.copyWith(
-                    color: colors.textSecondary,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: colors.inputBackground,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.keyboard_arrow_down,
-                    color: colors.textPrimary,
-                    size: 20,
-                  ),
-                ),
-              ],
+            const SizedBox(height: 2),
+            Text(
+              StringConstant.provideFlightBookingInformation,
+              style: textStyles.bodySmall.copyWith(
+                color: colors.textSecondary,
+              ),
             ),
           ],
         ),
-      ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'You can reach us anytime via ',
+              style: textStyles.bodySmall.copyWith(
+                color: colors.textSecondary,
+              ),
+            ),
+            Text(
+              'kthplcrm@mail.com',
+              style: textStyles.bodySmall.copyWith(
+                color: colors.secondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
