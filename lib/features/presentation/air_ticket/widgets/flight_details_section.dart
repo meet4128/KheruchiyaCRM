@@ -421,7 +421,7 @@ class _AddAnotherFieldButton extends StatelessWidget {
 }
 
 /// Location field widget that displays airport code and full name.
-/// When [onSelectAirport] is set, tap opens airport picker dialog and calls it with selected value.
+/// When [onSelectAirport] is set, tap opens airport picker bottom sheet and calls it with selected value.
 class _LocationField extends StatelessWidget {
   const _LocationField({
     required this.label,
@@ -480,7 +480,7 @@ class _LocationField extends StatelessWidget {
             const SizedBox(height: 8),
             InkWell(
               onTap: onSelectAirport != null
-                  ? () => showAirportPicker(
+                  ? () => showAirportPickerBottomSheet(
                         context,
                         onSelect: onSelectAirport!,
                       )
