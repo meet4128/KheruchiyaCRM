@@ -53,9 +53,9 @@ class InquiryFormScreen extends StatelessWidget {
                           vertical: isWide ? 60 : 40,
                         ),
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            // LEFT SECTION
+                            // LEFT SECTION (vertically centered with form card)
                             Expanded(
                               flex: 1,
                               child: _LeftTextSection(),
