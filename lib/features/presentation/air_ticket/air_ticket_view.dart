@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:travel_crm/core/constants/path_constants.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/theme/app_theme.dart';
 import 'package:travel_crm/data/repositories/inquiry_repository.dart';
 import 'package:travel_crm/di/injector.dart';
 import 'package:travel_crm/features/presentation/air_ticket/air_ticket_form_screen.dart';
 import 'package:travel_crm/features/presentation/air_ticket/bloc/air_ticket_bloc.dart';
+import 'package:travel_crm/features/presentation/air_ticket/bloc/air_ticket_event.dart';
 import 'package:travel_crm/features/presentation/air_ticket/bloc/air_ticket_state.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/bloc/inquiry_state.dart';
 
@@ -47,19 +50,31 @@ class _AirTicketScreen extends StatelessWidget {
         final messenger = ScaffoldMessenger.of(context);
 
         if (state.submissionStatus == AirTicketSubmissionStatus.success) {
-          // Loading overlay closes automatically when status leaves submitting
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(
-                state.successMessage ?? StringConstant.airTicketSubmittedSuccessfully,
+          final message = state.successMessage ?? StringConstant.airTicketSubmittedSuccessfully;
+          showDialog<void>(
+            context: context,
+            barrierDismissible: false,
+            builder: (dialogContext) => AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.check_circle, color: colors.success, size: 28),
+                  const SizedBox(width: 12),
+                  const Expanded(child: Text('Success')),
+                ],
               ),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: colors.success,
+              content: Text(message),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    context.read<AirTicketBloc>().add(const ResetAirTicketForm());
+                    context.go(PathConstant.inquiryManagement);
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
             ),
           );
-          // Optionally navigate to next screen, e.g.:
-          // Navigator.of(context).pop();
-          // or context.go('/inquiry-list');
         }
 
         if (state.submissionStatus == AirTicketSubmissionStatus.failure) {

@@ -128,6 +128,7 @@ class AppDatePicker extends StatelessWidget {
         : null;
 
     return AppTextField(
+      key: ValueKey<String?>(formattedDate),
       label: label,
       hint: hint ?? StringConstant.selectDate,
       value: formattedDate,
