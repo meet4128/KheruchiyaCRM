@@ -10,6 +10,7 @@ class DioClient {
   static final Dio _dio = Dio(BaseOptions(baseUrl: Apis.baseUrl));
   static const String contentType = 'application/json';
 
+
   /// Dev fallback token for Create Inquiry API when user is not logged in. Remove when auth is wired.
   static const String _devAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImRldi11c2VyIiwiZW1haWwiOiJtZWV0QGV4YW1wbGUuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NzMyMTY0OTEsImV4cCI6MTc3MzMwMjg5MX0.XfiX5easfDDI6F1x9i0IIpJnyAYla-gpSTj_ylEoMAQ';
 
@@ -57,7 +58,7 @@ class DioClient {
             final refreshed = await _refreshAccessToken();
             if (refreshed) {
               final token = SharedPrefUtils.getValue(
-                  SharedPrefUtilsKeys.userToken, '') as String;
+                  SharedPrefUtilsKeys.userToken, '');
               final headers = Map<String, dynamic>.from(e.requestOptions.headers);
               headers['Authorization'] = 'Bearer $token';
               final opts = e.requestOptions.copyWith(headers: headers);
@@ -92,7 +93,7 @@ class DioClient {
     if (_refreshLock != null && !_refreshLock!.isCompleted) {
       await _refreshLock!.future;
       final token =
-          SharedPrefUtils.getValue(SharedPrefUtilsKeys.userToken, '') as String;
+          SharedPrefUtils.getValue(SharedPrefUtilsKeys.userToken, '');
       return token.isNotEmpty && token != _devAccessToken;
     }
     _refreshLock = Completer<void>();
