@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:travel_crm/core/models/inquiry/create_inquiry_request.dart';
 import 'package:travel_crm/core/network/inquiry_api_client.dart';
+import 'package:travel_crm/data/models/inquiry/list_inquiries_response.dart';
 
 /// Repository for create-inquiry API. Handles API communication only; no UI logic.
 class InquiryRepository {
@@ -18,6 +19,23 @@ class InquiryRepository {
       if (e.response?.statusCode == 422 && e.response?.data != null) {
         final data = e.response!.data;
         developer.log('CreateInquiry 422 response: $data', name: 'InquiryRepository');
+        final message = _parseValidationError(data);
+        throw _ValidationException(message);
+      }
+      rethrow;
+    }
+  }
+
+  Future<ListInquiriesResponse> listInquiries(ListInquiriesQuery query) async {
+    try {
+      final queryMap = query.toQuery();
+      return await apiClient.listInquiries(queryMap);
+    } on DioException catch (e) {
+      // Surface server validation message from 422 response body
+      if (e.response?.statusCode == 422 && e.response?.data != null) {
+        final data = e.response!.data;
+        developer.log('ListInquiries 422 response: $data',
+            name: 'InquiryRepository');
         final message = _parseValidationError(data);
         throw _ValidationException(message);
       }

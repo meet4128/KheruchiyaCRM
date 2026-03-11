@@ -11,7 +11,7 @@ class DioClient {
   static const String contentType = 'application/json';
 
   /// Dev fallback token for Create Inquiry API when user is not logged in. Remove when auth is wired.
-  static const String _devAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImRldi11c2VyIiwiZW1haWwiOiJtZWV0QGV4YW1wbGUuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NzI4ODA2NTksImV4cCI6MTc3Mjk2NzA1OX0.2LF0k-Ezud4yXrN8Qszc8Kls1Y0CdXdcWHzwmxwJNuY';
+  static const String _devAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImRldi11c2VyIiwiZW1haWwiOiJtZWV0QGV4YW1wbGUuY29tIiwicm9sZSI6InVzZXIiLCJpYXQiOjE3NzMyMTY0OTEsImV4cCI6MTc3MzMwMjg5MX0.XfiX5easfDDI6F1x9i0IIpJnyAYla-gpSTj_ylEoMAQ';
 
   static Completer<void>? _refreshLock;
 

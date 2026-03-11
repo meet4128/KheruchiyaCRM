@@ -25,5 +25,5 @@ Future setup() async {
   );
 
   // register blocs
-  sl.registerFactory(() => InquiryManagementBloc());
+  sl.registerFactory(() => InquiryManagementBloc(inquiryRepository: sl<InquiryRepository>()));
 }

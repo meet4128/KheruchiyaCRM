@@ -24,99 +24,115 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
   final InquiryManagementBloc _inquiryManagementBloc = sl<InquiryManagementBloc>();
 
   @override
+  void initState() {
+    super.initState();
+    _inquiryManagementBloc.add(InquiryManagementInitialized(page: 1, limit: 20));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocConsumer(
-      bloc: _inquiryManagementBloc,
-      listener: (context, state) {},
-      builder: (context, state) {
-        return Scaffold(
-          backgroundColor: ColorConstant.inquiryManagementBgColor,
-          body: Padding(
-            padding: const EdgeInsets.all(DimensionConstant.d25),
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  /// Card Header 1
-                  Container(
-                    color: ColorConstant.cardBgColor,
-                    width: double.infinity,
-                    height: DimensionConstant.d133,
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            _hierarchyHeader(
-                              title: 'Inquiry Management',
-                              icon: AssetConstants.icRightArrow,
-                            ),
-                            _hierarchyHeader(title: 'Pending ', icon: AssetConstants.icRightArrow),
-                            _hierarchyHeader(
-                              title: '#85913 - Hardik Kheruchiya',
-                              color: ColorConstant.whiteColor,
-                            ),
-                            const Spacer(),
-                            Text(
-                              'Refresh',
-                              style: FontConstant.interMedium(
-                                fontSize: DimensionConstant.d16,
+    return BlocProvider.value(
+      value: _inquiryManagementBloc,
+      child: BlocConsumer<InquiryManagementBloc, InquiryManagementState>(
+        listener: (context, state) {},
+        builder: (context, state) {
+          return Scaffold(
+            backgroundColor: ColorConstant.inquiryManagementBgColor,
+            body: Padding(
+              padding: const EdgeInsets.all(DimensionConstant.d25),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    /// Card Header 1
+                    Container(
+                      color: ColorConstant.cardBgColor,
+                      width: double.infinity,
+                      height: DimensionConstant.d133,
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              _hierarchyHeader(
+                                title: 'Inquiry Management',
+                                icon: AssetConstants.icRightArrow,
+                              ),
+                              _hierarchyHeader(title: 'Pending ', icon: AssetConstants.icRightArrow),
+                              _hierarchyHeader(
+                                title: '#85913 - Hardik Kheruchiya',
                                 color: ColorConstant.whiteColor,
                               ),
-                            ),
-                            const SizedBox(width: DimensionConstant.d15),
-                            InkWell(
-                              onTap: () {
-                                Navigator.push(context, MaterialPageRoute(builder: (context) => const VendorListView()));
-                              },
-                              child: Container(
-                                height: DimensionConstant.d30,
-                                width: DimensionConstant.d30,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: LinearGradient(
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                    colors: [ColorConstant.purple, ColorConstant.indigo],
-                                  ),
+                              const Spacer(),
+                              Text(
+                                'Refresh',
+                                style: FontConstant.interMedium(
+                                  fontSize: DimensionConstant.d16,
+                                  color: ColorConstant.whiteColor,
                                 ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(DimensionConstant.d7),
-                                  child: Center(
-                                    child: SvgPicture.asset(
-                                      AssetConstants.icRepeat,
-                                      height: DimensionConstant.d24,
-                                      width: DimensionConstant.d24,
+                              ),
+                              const SizedBox(width: DimensionConstant.d15),
+                              InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => BlocProvider.value(
+                                        value: _inquiryManagementBloc,
+                                        child: const VendorListView(),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  height: DimensionConstant.d30,
+                                  width: DimensionConstant.d30,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      begin: Alignment.centerLeft,
+                                      end: Alignment.centerRight,
+                                      colors: [ColorConstant.purple, ColorConstant.indigo],
+                                    ),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(DimensionConstant.d7),
+                                    child: Center(
+                                      child: SvgPicture.asset(
+                                        AssetConstants.icRepeat,
+                                        height: DimensionConstant.d24,
+                                        width: DimensionConstant.d24,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: DimensionConstant.d25),
-                        StatusBar(),
-                      ],
+                            ],
+                          ),
+                          const SizedBox(height: DimensionConstant.d25),
+                          StatusBar(),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: DimensionConstant.d25),
+                    const SizedBox(height: DimensionConstant.d25),
 
-                  /// Card Body 1
-                  InquiryInformation(),
-                  const SizedBox(height: DimensionConstant.d10),
-                  AmendmentInfoCard(),
-                  const SizedBox(height: DimensionConstant.d10),
-                  AmendmentInfoCard(),
-                  const SizedBox(height: DimensionConstant.d10),
-                  AmendmentInfoCard(),
-                  const SizedBox(height: DimensionConstant.d10),
-                  AmendmentInfoCard(),
-                  const SizedBox(height: DimensionConstant.d10),
-                  QnaNotes(),
-                ],
+                    /// Card Body 1
+                    InquiryInformation(),
+                    const SizedBox(height: DimensionConstant.d10),
+                    AmendmentInfoCard(),
+                    const SizedBox(height: DimensionConstant.d10),
+                    AmendmentInfoCard(),
+                    const SizedBox(height: DimensionConstant.d10),
+                    AmendmentInfoCard(),
+                    const SizedBox(height: DimensionConstant.d10),
+                    AmendmentInfoCard(),
+                    const SizedBox(height: DimensionConstant.d10),
+                    QnaNotes(),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

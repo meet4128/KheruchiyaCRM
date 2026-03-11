@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:travel_crm/core/constants/font_constant.dart';
+import 'package:travel_crm/data/models/inquiry/list_inquiry_item.dart';
+import 'package:travel_crm/di/injector.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_management_bloc.dart';
 
 class VendorListView extends StatefulWidget {
   const VendorListView({super.key});
@@ -13,7 +18,7 @@ class _VendorListViewState extends State<VendorListView> {
   static const double _kGap = 25;
 
   final TextEditingController _searchController = TextEditingController();
-  int _activeSummaryIndex = 1;
+  final InquiryManagementBloc _bloc = sl<InquiryManagementBloc>();
 
   final List<_LeadCardData> _leadCards = const [
     _LeadCardData(
@@ -73,53 +78,6 @@ class _VendorListViewState extends State<VendorListView> {
     _SummaryChipData(label: 'Won', value: '2', valueBg: Color(0xFF34C759)),
   ];
 
-  final List<_VendorRowData> _rows = const [
-    _VendorRowData(
-      inquiryNo: '#85913',
-      generatedAt: '17/12/2025 @ 8:50PM',
-      name: 'Hardik Kheruchiya',
-      bookingType: 'Air Ticket',
-      priorityType: _Trend.up,
-      priorityText: '00:15 min Left',
-      assignedToNames: ['Amit', 'Jenny', 'Helly'],
-      assignedToText: 'Amit, Jenny & Helly',
-      status: 'In Progress',
-    ),
-    _VendorRowData(
-      inquiryNo: '#85914',
-      generatedAt: '17/12/2025 @ 10:50AM',
-      name: 'Meet Raval',
-      bookingType: 'Air Ticket',
-      priorityType: _Trend.up,
-      priorityText: '00:59 min Left',
-      assignedToNames: [],
-      assignedToText: 'Yet to assign',
-      status: 'In Progress',
-    ),
-    _VendorRowData(
-      inquiryNo: '#85915',
-      generatedAt: '17/12/2025 @ 8:52PM',
-      name: 'Rahul Mourya',
-      bookingType: 'Air Ticket',
-      priorityType: _Trend.down,
-      priorityText: '1 Week Left',
-      assignedToNames: ['Jenny', 'Helly'],
-      assignedToText: 'Jenny & Helly',
-      status: 'In Progress',
-    ),
-    _VendorRowData(
-      inquiryNo: '#85916',
-      generatedAt: '17/12/2025 @ 11:52AM',
-      name: 'Katha Raval',
-      bookingType: 'Air Ticket',
-      priorityType: _Trend.swap,
-      priorityText: '1 day Left',
-      assignedToNames: [],
-      assignedToText: 'Yet to assign',
-      status: 'In Progress',
-    ),
-  ];
-
   final List<_TableColumnData> _columns = const [
     _TableColumnData(key: 'expand', title: 'Expand', width: 100),
     _TableColumnData(key: 'inquiry', title: 'Inquiry Number', width: 152.5),
@@ -140,54 +98,89 @@ class _VendorListViewState extends State<VendorListView> {
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          const ColoredBox(color: Color(0xFF210D20)),
-          ColoredBox(color: Colors.black.withValues(alpha: 0.5)),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 25),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final double contentWidth =
-                      constraints.maxWidth < _kDesktopMinWidth
-                      ? _kDesktopMinWidth
-                      : constraints.maxWidth;
+  void initState() {
+    super.initState();
+    final current = _bloc.state;
+    if (current is InquiryManagementLoaded &&
+        current.items.isEmpty &&
+        current.requestStatus == InquiryManagementStatus.idle) {
+      _bloc.add(InquiryManagementInitialized(page: 1, limit: 20));
+    }
+    _searchController.addListener(_onSearchChanged);
+  }
 
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: SizedBox(
-                      width: contentWidth,
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildMainBoard(),
-                            const SizedBox(height: _kGap),
-                            _buildCollapsedSection(),
-                          ],
-                        ),
-                      ),
+  void _onSearchChanged() {
+    _bloc.add(InquiryManagementSearchChanged(search: _searchController.text));
+  }
+
+  /// Formats API createdAt (ISO 8601) to "17/12/2025 @ 8:50PM".
+  static String _formatInquiryGenerated(String? createdAt) {
+    if (createdAt == null || createdAt.trim().isEmpty) return '-';
+    try {
+      final dt = DateTime.parse(createdAt);
+      return DateFormat('dd/MM/yyyy @ h:mma').format(dt.toLocal());
+    } catch (_) {
+      return '-';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider.value(
+      value: _bloc,
+      child: BlocBuilder<InquiryManagementBloc, InquiryManagementState>(
+        builder: (context, state) {
+          final s = state as InquiryManagementLoaded;
+          return Scaffold(
+            body: Stack(
+              fit: StackFit.expand,
+              children: [
+                const ColoredBox(color: Color(0xFF210D20)),
+                ColoredBox(color: Colors.black.withValues(alpha: 0.5)),
+                SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 25),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final double contentWidth = constraints.maxWidth < _kDesktopMinWidth
+                            ? _kDesktopMinWidth
+                            : constraints.maxWidth;
+
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SizedBox(
+                            width: contentWidth,
+                            child: SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildMainBoard(s),
+                                  const SizedBox(height: _kGap),
+                                  _buildCollapsedSection(),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildMainBoard() {
+  Widget _buildMainBoard(InquiryManagementLoaded state) {
     return Container(
       color: const Color(0xFF121212),
       padding: const EdgeInsets.all(25),
@@ -198,11 +191,13 @@ class _VendorListViewState extends State<VendorListView> {
           const SizedBox(height: _kGap),
           _buildLeadCards(),
           const SizedBox(height: _kGap),
-          _buildSummaryStatusRow(),
+          _buildSummaryStatusRow(state),
           const SizedBox(height: _kGap),
           _buildToolbar(),
           const SizedBox(height: _kGap),
-          _buildTable(),
+          _buildTable(state),
+          const SizedBox(height: 14),
+          _buildPaginationBar(state),
         ],
       ),
     );
@@ -223,7 +218,7 @@ class _VendorListViewState extends State<VendorListView> {
         ),
         const SizedBox(width: 15),
         InkWell(
-          onTap: () {},
+          onTap: () => _bloc.add(InquiryManagementRefreshed()),
           borderRadius: BorderRadius.circular(30),
           child: Container(
             width: 30,
@@ -259,19 +254,28 @@ class _VendorListViewState extends State<VendorListView> {
     );
   }
 
-  Widget _buildSummaryStatusRow() {
+  Widget _buildSummaryStatusRow(InquiryManagementLoaded state) {
+    String? statusFromChip(String label) {
+      if (label.toLowerCase() == 'all') return null;
+      // Backend status values are backend-defined; for now we pass the label.
+      return label;
+    }
+
     return Row(
       children: List.generate(_summaryItems.length, (index) {
         final _SummaryChipData item = _summaryItems[index];
+        final chipStatus = statusFromChip(item.label);
+        final isActive = chipStatus == state.status;
+        final isAll = chipStatus == null && state.status == null;
         return Expanded(
           child: Padding(
             padding: EdgeInsets.only(
               right: index == _summaryItems.length - 1 ? 0 : 0.5,
             ),
             child: InkWell(
-              onTap: () => setState(() => _activeSummaryIndex = index),
+              onTap: () => _bloc.add(InquiryManagementFiltersChanged(status: chipStatus)),
               child: _SummaryChip(
-                item: item.copyWith(isActive: _activeSummaryIndex == index),
+                item: item.copyWith(isActive: isAll ? true : isActive),
                 isFirst: index == 0,
                 isLast: index == _summaryItems.length - 1,
               ),
@@ -371,35 +375,188 @@ class _VendorListViewState extends State<VendorListView> {
           style: FontConstant.interMedium(color: Colors.white, fontSize: 14),
         ),
         const SizedBox(width: 15),
-        Container(
-          width: 30,
-          height: 30,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [Color(0xFF903A8C), Color(0xFF393285)],
+        InkWell(
+          onTap: () => _bloc.add(InquiryManagementRefreshed()),
+          borderRadius: BorderRadius.circular(30),
+          child: Container(
+            width: 30,
+            height: 30,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [Color(0xFF903A8C), Color(0xFF393285)],
+              ),
             ),
+            child: const Icon(Icons.refresh, color: Colors.white, size: 16),
           ),
-          child: const Icon(Icons.refresh, color: Colors.white, size: 16),
         ),
       ],
     );
   }
 
-  Widget _buildTable() {
+  Widget _buildTable(InquiryManagementLoaded state) {
+    if (state.requestStatus == InquiryManagementStatus.loading &&
+        state.items.isEmpty) {
+      return SizedBox(
+        height: 220,
+        child: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (state.requestStatus == InquiryManagementStatus.failure &&
+        state.items.isEmpty) {
+      return SizedBox(
+        height: 220,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                state.errorMessage ?? 'Something went wrong',
+                style: FontConstant.interNormal(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              InkWell(
+                onTap: () => _bloc.add(InquiryManagementRefreshed()),
+                child: Text(
+                  'Retry',
+                  style: FontConstant.interMedium(
+                    color: Colors.white,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final rawItems = state.items;
+    final items = (rawItems ?? <dynamic>[]).whereType<ListInquiryItem>().toList();
+    if (state.requestStatus == InquiryManagementStatus.success &&
+        items.isEmpty) {
+      return SizedBox(
+        height: 220,
+        child: Center(
+          child: Text(
+            'No inquiries found',
+            style: FontConstant.interNormal(
+              color: Colors.white.withValues(alpha: 0.85),
+              fontSize: 12,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final rows = items
+        .map(
+          (e) {
+            final id = e.id ?? '';
+            final inquiryNo = id.length > 8 ? '#${id.substring(id.length - 8)}' : (id.isEmpty ? '-' : '#$id');
+            final generatedAt = _formatInquiryGenerated(e.createdAt);
+            return _VendorRowData(
+              inquiryNo: inquiryNo,
+              generatedAt: generatedAt,
+              name: e.fullName ?? '-',
+              bookingType: e.typeOfBooking ?? '-',
+              priorityType: _Trend.swap,
+              priorityText: '-',
+              assignedToNames: const [],
+              assignedToText: '-',
+              status: e.status ?? '-',
+            );
+          },
+        )
+        .toList();
+
     return Column(
       children: [
         _buildTableHeader(),
         const SizedBox(height: 7),
-        ...List.generate(_rows.length, (index) {
+        ...List.generate(rows.length, (index) {
           return Padding(
-            padding: EdgeInsets.only(bottom: index == _rows.length - 1 ? 0 : 7),
-            child: _buildTableRow(_rows[index], index),
+            padding: EdgeInsets.only(bottom: index == rows.length - 1 ? 0 : 7),
+            child: _buildTableRow(rows[index], index),
           );
         }),
+        if (state.isLoadingMore) ...[
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 24,
+            child: Center(
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Colors.white.withValues(alpha: 0.85),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
+    );
+  }
+
+  Widget _buildPaginationBar(InquiryManagementLoaded state) {
+    if (state.total <= 0) return const SizedBox.shrink();
+    final totalPages = (state.total / state.limit).ceil();
+    if (totalPages <= 1) return const SizedBox.shrink();
+
+    final currentPage = state.page;
+    final start = (currentPage - 3).clamp(1, totalPages);
+    final end = (currentPage + 3).clamp(1, totalPages);
+
+    final pages = <int>[
+      for (int p = start; p <= end; p++) p,
+    ];
+
+    return Center(
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: pages.map((p) {
+          final isActive = p == currentPage;
+          return InkWell(
+            onTap: () => _bloc.add(InquiryManagementPageChanged(page: p)),
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              width: 32,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+              ),
+              child: Text(
+                '$p',
+                style: FontConstant.interMedium(
+                  color: isActive ? const Color(0xFF1B1535) : Colors.white,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 
