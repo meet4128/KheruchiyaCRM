@@ -327,6 +327,7 @@ In addition to `page` and `limit`, `InquiryManagementState` should include enoug
 - `totalPages` **or**
 - `hasMore` + a backend-provided page list
 
+
 Recommended (if backend provides totals):
 
 - `total` (int)
