@@ -10,6 +10,9 @@ class Apis {
   /// - Physical device: use your Mac's LAN IP, e.g. 'http://192.168.1.x:5001'.
   static const String inquiryBaseUrl = 'http://localhost:5001';
 
+  /// Inquiry server auth (no Authorization header)
+  static const String inquiryAuthLoginPath = '/api/v1/auth/login';
+
   // static const baseUrl = 'https://bacancy-dev.mixsrvr.co.uk/api/v2';
 
   /// list of all other apis
