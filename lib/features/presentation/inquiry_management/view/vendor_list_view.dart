@@ -130,11 +130,32 @@ class _VendorListViewState extends State<VendorListView> {
     }
   }
 
+  static const String _sessionExpiredMessage =
+      'Session expired or invalid. Please log in again.';
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _bloc,
-      child: BlocBuilder<InquiryManagementBloc, InquiryManagementState>(
+      child: BlocConsumer<InquiryManagementBloc, InquiryManagementState>(
+        listener: (context, state) {
+          if (state is! InquiryManagementLoaded) return;
+          final s = state as InquiryManagementLoaded;
+          if (s.requestStatus != InquiryManagementStatus.failure) return;
+          final msg = s.errorMessage ?? '';
+          final isAuthError = msg.contains('401') ||
+              msg.toLowerCase().contains('session expired') ||
+              msg.toLowerCase().contains('invalid');
+          if (isAuthError && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(_sessionExpiredMessage),
+                backgroundColor: Colors.red.shade700,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        },
         builder: (context, state) {
           final s = state as InquiryManagementLoaded;
           return Scaffold(

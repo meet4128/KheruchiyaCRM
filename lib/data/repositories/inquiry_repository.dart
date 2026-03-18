@@ -15,7 +15,10 @@ class InquiryRepository {
     try {
       await apiClient.createInquiry(request);
     } on DioException catch (e) {
-      // Surface server validation message from 422 response body
+      if (e.response?.statusCode == 401) {
+        developer.log('CreateInquiry 401 Unauthorized', name: 'InquiryRepository');
+        throw _UnauthorizedException();
+      }
       if (e.response?.statusCode == 422 && e.response?.data != null) {
         final data = e.response!.data;
         developer.log('CreateInquiry 422 response: $data', name: 'InquiryRepository');
@@ -31,7 +34,10 @@ class InquiryRepository {
       final queryMap = query.toQuery();
       return await apiClient.listInquiries(queryMap);
     } on DioException catch (e) {
-      // Surface server validation message from 422 response body
+      if (e.response?.statusCode == 401) {
+        developer.log('ListInquiries 401 Unauthorized', name: 'InquiryRepository');
+        throw _UnauthorizedException();
+      }
       if (e.response?.statusCode == 422 && e.response?.data != null) {
         final data = e.response!.data;
         developer.log('ListInquiries 422 response: $data',
@@ -74,6 +80,12 @@ class InquiryRepository {
 
     return 'Validation failed. Check the form and try again.';
   }
+}
+
+/// Thrown when the server returns 401; token expired or invalid.
+class _UnauthorizedException implements Exception {
+  @override
+  String toString() => 'Session expired or invalid. Please log in again.';
 }
 
 /// Thrown when the server returns 422; message is shown to the user (no "Exception:" prefix).
