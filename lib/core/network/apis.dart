@@ -12,6 +12,7 @@ class Apis {
 
   /// Inquiry server auth (no Authorization header)
   static const String inquiryAuthLoginPath = '/api/v1/auth/login';
+  static const String inquiryAuthRefreshTokenPath = '/api/v1/auth/refresh-token';
 
   // static const baseUrl = 'https://bacancy-dev.mixsrvr.co.uk/api/v2';
 

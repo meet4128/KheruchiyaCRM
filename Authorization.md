@@ -20,10 +20,11 @@ Goal: **make token fully dynamic** by integrating the backend login endpoint:
 
 When the API returns **401 (token expired/invalid)**, the app should:
 
-1. Call `POST /api/v1/auth/login`
-2. Store the returned access token in shared prefs (`SharedPrefUtilsKeys.userToken`)
+1. Call `POST /api/v1/auth/refresh-token` using stored `refreshToken`
+2. If refresh succeeds, store the new access token (and refresh token if returned)
 3. Retry the original request once with the new token
-4. If login fails, show a clear message (snackbar) and/or navigate to login (future)
+4. If refresh fails (or refresh token is missing), fallback to `POST /api/v1/auth/login`
+5. If login fails, show a clear message (snackbar) and/or navigate to login (future)
 
 All logic must follow the existing **BLoC + repository** architecture.
 
@@ -81,17 +82,72 @@ To fully switch to dynamic auth for inquiry APIs:
 
 ### Response (expected)
 
-Backend should return an access token (field name depends on backend). Common patterns:
+Backend returns a wrapped response:
 
-- `{ "accessToken": "<jwt>" }`
-- `{ "token": "<jwt>" }`
-- `{ "data": { "accessToken": "<jwt>" } }`
+```json
+{
+  "status": "success",
+  "data": {
+    "accessToken": "<jwt>",
+    "refreshToken": "<jwt>",
+    "expiresIn": 86400,
+    "user": {
+      "id": "dev-user",
+      "email": "meet@example.com",
+      "role": "user"
+    }
+  }
+}
+```
 
-Store the token to:
+Store tokens to:
 
-- `SharedPrefUtils.setValue(SharedPrefUtilsKeys.userToken, accessToken)`
+- `SharedPrefUtils.setValue(SharedPrefUtilsKeys.userToken, data.accessToken)`
+- `SharedPrefUtils.setValue(SharedPrefUtilsKeys.refreshToken, data.refreshToken)` (if present)
 
 ---
+
+## 3.1 API: Refresh Token (POST `/api/v1/auth/refresh-token`)
+
+### Endpoint
+
+| Item | Value |
+|------|------|
+| Method | `POST` |
+| Path | `/api/v1/auth/refresh-token` |
+| Base URL | `Apis.inquiryBaseUrl` |
+
+### Request headers
+
+- `Content-Type: application/json`
+- No `Authorization` header required for this endpoint
+
+### Request body
+
+```json
+{
+  "refreshToken": "<jwt>"
+}
+```
+
+### Response (expected)
+
+Backend typically returns the same wrapper shape:
+
+```json
+{
+  "status": "success",
+  "data": {
+    "accessToken": "<jwt>",
+    "refreshToken": "<jwt>"
+  }
+}
+```
+
+Store tokens to:
+
+- `SharedPrefUtils.setValue(SharedPrefUtilsKeys.userToken, data.accessToken)`
+- `SharedPrefUtils.setValue(SharedPrefUtilsKeys.refreshToken, data.refreshToken)` (if present)
 
 ## 4. Architecture (BLoC-friendly)
 
@@ -131,11 +187,12 @@ Flow:
 
 1. Any inquiry request returns **401**
 2. `DioClient.onError` detects 401 and `_needsAuth(...) == true`
-3. Call `_loginAndStoreAccessToken()` (uses `POST /api/v1/auth/login`)
-4. If login succeeds:
+3. Call `_refreshTokenAndStoreAccessToken()` (uses `POST /api/v1/auth/refresh-token`)
+4. If refresh succeeds:
    - load `SharedPrefUtilsKeys.userToken`
    - retry original request once with new header
-5. If login fails:
+5. If refresh fails (or refresh token missing), call `_loginAndStoreAccessToken()` (uses `POST /api/v1/auth/login`)
+6. If login fails:
    - clear stored token
    - allow error to bubble up (BLoC sets failure state)
    - UI shows snackbar “Session expired, please log in again”
@@ -160,20 +217,25 @@ File: `lib/core/network/dio_client.dart`
 
 - Add inquiry-auth login path constant in `Apis`:
   - `static const String inquiryAuthLogin = '/api/v1/auth/login';` (or full URL)
+- Add inquiry refresh-token path constant in `Apis`:
+  - `static const String inquiryAuthRefreshToken = '/api/v1/auth/refresh-token';`
 - Update `_needsAuth` so it **excludes** inquiry login endpoint too.
-- Add a new helper similar to `_refreshAccessToken()`:
-  - `_loginAndStoreAccessToken()`
-  - Use a lock (`Completer`) like `_refreshLock` to avoid multiple parallel logins.
+- Update `_needsAuth` so it **excludes** inquiry refresh-token endpoint too.
+- Add helpers:
+  - `_refreshTokenAndStoreAccessToken()` (preferred on 401)
+  - `_loginAndStoreAccessToken()` (fallback when refresh fails)
+  - Use locks (`Completer`) to avoid multiple parallel refresh/login calls.
 - Remove the static dev token fallback:
   - Remove `static const String _devAccessToken = ...`
   - Remove `if (token.isEmpty) token = _devAccessToken;`
   - Ensure `Authorization` is attached **only** when `SharedPrefUtilsKeys.userToken` exists (non-empty).
-- Update refresh/login logic so a real token is obtained via `POST /api/v1/auth/login` and stored in `SharedPrefUtilsKeys.userToken`.
+- Update refresh/login logic so a real token is obtained via `POST /api/v1/auth/refresh-token` (preferred) or `POST /api/v1/auth/login` (fallback) and stored in shared prefs.
 
 ### 5.2 Auth models (minimal)
 
 - `LoginRequest` with `userId`, `email`, `role`
 - `LoginResponse` (shape based on backend; extract `accessToken`)
+- Store `refreshToken` too (if backend returns it) so future refresh-token flow can be added without rework.
 
 ### 5.3 Repositories
 
@@ -204,6 +266,16 @@ curl -X 'POST' \
   "userId": "dev-user",
   "email": "meet@example.com",
   "role": "user"
+}'
+```
+
+```bash
+curl -X 'POST' \
+  'http://192.168.1.7:5001/api/v1/auth/refresh-token' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "refreshToken": "string"
 }'
 ```
 

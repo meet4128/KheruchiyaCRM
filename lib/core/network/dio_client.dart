@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:travel_crm/data/models/auth/auth_tokens_response.dart';
 import '../utils/shared_pref_utils.dart';
 import 'apis.dart';
 
@@ -11,6 +12,7 @@ class DioClient {
   static const String contentType = 'application/json';
 
   static Completer<void>? _loginLock;
+  static Completer<void>? _refreshTokenLock;
 
   static Dio getInstance() {
     _initializeInterceptors();
@@ -21,6 +23,7 @@ class DioClient {
   static bool _needsAuth(String uri) {
     // Exclude inquiry-auth login too (no Bearer for this call).
     if (uri.contains(Apis.inquiryAuthLoginPath)) return false;
+    if (uri.contains(Apis.inquiryAuthRefreshTokenPath)) return false;
     return uri != Apis.login &&
         uri != Apis.forgotPassword &&
         uri != Apis.refreshTokenUrl;
@@ -52,7 +55,8 @@ class DioClient {
         onError: (DioException e, handler) async {
           final requestUri = e.requestOptions.uri.toString();
           if (e.response?.statusCode == 401 && _needsAuth(requestUri)) {
-            final relogged = await _loginAndStoreAccessToken();
+            final refreshed = await _refreshTokenAndStoreAccessToken();
+            final relogged = refreshed ? true : await _loginAndStoreAccessToken();
             if (relogged) {
               final token =
                   SharedPrefUtils.getValue(SharedPrefUtilsKeys.userToken, '');
@@ -114,29 +118,66 @@ class DioClient {
 
       final body = response.data;
       if (body == null) return false;
-
-      String? token;
-      // Common response shapes
-      token = body['accessToken'] as String? ??
-          body['token'] as String? ??
-          body['access_token'] as String?;
-      if (token == null && body['data'] is Map) {
-        final data = body['data'] as Map;
-        token = data['accessToken'] as String? ??
-            data['token'] as String? ??
-            data['access_token'] as String?;
+      final parsed = AuthTokensResponse.fromJson(body);
+      final accessToken = parsed.data.accessToken.trim();
+      final refreshToken = parsed.data.refreshToken.trim();
+      if (accessToken.isEmpty) return false;
+      SharedPrefUtils.setValue(SharedPrefUtilsKeys.userToken, accessToken);
+      if (refreshToken.isNotEmpty) {
+        SharedPrefUtils.setValue(SharedPrefUtilsKeys.refreshToken, refreshToken);
       }
-      if (token != null && token.trim().isNotEmpty) {
-        SharedPrefUtils.setValue(SharedPrefUtilsKeys.userToken, token.trim());
-        return true;
-      }
-      return false;
+      return true;
     } catch (e) {
       log('Login failed: $e');
       return false;
     } finally {
       _loginLock?.complete();
       _loginLock = null;
+    }
+  }
+
+  /// Calls inquiry refresh-token API using stored refreshToken, saves new access token.
+  /// Returns true if successful; false if refresh token is missing/invalid.
+  static Future<bool> _refreshTokenAndStoreAccessToken() async {
+    if (_refreshTokenLock != null && !_refreshTokenLock!.isCompleted) {
+      await _refreshTokenLock!.future;
+      final token =
+          SharedPrefUtils.getValue(SharedPrefUtilsKeys.userToken, '');
+      return token.toString().trim().isNotEmpty;
+    }
+    _refreshTokenLock = Completer<void>();
+    try {
+      final refreshToken = SharedPrefUtils.getValue(
+          SharedPrefUtilsKeys.refreshToken, '');
+      if (refreshToken.toString().trim().isEmpty) return false;
+
+      final dio = Dio(BaseOptions(baseUrl: Apis.inquiryBaseUrl));
+      dio.options.headers['Content-Type'] = contentType;
+
+      final response = await dio.post<Map<String, dynamic>>(
+        Apis.inquiryAuthRefreshTokenPath,
+        data: {
+          'refreshToken': refreshToken,
+        },
+      );
+
+      final body = response.data;
+      if (body == null) return false;
+      final parsed = AuthTokensResponse.fromJson(body);
+      final accessToken = parsed.data.accessToken.trim();
+      final newRefreshToken = parsed.data.refreshToken.trim();
+      if (accessToken.isEmpty) return false;
+      SharedPrefUtils.setValue(SharedPrefUtilsKeys.userToken, accessToken);
+      if (newRefreshToken.isNotEmpty) {
+        SharedPrefUtils.setValue(SharedPrefUtilsKeys.refreshToken, newRefreshToken);
+      }
+      return true;
+    } catch (e) {
+      log('Refresh-token failed: $e');
+      return false;
+    } finally {
+      _refreshTokenLock?.complete();
+      _refreshTokenLock = null;
     }
   }
 }
