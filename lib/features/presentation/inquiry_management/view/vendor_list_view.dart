@@ -65,20 +65,6 @@ class _VendorListViewState extends State<VendorListView> {
     ),
   ];
 
-  final List<_SummaryChipData> _summaryItems = const [
-    _SummaryChipData(label: 'All', value: '68', valueBg: Colors.white),
-    _SummaryChipData(
-      label: 'New In',
-      value: '18',
-      valueBg: Color(0xFF0088FF),
-      isActive: true,
-    ),
-    _SummaryChipData(label: 'Pending', value: '13', valueBg: Color(0xFFFF8D28)),
-    _SummaryChipData(label: 'New Follow Up', icon: Icons.send_rounded),
-    _SummaryChipData(label: 'Set Follow Up', icon: Icons.send_rounded),
-    _SummaryChipData(label: 'Loss', value: '35', valueBg: Color(0xFFFF383C)),
-    _SummaryChipData(label: 'Won', value: '2', valueBg: Color(0xFF34C759)),
-  ];
 
   final List<_TableColumnData> _columns = const [
     _TableColumnData(key: 'expand', title: 'Expand', width: 100),
@@ -283,23 +269,75 @@ class _VendorListViewState extends State<VendorListView> {
     );
   }
 
-  Widget _buildSummaryStatusRow(InquiryManagementLoaded state) {
-    String? statusFromChip(String label) {
-      if (label.toLowerCase() == 'all') return null;
-      // Backend status values are backend-defined; for now we pass the label.
-      return label;
+  List<_SummaryChipData> _buildSummaryItems(InquiryManagementLoaded state) {
+    final allItems = state.allItems.whereType<ListInquiryItem>().toList();
+
+    int countByStatus(String status) =>
+        allItems.where((e) => (e.status ?? '').toLowerCase() == status.toLowerCase()).length;
+
+    return [
+      _SummaryChipData(
+        label: 'All',
+        value: '${allItems.length}',
+        valueBg: Colors.white,
+      ),
+      _SummaryChipData(
+        label: 'New In',
+        value: '${countByStatus('IN_PROGRESS')}',
+        valueBg: const Color(0xFF0088FF),
+      ),
+      _SummaryChipData(
+        label: 'Pending',
+        value: '${countByStatus('PENDING')}',
+        valueBg: const Color(0xFFFF8D28),
+      ),
+      const _SummaryChipData(label: 'New Follow Up', icon: Icons.send_rounded),
+      const _SummaryChipData(label: 'Set Follow Up', icon: Icons.send_rounded),
+      _SummaryChipData(
+        label: 'Loss',
+        value: '${countByStatus('CANCELLED')}',
+        valueBg: const Color(0xFFFF383C),
+      ),
+      _SummaryChipData(
+        label: 'Won',
+        value: '${countByStatus('COMPLETED')}',
+        valueBg: const Color(0xFF34C759),
+      ),
+    ];
+  }
+
+  String? _statusFromChip(String label) {
+    switch (label.toLowerCase()) {
+      case 'all':
+        return null;
+      case 'new in':
+        return 'IN_PROGRESS';
+      case 'pending':
+        return 'PENDING';
+      case 'loss':
+        return 'CANCELLED';
+      case 'won':
+        return 'COMPLETED';
+      default:
+        return null;
     }
+  }
+
+  Widget _buildSummaryStatusRow(InquiryManagementLoaded state) {
+    final summaryItems = _buildSummaryItems(state);
 
     return Row(
-      children: List.generate(_summaryItems.length, (index) {
-        final _SummaryChipData item = _summaryItems[index];
-        final chipStatus = statusFromChip(item.label);
-        final isActive = chipStatus == state.status;
+      children: List.generate(summaryItems.length, (index) {
+        final _SummaryChipData item = summaryItems[index];
+        final chipStatus = _statusFromChip(item.label);
         final isAll = chipStatus == null && state.status == null;
+        final isActive = item.icon != null
+            ? false
+            : (isAll ? true : chipStatus == state.status);
         return Expanded(
           child: Padding(
             padding: EdgeInsets.only(
-              right: index == _summaryItems.length - 1 ? 0 : 0.5,
+              right: index == summaryItems.length - 1 ? 0 : 0.5,
             ),
             child: InkWell(
               onTap: () => _bloc.add(
@@ -308,7 +346,7 @@ class _VendorListViewState extends State<VendorListView> {
               child: _SummaryChip(
                 item: item.copyWith(isActive: isAll ? true : isActive),
                 isFirst: index == 0,
-                isLast: index == _summaryItems.length - 1,
+                isLast: index == summaryItems.length - 1,
               ),
             ),
           ),
