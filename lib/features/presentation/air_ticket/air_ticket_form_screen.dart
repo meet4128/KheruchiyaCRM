@@ -14,6 +14,7 @@ import 'package:travel_crm/features/presentation/air_ticket/bloc/air_ticket_stat
 import 'package:travel_crm/features/presentation/inquiry_form/bloc/inquiry_state.dart';
 import 'package:travel_crm/features/presentation/air_ticket/models/flight_segment.dart';
 import 'package:travel_crm/features/presentation/air_ticket/models/booking_type.dart';
+import 'package:travel_crm/features/presentation/air_ticket/models/checklist_priority.dart';
 import 'package:travel_crm/features/presentation/air_ticket/models/priority.dart';
 import 'package:travel_crm/features/presentation/air_ticket/models/visa_type.dart';
 import 'package:travel_crm/features/presentation/air_ticket/widgets/booking_type_selector.dart';
@@ -483,7 +484,7 @@ class _ChecklistSectionWidget extends StatelessWidget {
               context.read<AirTicketBloc>().add(ChecklistUserChanged(value)),
           onDueDateChanged: (date) =>
               context.read<AirTicketBloc>().add(ChecklistDueDateChanged(date)),
-          onPriorityChanged: (Priority priority) => context
+          onPriorityChanged: (ChecklistPriority priority) => context
               .read<AirTicketBloc>()
               .add(ChecklistPriorityChanged(priority)),
           onCategoryChanged: (category) => context.read<AirTicketBloc>().add(

@@ -117,6 +117,8 @@ class StringConstant {
   static const String typeOfVisa = 'Type of visa:';
   static const String remark = 'Remark';
   static const String setPriority = 'Set Priority:';
+  /// Hint when no checklist priority is selected (no trailing colon).
+  static const String setPriorityHint = 'Set Priority';
   static const String typeOfFollowUps = 'Type of follow ups';
 
   // ========== Air Ticket Form Hints ==========

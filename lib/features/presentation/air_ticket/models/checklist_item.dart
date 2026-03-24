@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'priority.dart';
+import 'checklist_priority.dart';
 
 /// Checklist item data model
 class ChecklistItem extends Equatable {
@@ -14,15 +14,18 @@ class ChecklistItem extends Equatable {
 
   final String user;
   final DateTime? dueDate;
-  final Priority? priority;
+  final ChecklistPriority? priority;
   final String category;
   final bool inLoop;
   final bool repeat;
 
+  /// Backend value for [priority] (e.g. `IN_PROGRESS`), not the UI label.
+  String? get priorityApiValue => priority?.apiValue;
+
   ChecklistItem copyWith({
     String? user,
     DateTime? dueDate,
-    Priority? priority,
+    ChecklistPriority? priority,
     String? category,
     bool? inLoop,
     bool? repeat,

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../models/booking_type.dart';
+import '../models/checklist_priority.dart';
 import '../models/priority.dart';
 import '../models/visa_type.dart';
 import '../models/checklist_item.dart';
@@ -68,7 +69,7 @@ class AirTicketState extends Equatable {
   // Checklist current values (for adding new items)
   final String checklistUser;
   final DateTime? checklistDueDate;
-  final Priority? checklistPriority;
+  final ChecklistPriority? checklistPriority;
   final String checklistCategory;
   final bool checklistInLoop;
   final bool checklistRepeat;
@@ -151,7 +152,7 @@ class AirTicketState extends Equatable {
     String? followUpType,
     String? checklistUser,
     DateTime? checklistDueDate,
-    Priority? checklistPriority,
+    ChecklistPriority? checklistPriority,
     String? checklistCategory,
     bool? checklistInLoop,
     bool? checklistRepeat,

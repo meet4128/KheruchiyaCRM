@@ -8,7 +8,7 @@ import 'package:travel_crm/core/widgets/app_date_picker.dart';
 import 'package:travel_crm/core/widgets/app_dropdown.dart';
 import 'package:travel_crm/core/widgets/app_text_field.dart';
 import '../models/checklist_item.dart';
-import '../models/priority.dart';
+import '../models/checklist_priority.dart';
 
 /// Checklist section widget
 /// Displays checklist input fields and action buttons
@@ -42,13 +42,13 @@ class ChecklistSection extends StatelessWidget {
   final List<ChecklistItem> items;
   final String user;
   final DateTime? dueDate;
-  final Priority? priority;
+  final ChecklistPriority? priority;
   final String category;
   final bool inLoop;
   final bool repeat;
   final ValueChanged<String> onUserChanged;
   final ValueChanged<DateTime?> onDueDateChanged;
-  final ValueChanged<Priority> onPriorityChanged;
+  final ValueChanged<ChecklistPriority> onPriorityChanged;
   final ValueChanged<String> onCategoryChanged;
   final ValueChanged<bool> onInLoopChanged;
   final ValueChanged<bool> onRepeatChanged;
@@ -58,7 +58,8 @@ class ChecklistSection extends StatelessWidget {
   final bool isSubmitting;
   final bool isValid;
 
-  static const List<Priority> priorities = Priority.values;
+  static const List<ChecklistPriority> checklistPriorities =
+      ChecklistPriority.values;
   static const List<String> categories = [
     StringConstant.documentation,
     StringConstant.payment,
@@ -134,10 +135,10 @@ class ChecklistSection extends StatelessWidget {
                 child: _ChecklistFieldWrap(
                   decoration: fieldDecoration,
                   icon: Icons.bar_chart,
-                  child: AppDropdown<Priority>(
-                    hintText: StringConstant.setPriority,
-                    items: priorities,
-                    itemLabel: (p) => p.label,
+                  child: AppDropdown<ChecklistPriority>(
+                    hintText: StringConstant.setPriorityHint,
+                    items: checklistPriorities,
+                    itemLabel: (p) => p.displayLabel,
                     value: priority,
                     onChanged: (value) {
                       if (value != null) onPriorityChanged(value);

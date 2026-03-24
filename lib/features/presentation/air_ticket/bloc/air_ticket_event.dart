@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../../inquiry_form/bloc/inquiry_state.dart';
 import '../models/booking_type.dart';
+import '../models/checklist_priority.dart';
 import '../models/priority.dart';
 import '../models/visa_type.dart';
 
@@ -158,7 +159,7 @@ class ChecklistDueDateChanged extends AirTicketEvent {
 class ChecklistPriorityChanged extends AirTicketEvent {
   const ChecklistPriorityChanged(this.priority);
 
-  final Priority priority;
+  final ChecklistPriority priority;
 
   @override
   List<Object> get props => [priority];

@@ -80,6 +80,13 @@ class AppDropdown<T> extends StatelessWidget {
         // Dropdown
         DropdownButtonFormField<T>(
           value: value,
+          hint: value == null
+              ? Text(
+                  hintText,
+                  style: textStyles.formHint,
+                  overflow: TextOverflow.ellipsis,
+                )
+              : null,
           decoration: InputDecoration(
             hintText: hintText,
             errorText: errorText,
