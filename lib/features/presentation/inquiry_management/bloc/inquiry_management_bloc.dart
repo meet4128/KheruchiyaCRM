@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:travel_crm/core/network/inquiry_api_client.dart';
+import 'package:travel_crm/data/models/inquiry/list_inquiry_item.dart';
 import 'package:travel_crm/data/repositories/inquiry_repository.dart';
 
 part 'inquiry_management_event.dart';
@@ -116,28 +117,35 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
     );
   }
 
-  Future<void> _onSearchChanged(
+  void _onSearchChanged(
     InquiryManagementSearchChanged event,
     Emitter<InquiryManagementState> emit,
-  ) async {
+  ) {
     final current = _s;
-    if (current.requestStatus == InquiryManagementStatus.loading ||
-        current.isLoadingMore) {
-      return;
-    }
+    final search = event.search.trim().isEmpty ? null : event.search.trim();
+    final filtered = _filterItemsBySearch(current.allItems, search);
     emit(current.copyWith(
-      page: 1,
-      search: event.search,
-      requestStatus: InquiryManagementStatus.loading,
+      search: search,
+      items: filtered,
+      requestStatus: InquiryManagementStatus.success,
       clearErrorMessage: true,
-      isLoadingMore: false,
     ));
-    await _fetchPage(
-      emit,
-      page: 1,
-      limit: current.limit,
-      replace: true,
-    );
+  }
+
+  List<dynamic> _filterItemsBySearch(List<dynamic> allItems, String? search) {
+    if (search == null || search.trim().isEmpty) return allItems;
+    final term = search.trim().toLowerCase();
+    return allItems.where((e) {
+      if (e is! ListInquiryItem) return true;
+      final id = e.id ?? '';
+      final inquiryNo = id.length > 8 ? id.substring(id.length - 8) : id;
+      return (e.fullName?.toLowerCase().contains(term) ?? false) ||
+          (e.title?.toLowerCase().contains(term) ?? false) ||
+          (e.status?.toLowerCase().contains(term) ?? false) ||
+          (e.typeOfBooking?.toLowerCase().contains(term) ?? false) ||
+          id.toLowerCase().contains(term) ||
+          inquiryNo.toLowerCase().contains(term);
+    }).toList();
   }
 
   Future<void> _onSortChanged(
@@ -176,7 +184,7 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
     }
 
     // If total is known and we've already loaded all, do nothing.
-    final loadedCount = current.items.length;
+    final loadedCount = current.allItems.length;
     if (current.total > 0 && loadedCount >= current.total) return;
 
     final nextPage = current.page + 1;
@@ -207,23 +215,24 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
         typeOfBooking: current.typeOfBooking,
         typeOfClient: current.typeOfClient,
         status: current.status,
-        search: current.search,
         sort: current.sort,
       );
       final response = await inquiryRepository.listInquiries(query);
       final data = response.data;
 
       final responseItems = data.items;
-      final currentItems = current.items;
-      final mergedItems = replace
+      final currentAllItems = current.allItems;
+      final mergedAllItems = replace
           ? responseItems
-          : <dynamic>[...currentItems, ...responseItems];
+          : <dynamic>[...currentAllItems, ...responseItems];
+      final filteredItems = _filterItemsBySearch(mergedAllItems, current.search);
 
       emit(current.copyWith(
         page: data.page,
         limit: data.limit,
         total: data.totalItems,
-        items: mergedItems,
+        allItems: mergedAllItems,
+        items: filteredItems,
         requestStatus: InquiryManagementStatus.success,
         clearErrorMessage: true,
         isLoadingMore: false,

@@ -22,6 +22,7 @@ final class InquiryManagementLoaded extends InquiryManagementState {
     this.status,
     this.search,
     this.sort,
+    required this.allItems,
     required this.items,
     required this.requestStatus,
     this.errorMessage,
@@ -38,8 +39,10 @@ final class InquiryManagementLoaded extends InquiryManagementState {
   final String? search;
   final String? sort;
 
-  /// NOTE: This is intended to be `List<ListInquiryItem>` once the BLoC library
-  /// imports `lib/data/models/inquiry/list_inquiry_item.dart`.
+  /// Raw items from API (all pages loaded). Not filtered by search.
+  final List<dynamic> allItems;
+
+  /// Filtered items for display (allItems filtered by search, or allItems if search is empty).
   final List<dynamic> items;
 
   final InquiryManagementStatus requestStatus;
@@ -55,6 +58,7 @@ final class InquiryManagementLoaded extends InquiryManagementState {
     String? status,
     String? search,
     String? sort,
+    List<dynamic>? allItems,
     List<dynamic>? items,
     InquiryManagementStatus? requestStatus,
     String? errorMessage,
@@ -70,6 +74,7 @@ final class InquiryManagementLoaded extends InquiryManagementState {
       status: status ?? this.status,
       search: search ?? this.search,
       sort: sort ?? this.sort,
+      allItems: allItems ?? this.allItems,
       items: items ?? this.items,
       requestStatus: requestStatus ?? this.requestStatus,
       errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
@@ -84,6 +89,7 @@ final class InquiryManagementInitial extends InquiryManagementLoaded {
           page: 1,
           limit: 20,
           total: 0,
+          allItems: const <dynamic>[],
           items: const <dynamic>[],
           requestStatus: InquiryManagementStatus.idle,
           errorMessage: null,
