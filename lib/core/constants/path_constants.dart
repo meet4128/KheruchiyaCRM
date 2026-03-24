@@ -105,6 +105,15 @@ GoRouter createRouter(NavigationBloc navBloc) {
           GoRoute(
             path: PathConstant.inquiryManagement,
             name: 'inquiryManagement',
+            routes: [
+              GoRoute(
+                path: 'detail',
+                name: 'inquiryDetail',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  child: InquiryManagementDetailPage(),
+                ),
+              ),
+            ],
             pageBuilder: (context, state) => NoTransitionPage(child: InquiryManagementPage()),
           ),
 
@@ -302,6 +311,7 @@ class PathConstant {
   static const String dashboard = '/';
   static const String clientLeads = '/client-leads';
   static const String inquiryManagement = '/inquiry-management';
+  static const String inquiryManagementDetail = '/inquiry-management/detail';
   static const String inquiryView = '/inquiry-view';
   static const String projectJobs = '/project-jobs';
   static const String invoices = '/invoices';

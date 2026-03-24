@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:travel_crm/core/constants/font_constant.dart';
+import 'package:travel_crm/core/constants/path_constants.dart';
 import 'package:travel_crm/data/models/inquiry/list_inquiry_item.dart';
 import 'package:travel_crm/di/injector.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_management_bloc.dart';
@@ -140,10 +142,11 @@ class _VendorListViewState extends State<VendorListView> {
       child: BlocConsumer<InquiryManagementBloc, InquiryManagementState>(
         listener: (context, state) {
           if (state is! InquiryManagementLoaded) return;
-          final s = state as InquiryManagementLoaded;
+          final s = state;
           if (s.requestStatus != InquiryManagementStatus.failure) return;
           final msg = s.errorMessage ?? '';
-          final isAuthError = msg.contains('401') ||
+          final isAuthError =
+              msg.contains('401') ||
               msg.toLowerCase().contains('session expired') ||
               msg.toLowerCase().contains('invalid');
           if (isAuthError && context.mounted) {
@@ -166,10 +169,14 @@ class _VendorListViewState extends State<VendorListView> {
                 ColoredBox(color: Colors.black.withValues(alpha: 0.5)),
                 SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 25),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 25,
+                      vertical: 25,
+                    ),
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-                        final double contentWidth = constraints.maxWidth < _kDesktopMinWidth
+                        final double contentWidth =
+                            constraints.maxWidth < _kDesktopMinWidth
                             ? _kDesktopMinWidth
                             : constraints.maxWidth;
 
@@ -214,7 +221,7 @@ class _VendorListViewState extends State<VendorListView> {
           const SizedBox(height: _kGap),
           _buildSummaryStatusRow(state),
           const SizedBox(height: _kGap),
-          _buildToolbar(),
+          _buildToolbar(state),
           const SizedBox(height: _kGap),
           _buildTable(state),
           const SizedBox(height: 14),
@@ -260,18 +267,19 @@ class _VendorListViewState extends State<VendorListView> {
   }
 
   Widget _buildLeadCards() {
-    return Row(
-      children: List.generate(_leadCards.length, (index) {
-        final _LeadCardData card = _leadCards[index];
-        return Expanded(
-          child: Padding(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: List.generate(_leadCards.length, (index) {
+          final _LeadCardData card = _leadCards[index];
+          return Padding(
             padding: EdgeInsets.only(
               right: index == _leadCards.length - 1 ? 0 : 12,
             ),
-            child: _LeadCard(card: card),
-          ),
-        );
-      }),
+            child: SizedBox(width: 280, child: _LeadCard(card: card)),
+          );
+        }),
+      ),
     );
   }
 
@@ -294,7 +302,9 @@ class _VendorListViewState extends State<VendorListView> {
               right: index == _summaryItems.length - 1 ? 0 : 0.5,
             ),
             child: InkWell(
-              onTap: () => _bloc.add(InquiryManagementFiltersChanged(status: chipStatus)),
+              onTap: () => _bloc.add(
+                InquiryManagementFiltersChanged(status: chipStatus),
+              ),
               child: _SummaryChip(
                 item: item.copyWith(isActive: isAll ? true : isActive),
                 isFirst: index == 0,
@@ -307,14 +317,14 @@ class _VendorListViewState extends State<VendorListView> {
     );
   }
 
-  Widget _buildToolbar() {
+  Widget _buildToolbar(InquiryManagementLoaded state) {
     return Row(
       children: [
         Expanded(
           child: Row(
             children: [
               Text(
-                'New In (18)',
+                'New in (${state.requestStatus == InquiryManagementStatus.loading && state.items.isEmpty ? 0 : state.items.length})',
                 style: FontConstant.interMedium(
                   color: Colors.white,
                   fontSize: 16,
@@ -466,7 +476,7 @@ class _VendorListViewState extends State<VendorListView> {
     }
 
     final rawItems = state.items;
-    final items = (rawItems ?? <dynamic>[]).whereType<ListInquiryItem>().toList();
+    final items = (rawItems).whereType<ListInquiryItem>().toList();
     if (state.requestStatus == InquiryManagementStatus.success &&
         items.isEmpty) {
       return SizedBox(
@@ -483,26 +493,24 @@ class _VendorListViewState extends State<VendorListView> {
       );
     }
 
-    final rows = items
-        .map(
-          (e) {
-            final id = e.id ?? '';
-            final inquiryNo = id.length > 8 ? '#${id.substring(id.length - 8)}' : (id.isEmpty ? '-' : '#$id');
-            final generatedAt = _formatInquiryGenerated(e.createdAt);
-            return _VendorRowData(
-              inquiryNo: inquiryNo,
-              generatedAt: generatedAt,
-              name: e.fullName ?? '-',
-              bookingType: e.typeOfBooking ?? '-',
-              priorityType: _Trend.swap,
-              priorityText: '-',
-              assignedToNames: const [],
-              assignedToText: '-',
-              status: e.status ?? '-',
-            );
-          },
-        )
-        .toList();
+    final rows = items.map((e) {
+      final id = e.id ?? '';
+      final inquiryNo = id.length > 8
+          ? '#${id.substring(id.length - 8)}'
+          : (id.isEmpty ? '-' : '#$id');
+      final generatedAt = _formatInquiryGenerated(e.createdAt);
+      return _VendorRowData(
+        inquiryNo: inquiryNo,
+        generatedAt: generatedAt,
+        name: e.fullName ?? '-',
+        bookingType: e.typeOfBooking ?? '-',
+        priorityType: _Trend.swap,
+        priorityText: '-',
+        assignedToNames: const [],
+        assignedToText: '-',
+        status: e.status ?? '-',
+      );
+    }).toList();
 
     return Column(
       children: [
@@ -545,9 +553,7 @@ class _VendorListViewState extends State<VendorListView> {
     final start = (currentPage - 3).clamp(1, totalPages);
     final end = (currentPage + 3).clamp(1, totalPages);
 
-    final pages = <int>[
-      for (int p = start; p <= end; p++) p,
-    ];
+    final pages = <int>[for (int p = start; p <= end; p++) p];
 
     return Center(
       child: Wrap(
@@ -563,7 +569,9 @@ class _VendorListViewState extends State<VendorListView> {
               height: 32,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.15),
+                color: isActive
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
               ),
@@ -626,11 +634,16 @@ class _VendorListViewState extends State<VendorListView> {
   Widget _buildDataCellContent(String key, _VendorRowData row) {
     switch (key) {
       case 'expand':
-        return const Center(
-          child: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: Colors.white,
-            size: 24,
+        return Center(
+          child: InkWell(
+            onTap: () {
+              context.push(PathConstant.inquiryManagementDetail);
+            },
+            child: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Colors.white,
+              size: 24,
+            ),
           ),
         );
       case 'inquiry':

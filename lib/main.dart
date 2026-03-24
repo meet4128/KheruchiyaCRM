@@ -2,12 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'core/constants/path_constants.dart';
 import 'core/constants/string_constants.dart';
 import 'di/injector.dart';
 import 'features/presentation/dashboard/bloc/navigation_bloc.dart';
 
 void main() async {
+  GoRouter.optionURLReflectsImperativeAPIs = true;
+
   await runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
 

@@ -4,6 +4,7 @@ import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/inquiry_view.dart';
 import 'package:travel_crm/features/presentation/air_ticket/air_ticket_view.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/view/inquiry_management_screen.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/view/vendor_list_view.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -14,14 +15,16 @@ class DashboardPage extends StatelessWidget {
 
 /// The whole Inquiry Management Module
 
-class InquiryManagementPage extends StatefulWidget {
+class InquiryManagementPage extends StatelessWidget {
   const InquiryManagementPage({super.key});
 
   @override
-  State<InquiryManagementPage> createState() => _InquiryManagementPageState();
+  Widget build(BuildContext context) => const VendorListView();
 }
 
-class _InquiryManagementPageState extends State<InquiryManagementPage> {
+class InquiryManagementDetailPage extends StatelessWidget {
+  const InquiryManagementDetailPage({super.key});
+
   @override
   Widget build(BuildContext context) => const InquiryManagementScreen();
 }
