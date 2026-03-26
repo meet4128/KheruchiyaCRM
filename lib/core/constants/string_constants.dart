@@ -193,6 +193,9 @@ class StringConstant {
   // ========== Checklist ==========
   static const String addChecklist = 'Add Checklist';
   static const String user = 'User';
+  static const String addUsersTitle = 'Add users';
+  static const String userTypeNamePressEnter = 'Type a name and press Enter';
+  static const String done = 'Done';
   static const String dueDate = 'Due Date';
   static const String category = 'Category';
   static const String inLoop = 'In Loop';
