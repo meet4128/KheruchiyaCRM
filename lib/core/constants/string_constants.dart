@@ -200,6 +200,15 @@ class StringConstant {
   static const String category = 'Category';
   static const String inLoop = 'In Loop';
   static const String repeat = 'Repeat';
+  static const String voiceNoteTitle = 'Voice note';
+  static const String voiceNoteHint = 'Tap the mic to record';
+  static const String voiceNoteRecording = 'Recording…';
+  static const String voiceNoteSaved = 'Recording saved';
+  static const String microphonePermissionRequired =
+      'Microphone permission is required to record a voice note.';
+  static const String recordAgain = 'Record again';
+  static const String playRecording = 'Play recording';
+  static const String pausePlayback = 'Pause';
 
   // ========== Checklist Categories ==========
   static const String documentation = 'Documentation';

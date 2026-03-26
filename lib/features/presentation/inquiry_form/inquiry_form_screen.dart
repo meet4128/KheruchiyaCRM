@@ -445,9 +445,9 @@ class _InquiryFormCard extends StatelessWidget {
                               child: _FormFieldWrapper(
                                 label: StringConstant.typeOfClient,
                                 isRequired: true,
-                                child: AppDropdown<BookingType>(
+                                child: AppDropdown<ClientType>(
                                   hintText: StringConstant.selectRole,
-                                  items: BookingType.values,
+                                  items: ClientType.values,
                                   itemLabel: (type) => type.label,
                                   value: state.typeOfClient,
                                   errorText: null,

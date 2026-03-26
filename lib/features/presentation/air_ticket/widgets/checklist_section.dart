@@ -9,6 +9,7 @@ import 'package:travel_crm/core/widgets/app_dropdown.dart';
 import '../models/checklist_item.dart';
 import '../models/checklist_priority.dart';
 import 'checklist_users_picker_dialog.dart';
+import 'checklist_voice_record_dialog.dart';
 
 /// Checklist section widget
 /// Displays checklist input fields and action buttons
@@ -291,8 +292,8 @@ class ChecklistSection extends StatelessWidget {
                     BlendMode.srcIn,
                   ),
                 ),
-                onPressed: () {},
-                tooltip: 'Mute',
+                onPressed: () => showChecklistVoiceRecordDialog(context),
+                tooltip: StringConstant.voiceNoteTitle,
               ),
               const Spacer(),
               // Vertical dots directly adjacent to Submit button (match screenshot)

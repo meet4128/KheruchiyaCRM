@@ -50,7 +50,7 @@ class InquiryState extends Equatable {
   final String phoneNumber;
   final String email;
   final String address;
-  final BookingType? typeOfClient;
+  final ClientType? typeOfClient;
   final BookingType? bookingType;
   final String referenceName;
   final String referenceDialCode;
@@ -113,6 +113,7 @@ class InquiryState extends Equatable {
     if (email.trim().isEmpty) return false;
     if (address.trim().isEmpty) return false;
     if (bookingType == null) return false;
+    if (typeOfClient == null) return false;
     if (referenceName.trim().isEmpty) return false;
     if (referenceNumber.trim().isEmpty) return false;
     if (clientBehaviour.trim().isEmpty) return false;
@@ -144,7 +145,7 @@ class InquiryState extends Equatable {
     String? phoneNumber,
     String? email,
     String? address,
-    BookingType? typeOfClient,
+    ClientType? typeOfClient,
     BookingType? bookingType,
     String? referenceName,
     String? referenceDialCode,

@@ -12,6 +12,16 @@ enum BookingType {
   final String label;
 }
 
+/// Type of client (inquiry form — separate from [BookingType] / type of booking).
+enum ClientType {
+  customer('Customer'),
+  agent('Agent'),
+  corporate('Corporate');
+
+  const ClientType(this.label);
+  final String label;
+}
+
 /// Inquiry field enum for validation
 enum InquiryField {
   title,
@@ -116,7 +126,7 @@ class BookingTypeChanged extends InquiryEvent {
 class TypeOfClientChanged extends InquiryEvent {
   const TypeOfClientChanged(this.typeOfClient);
 
-  final BookingType typeOfClient;
+  final ClientType typeOfClient;
 
   @override
   List<Object> get props => [typeOfClient];
