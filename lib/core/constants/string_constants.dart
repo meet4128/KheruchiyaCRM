@@ -153,6 +153,8 @@ class StringConstant {
 
   // ========== Air Ticket Form Success/Error Messages ==========
   static const String airTicketSubmissionSuccessTitle = 'Success';
+  /// Primary action on air ticket success dialog (pill button).
+  static const String continueAction = 'Continue';
   static const String airTicketSubmittedSuccessfully = 'Air ticket booking submitted successfully!';
   static const String airTicketSubmissionFailed =
       'Failed to submit air ticket booking. Please try again.';
