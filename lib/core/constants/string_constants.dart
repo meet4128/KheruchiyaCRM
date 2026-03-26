@@ -152,6 +152,7 @@ class StringConstant {
   static const String remarkMinLength = 'Remark must be at least 3 characters';
 
   // ========== Air Ticket Form Success/Error Messages ==========
+  static const String airTicketSubmissionSuccessTitle = 'Success';
   static const String airTicketSubmittedSuccessfully = 'Air ticket booking submitted successfully!';
   static const String airTicketSubmissionFailed =
       'Failed to submit air ticket booking. Please try again.';
