@@ -15,7 +15,7 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
     on<InquiryManagementInitialized>(_onInitialized);
     on<InquiryManagementRefreshed>(_onRefreshed);
     on<InquiryManagementPageChanged>(_onPageChanged);
-    on<InquiryManagementFiltersChanged>(_onFiltersChanged);
+    on<InquiryManagementStatusChipChanged>(_onStatusChipChanged);
     on<InquiryManagementSearchChanged>(_onSearchChanged);
     on<InquiryManagementSortChanged>(_onSortChanged);
     on<InquiryManagementLoadMoreRequested>(_onLoadMoreRequested);
@@ -91,30 +91,34 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
     );
   }
 
-  Future<void> _onFiltersChanged(
-    InquiryManagementFiltersChanged event,
+  void _onStatusChipChanged(
+    InquiryManagementStatusChipChanged event,
     Emitter<InquiryManagementState> emit,
-  ) async {
+  ) {
     final current = _s;
-    if (current.requestStatus == InquiryManagementStatus.loading ||
-        current.isLoadingMore) {
-      return;
-    }
     emit(current.copyWith(
-      page: 1,
-      typeOfBooking: event.typeOfBooking,
-      typeOfClient: event.typeOfClient,
       status: event.status,
-      requestStatus: InquiryManagementStatus.loading,
+      replaceStatus: true,
+      items: _visibleItems(current.allItems, current.search, event.status),
+      requestStatus: InquiryManagementStatus.success,
       clearErrorMessage: true,
-      isLoadingMore: false,
     ));
-    await _fetchPage(
-      emit,
-      page: 1,
-      limit: current.limit,
-      replace: true,
-    );
+  }
+
+  List<dynamic> _visibleItems(
+    List<dynamic> allItems,
+    String? search,
+    String? statusFilter,
+  ) {
+    Iterable<dynamic> list = allItems;
+    if (statusFilter != null && statusFilter.isNotEmpty) {
+      final f = statusFilter.toLowerCase();
+      list = list.where((e) {
+        if (e is! ListInquiryItem) return false;
+        return (e.status ?? '').toLowerCase() == f;
+      });
+    }
+    return _filterItemsBySearch(list.toList(), search);
   }
 
   void _onSearchChanged(
@@ -123,7 +127,7 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
   ) {
     final current = _s;
     final search = event.search.trim().isEmpty ? null : event.search.trim();
-    final filtered = _filterItemsBySearch(current.allItems, search);
+    final filtered = _visibleItems(current.allItems, search, current.status);
     emit(current.copyWith(
       search: search,
       items: filtered,
@@ -214,7 +218,6 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
         limit: limit,
         typeOfBooking: current.typeOfBooking,
         typeOfClient: current.typeOfClient,
-        status: current.status,
         sort: current.sort,
       );
       final response = await inquiryRepository.listInquiries(query);
@@ -225,7 +228,7 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
       final mergedAllItems = replace
           ? responseItems
           : <dynamic>[...currentAllItems, ...responseItems];
-      final filteredItems = _filterItemsBySearch(mergedAllItems, current.search);
+      final filteredItems = _visibleItems(mergedAllItems, current.search, current.status);
 
       emit(current.copyWith(
         page: data.page,

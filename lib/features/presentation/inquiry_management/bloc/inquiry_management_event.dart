@@ -29,15 +29,11 @@ final class InquiryManagementPageChanged extends InquiryManagementEvent {
   final int page;
 }
 
-final class InquiryManagementFiltersChanged extends InquiryManagementEvent {
-  InquiryManagementFiltersChanged({
-    this.typeOfBooking,
-    this.typeOfClient,
-    this.status,
-  });
+/// Summary chip tap: filters loaded [allItems] client-side (no API refetch).
+final class InquiryManagementStatusChipChanged extends InquiryManagementEvent {
+  InquiryManagementStatusChipChanged(this.status);
 
-  final String? typeOfBooking;
-  final String? typeOfClient;
+  /// `null` = All. Otherwise `IN_PROGRESS`, `PENDING`, `COMPLETED`, `CANCELLED`.
   final String? status;
 }
 

@@ -340,9 +340,11 @@ class _VendorListViewState extends State<VendorListView> {
               right: index == summaryItems.length - 1 ? 0 : 0.5,
             ),
             child: InkWell(
-              onTap: () => _bloc.add(
-                InquiryManagementFiltersChanged(status: chipStatus),
-              ),
+              onTap: item.icon != null
+                  ? null
+                  : () => _bloc.add(
+                        InquiryManagementStatusChipChanged(chipStatus),
+                      ),
               child: _SummaryChip(
                 item: item.copyWith(isActive: isAll ? true : isActive),
                 isFirst: index == 0,

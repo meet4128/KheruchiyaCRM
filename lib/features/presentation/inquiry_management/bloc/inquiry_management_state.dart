@@ -35,14 +35,15 @@ final class InquiryManagementLoaded extends InquiryManagementState {
 
   final String? typeOfBooking;
   final String? typeOfClient;
+  /// Summary chip filter: `IN_PROGRESS`, `PENDING`, `COMPLETED`, `CANCELLED`, or null for All.
   final String? status;
   final String? search;
   final String? sort;
 
-  /// Raw items from API (all pages loaded). Not filtered by search.
+  /// Raw items from API (all pages loaded). Not filtered by chip or search.
   final List<dynamic> allItems;
 
-  /// Filtered items for display (allItems filtered by search, or allItems if search is empty).
+  /// Filtered for display: [allItems] plus optional [status] chip and [search] filters.
   final List<dynamic> items;
 
   final InquiryManagementStatus requestStatus;
@@ -56,6 +57,7 @@ final class InquiryManagementLoaded extends InquiryManagementState {
     String? typeOfBooking,
     String? typeOfClient,
     String? status,
+    bool replaceStatus = false,
     String? search,
     String? sort,
     List<dynamic>? allItems,
@@ -71,7 +73,7 @@ final class InquiryManagementLoaded extends InquiryManagementState {
       total: total ?? this.total,
       typeOfBooking: typeOfBooking ?? this.typeOfBooking,
       typeOfClient: typeOfClient ?? this.typeOfClient,
-      status: status ?? this.status,
+      status: replaceStatus ? status : (status ?? this.status),
       search: search ?? this.search,
       sort: sort ?? this.sort,
       allItems: allItems ?? this.allItems,
