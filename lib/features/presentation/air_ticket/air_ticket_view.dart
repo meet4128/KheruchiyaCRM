@@ -12,6 +12,9 @@ import 'package:travel_crm/features/presentation/air_ticket/bloc/air_ticket_bloc
 import 'package:travel_crm/features/presentation/air_ticket/bloc/air_ticket_event.dart';
 import 'package:travel_crm/features/presentation/air_ticket/bloc/air_ticket_state.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/bloc/inquiry_state.dart';
+import 'package:travel_crm/features/presentation/dashboard/bloc/navigation_bloc.dart';
+import 'package:travel_crm/features/presentation/dashboard/bloc/navigation_event.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_management_bloc.dart';
 
 /// Air Ticket View - BLoC Provider Wrapper
 /// Provides AirTicketBloc to the widget tree and handles side effects
@@ -57,6 +60,10 @@ class _AirTicketScreen extends StatelessWidget {
             message: message,
             onAcknowledge: () {
               context.read<AirTicketBloc>().add(const ResetAirTicketForm());
+              // Shared singleton: refetch list so New Inquiry / vendor table shows the new inquiry.
+              sl<InquiryManagementBloc>().add(InquiryManagementRefreshed());
+              // Same as side menu: keep NavigationBloc in sync (router listener skips go() from sub-routes).
+              context.read<NavigationBloc>().add(ChangePageEvent(NavPage.inquiryManagement));
               context.go(PathConstant.inquiryManagement);
             },
           );
