@@ -58,6 +58,12 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
 
   final InquiryRepository inquiryRepository;
 
+  /// Clears visa when routes are domestic only (international no longer applies).
+  AirTicketState _clearVisaIfDomestic(AirTicketState next) {
+    if (next.requiresVisaSelection) return next;
+    return next.copyWith(clearVisaType: true, clearVisaTypeError: true);
+  }
+
   // ========== Form Field Event Handlers ==========
 
   /// Handle initialization event
@@ -98,11 +104,15 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     Emitter<AirTicketState> emit,
   ) {
     final error = _validateFromLocation(event.from);
-    emit(state.copyWith(
-      from: event.from,
-      fromError: error,
-      clearFromError: error == null,
-    ));
+    emit(
+      _clearVisaIfDomestic(
+        state.copyWith(
+          from: event.from,
+          fromError: error,
+          clearFromError: error == null,
+        ),
+      ),
+    );
   }
 
   /// Handle to location changed event
@@ -111,11 +121,15 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     Emitter<AirTicketState> emit,
   ) {
     final error = _validateToLocation(event.to, state.from);
-    emit(state.copyWith(
-      to: event.to,
-      toError: error,
-      clearToError: error == null,
-    ));
+    emit(
+      _clearVisaIfDomestic(
+        state.copyWith(
+          to: event.to,
+          toError: error,
+          clearToError: error == null,
+        ),
+      ),
+    );
   }
 
   /// Handle departure date changed event
@@ -321,12 +335,16 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     final fromError = state.toError;
     final toError = state.fromError;
 
-    emit(state.copyWith(
-      from: from,
-      to: to,
-      fromError: fromError,
-      toError: toError,
-    ));
+    emit(
+      _clearVisaIfDomestic(
+        state.copyWith(
+          from: from,
+          to: to,
+          fromError: fromError,
+          toError: toError,
+        ),
+      ),
+    );
   }
 
   /// Handle add flight segment (Add another City)
@@ -335,7 +353,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     Emitter<AirTicketState> emit,
   ) {
     final updated = [...state.flightSegments, FlightSegment.defaultSegment];
-    emit(state.copyWith(flightSegments: updated));
+    emit(_clearVisaIfDomestic(state.copyWith(flightSegments: updated)));
   }
 
   /// Handle segment from changed (extra segments only; index 0-based in flightSegments)
@@ -348,7 +366,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     final list = List<FlightSegment>.from(state.flightSegments);
     list[event.segmentIndex] =
         list[event.segmentIndex].copyWith(from: event.from);
-    emit(state.copyWith(flightSegments: list));
+    emit(_clearVisaIfDomestic(state.copyWith(flightSegments: list)));
   }
 
   /// Handle segment to changed
@@ -360,7 +378,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
         event.segmentIndex >= state.flightSegments.length) return;
     final list = List<FlightSegment>.from(state.flightSegments);
     list[event.segmentIndex] = list[event.segmentIndex].copyWith(to: event.to);
-    emit(state.copyWith(flightSegments: list));
+    emit(_clearVisaIfDomestic(state.copyWith(flightSegments: list)));
   }
 
   /// Handle segment departure date changed
@@ -400,7 +418,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     final list = List<FlightSegment>.from(state.flightSegments);
     list[event.segmentIndex] =
         seg.copyWith(from: seg.to, to: seg.from);
-    emit(state.copyWith(flightSegments: list));
+    emit(_clearVisaIfDomestic(state.copyWith(flightSegments: list)));
   }
 
   /// Handle remove flight segment (extra segments only)
@@ -412,7 +430,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
         event.segmentIndex >= state.flightSegments.length) return;
     final list = List<FlightSegment>.from(state.flightSegments);
     list.removeAt(event.segmentIndex);
-    emit(state.copyWith(flightSegments: list));
+    emit(_clearVisaIfDomestic(state.copyWith(flightSegments: list)));
   }
 
   /// Handle reset form event
@@ -479,7 +497,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     }
   }
 
-  /// Parses stored airport string "CODE - City|Airport Name" to (code, city).
+  /// Parses stored airport string "CODE - City|Airport Name|Country" to (code, city).
   ({String code, String city}) _parseAirport(String raw) {
     final valuePart = raw.contains('|') ? raw.split('|').first.trim() : raw;
     final dash = valuePart.indexOf(' - ');
@@ -540,7 +558,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     final airTicket = AirTicketRequest(
       bookingType: _bookingTypeToApi(state.bookingType),
       flightSegments: segments,
-      typeOfVisa: state.visaType?.label ?? '',
+      typeOfVisa: state.requiresVisaSelection ? (state.visaType?.label ?? '') : '',
       remark: state.remark,
     );
 
@@ -620,7 +638,9 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
         state.bookingType,
       ),
       'travellerCount': _validateTravellerCount(state.travellerCount),
-      'visaType': state.visaType == null ? StringConstant.visaTypeRequired : null,
+      'visaType': state.requiresVisaSelection && state.visaType == null
+          ? StringConstant.visaTypeRequired
+          : null,
       'remark': _validateRemark(state.remark),
     };
   }

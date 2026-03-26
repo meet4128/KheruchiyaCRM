@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:travel_crm/features/presentation/air_ticket/utils/flight_travel_scope.dart';
 import '../models/booking_type.dart';
 import '../models/checklist_priority.dart';
 import '../models/priority.dart';
@@ -111,6 +112,13 @@ class AirTicketState extends Equatable {
   /// Check if form submission was successful
   bool get isSuccess => submissionStatus == AirTicketSubmissionStatus.success;
 
+  /// Visa field applies only when at least one segment is international (different countries).
+  bool get requiresVisaSelection => FlightTravelScope.requiresVisaSelection(
+        from: from,
+        to: to,
+        flightSegments: flightSegments,
+      );
+
   /// Check if form is valid (no errors and all required fields filled)
   /// This is computed from state - UI remains dumb
   bool get isValid {
@@ -130,7 +138,7 @@ class AirTicketState extends Equatable {
     
     if (travellerCount < 1) return false;
     if (classType.trim().isEmpty) return false;
-    if (visaType == null) return false;
+    if (requiresVisaSelection && visaType == null) return false;
     if (remark.trim().isEmpty) return false;
 
     // All checks passed - form is valid
@@ -176,6 +184,7 @@ class AirTicketState extends Equatable {
     bool clearTravellerCountError = false,
     bool clearVisaTypeError = false,
     bool clearRemarkError = false,
+    bool clearVisaType = false,
   }) {
     return AirTicketState(
       bookingType: bookingType ?? this.bookingType,
@@ -185,7 +194,7 @@ class AirTicketState extends Equatable {
       returnDate: returnDate ?? this.returnDate,
       travellerCount: travellerCount ?? this.travellerCount,
       classType: classType ?? this.classType,
-      visaType: visaType ?? this.visaType,
+      visaType: clearVisaType ? null : (visaType ?? this.visaType),
       remark: remark ?? this.remark,
       priority: priority ?? this.priority,
       followUpType: followUpType ?? this.followUpType,

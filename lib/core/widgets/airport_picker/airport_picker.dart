@@ -207,10 +207,12 @@ class _AirportPickerWidgetState extends State<AirportPickerWidget> {
                   final line2 = [airport.city, airport.country]
                       .where((s) => s.isNotEmpty)
                       .join(', ');
-                  // Pass "CODE - City|Airport Name" so location field shows value + sublabel
+                  // Pass CODE - City|Airport Name|Country (third part for domestic vs intl. visa).
                   final valuePart = '${airport.code} - ${airport.city}';
                   final sublabelPart = airport.name;
-                  final payload = '$valuePart|$sublabelPart';
+                  final countryPart = airport.country;
+                  // Third segment enables domestic vs international (visa) in air ticket form.
+                  final payload = '$valuePart|$sublabelPart|$countryPart';
                   return InkWell(
                     onTap: () => widget.onSelect(payload),
                     child: Padding(

@@ -73,14 +73,14 @@ class FlightDetailsSection extends StatelessWidget {
     StringConstant.first,
   ];
 
-  /// Parses stored airport string "CODE - City|Airport Name" into (value, sublabel).
+  /// Parses stored airport string "CODE - City|Airport Name|Country" (country optional).
   static ({String value, String sublabel}) _airportDisplay(String raw, String defaultValue, String defaultSublabel) {
     if (raw.isEmpty) return (value: defaultValue, sublabel: defaultSublabel);
-    final i = raw.indexOf('|');
-    if (i < 0) return (value: raw, sublabel: '');
+    final parts = raw.split('|');
+    if (parts.length == 1) return (value: raw.trim(), sublabel: '');
     return (
-      value: raw.substring(0, i).trim(),
-      sublabel: raw.substring(i + 1).trim(),
+      value: parts[0].trim(),
+      sublabel: parts[1].trim(),
     );
   }
 

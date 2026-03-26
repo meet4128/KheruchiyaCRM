@@ -347,18 +347,20 @@ class _AirTicketFormCard extends StatelessWidget {
               // Flight Details Sections: one per segment, each with its own border (per screenshot)
               ..._buildFlightDetailsSections(context, state),
               const SizedBox(height: 22),
-              // Type of Visa Selection (Visitor Visa, Student Visa, PR, Work Permit)
-              FormFieldWrapper(
-                label: StringConstant.typeOfVisa,
-                isRequired: false,
-                child: VisaTypeSelector(
-                  selectedType: state.visaType,
-                  onChanged: (VisaType type) =>
-                      context.read<AirTicketBloc>().add(VisaTypeChanged(type)),
-                  errorText: state.visaTypeError,
+              // Type of Visa — only when at least one segment is international (different countries).
+              if (state.requiresVisaSelection) ...[
+                FormFieldWrapper(
+                  label: StringConstant.typeOfVisa,
+                  isRequired: false,
+                  child: VisaTypeSelector(
+                    selectedType: state.visaType,
+                    onChanged: (VisaType type) =>
+                        context.read<AirTicketBloc>().add(VisaTypeChanged(type)),
+                    errorText: state.visaTypeError,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 22),
+                const SizedBox(height: 22),
+              ],
               // Remark Field
               FormFieldWrapper(
                 label: StringConstant.remark,
