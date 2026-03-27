@@ -1,12 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:travel_crm/core/constants/font_constant.dart';
 import 'package:travel_crm/core/constants/path_constants.dart';
 import 'package:travel_crm/data/models/inquiry/list_inquiry_item.dart';
 import 'package:travel_crm/di/injector.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_management_bloc.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/models/inquiry_priority_trend.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/widgets/inquiry_priority_trend_icon.dart';
 
 class VendorListView extends StatefulWidget {
   const VendorListView({super.key});
@@ -26,7 +30,7 @@ class _VendorListViewState extends State<VendorListView> {
     _LeadCardData(
       name: 'Kirsty Ben',
       subtitle: 'Hot Prospect',
-      trend: _Trend.up,
+      trend: InquiryPriorityTrend.up,
       updateText: 'Update',
       updateDateTime: '08 Dec, 16:30 PM',
       chipText: 'New',
@@ -34,7 +38,7 @@ class _VendorListViewState extends State<VendorListView> {
     _LeadCardData(
       name: 'Joane Dales',
       subtitle: 'Hot Prospect',
-      trend: _Trend.up,
+      trend: InquiryPriorityTrend.up,
       updateText: 'Update',
       updateDateTime: '08 Dec, 16:30 PM',
       chipText: 'New',
@@ -42,7 +46,7 @@ class _VendorListViewState extends State<VendorListView> {
     _LeadCardData(
       name: 'Mickey Wick',
       subtitle: 'Hot Prospect',
-      trend: _Trend.down,
+      trend: InquiryPriorityTrend.down,
       updateText: 'Update',
       updateDateTime: '08 Dec, 16:30 PM',
       chipText: 'New',
@@ -50,7 +54,7 @@ class _VendorListViewState extends State<VendorListView> {
     _LeadCardData(
       name: 'Joane Dales',
       subtitle: 'Hot Prospect',
-      trend: _Trend.swap,
+      trend: InquiryPriorityTrend.swap,
       updateText: 'Update',
       updateDateTime: '08 Dec, 16:30 PM',
       chipText: 'New',
@@ -58,7 +62,7 @@ class _VendorListViewState extends State<VendorListView> {
     _LeadCardData(
       name: 'Mickey Wick',
       subtitle: 'Hot Prospect',
-      trend: _Trend.up,
+      trend: InquiryPriorityTrend.up,
       updateText: 'Update',
       updateDateTime: '08 Dec, 16:30 PM',
       chipText: 'New',
@@ -105,17 +109,6 @@ class _VendorListViewState extends State<VendorListView> {
 
   void _onSearchChanged() {
     _bloc.add(InquiryManagementSearchChanged(search: _searchController.text));
-  }
-
-  /// Formats API createdAt (ISO 8601) to "17/12/2025 @ 8:50PM".
-  static String _formatInquiryGenerated(String? createdAt) {
-    if (createdAt == null || createdAt.trim().isEmpty) return '-';
-    try {
-      final dt = DateTime.parse(createdAt);
-      return DateFormat('dd/MM/yyyy @ h:mma').format(dt.toLocal());
-    } catch (_) {
-      return '-';
-    }
   }
 
   static const String _sessionExpiredMessage =
@@ -533,35 +526,34 @@ class _VendorListViewState extends State<VendorListView> {
       );
     }
 
-    final rows = items.map((e) {
-      final id = e.id ?? '';
-      final inquiryNo = id.length > 8
-          ? '#${id.substring(id.length - 8)}'
-          : (id.isEmpty ? '-' : '#$id');
-      final generatedAt = _formatInquiryGenerated(e.createdAt);
-      return _VendorRowData(
-        inquiryNo: inquiryNo,
-        generatedAt: generatedAt,
-        name: e.fullName ?? '-',
-        bookingType: e.typeOfBooking ?? '-',
-        priorityType: _Trend.swap,
-        priorityText: '-',
-        assignedToNames: const [],
-        assignedToText: '-',
-        status: e.status ?? '-',
-      );
-    }).toList();
+    final rows = items.map(VendorInquiryRow.fromListInquiryItem).toList();
+    final needsSlaTicker = rows.any((r) => r.slaDeadline != null);
+
+    final Widget tableRows = needsSlaTicker
+        ? _VendorTableRowsWithSlaTicker(
+            rows: rows,
+            buildRow: (row, index) =>
+                _buildTableRow(row, index, slaClock: DateTime.now()),
+          )
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ...List.generate(rows.length, (index) {
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: index == rows.length - 1 ? 0 : 7,
+                  ),
+                  child: _buildTableRow(rows[index], index),
+                );
+              }),
+            ],
+          );
 
     return Column(
       children: [
         _buildTableHeader(),
         const SizedBox(height: 7),
-        ...List.generate(rows.length, (index) {
-          return Padding(
-            padding: EdgeInsets.only(bottom: index == rows.length - 1 ? 0 : 7),
-            child: _buildTableRow(rows[index], index),
-          );
-        }),
+        tableRows,
         if (state.isLoadingMore) ...[
           const SizedBox(height: 10),
           SizedBox(
@@ -654,7 +646,11 @@ class _VendorListViewState extends State<VendorListView> {
     );
   }
 
-  Widget _buildTableRow(_VendorRowData row, int rowIndex) {
+  Widget _buildTableRow(
+    VendorInquiryRow row,
+    int rowIndex, {
+    DateTime? slaClock,
+  }) {
     return SizedBox(
       height: 50,
       child: Row(
@@ -662,7 +658,7 @@ class _VendorListViewState extends State<VendorListView> {
           final _TableColumnData column = _columns[index];
           return _buildTableCell(
             width: column.width,
-            child: _buildDataCellContent(column.key, row),
+            child: _buildDataCellContent(column.key, row, slaClock: slaClock),
             backgroundColor: _dataCellColor(rowIndex),
             isFirst: index == 0,
           );
@@ -671,7 +667,11 @@ class _VendorListViewState extends State<VendorListView> {
     );
   }
 
-  Widget _buildDataCellContent(String key, _VendorRowData row) {
+  Widget _buildDataCellContent(
+    String key,
+    VendorInquiryRow row, {
+    DateTime? slaClock,
+  }) {
     switch (key) {
       case 'expand':
         return Center(
@@ -695,16 +695,9 @@ class _VendorListViewState extends State<VendorListView> {
       case 'booking':
         return _cellText(row.bookingType);
       case 'priority':
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _trendIcon(row.priorityType, size: 16),
-              const SizedBox(width: 5),
-              Flexible(child: _cellText(row.priorityText)),
-            ],
-          ),
+        return _PrioritySlaCell(
+          row: row,
+          now: slaClock ?? DateTime.now(),
         );
       case 'assigned':
         return Padding(
@@ -831,27 +824,94 @@ class _VendorListViewState extends State<VendorListView> {
     );
   }
 
-  Widget _trendIcon(_Trend trend, {double size = 16}) {
-    switch (trend) {
-      case _Trend.up:
-        return Icon(
-          Icons.north_rounded,
-          size: size,
-          color: const Color(0xFFFF383C),
-        );
-      case _Trend.down:
-        return Icon(
-          Icons.south_rounded,
-          size: size,
-          color: const Color(0xFF34C759),
-        );
-      case _Trend.swap:
-        return Icon(
-          Icons.swap_horiz_rounded,
-          size: size,
-          color: const Color(0xFFFF8D28),
-        );
-    }
+}
+
+/// One [Timer] for all SLA rows — avoids N timers when the table has many entries.
+class _VendorTableRowsWithSlaTicker extends StatefulWidget {
+  const _VendorTableRowsWithSlaTicker({
+    required this.rows,
+    required this.buildRow,
+  });
+
+  final List<VendorInquiryRow> rows;
+  final Widget Function(VendorInquiryRow row, int index) buildRow;
+
+  @override
+  State<_VendorTableRowsWithSlaTicker> createState() =>
+      _VendorTableRowsWithSlaTickerState();
+}
+
+class _VendorTableRowsWithSlaTickerState extends State<_VendorTableRowsWithSlaTicker> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ...List.generate(widget.rows.length, (index) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: index == widget.rows.length - 1 ? 0 : 7,
+            ),
+            child: widget.buildRow(widget.rows[index], index),
+          );
+        }),
+      ],
+    );
+  }
+}
+
+/// Priority column: trend icon + SLA countdown (15m / 1h / 8h from inquiry `createdAt`).
+class _PrioritySlaCell extends StatelessWidget {
+  const _PrioritySlaCell({required this.row, required this.now});
+
+  final VendorInquiryRow row;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final deadline = row.slaDeadline;
+    final String label = deadline != null
+        ? VendorInquiryRow.formatSlaCountdownLabel(deadline, now)
+        : row.priorityText;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          InquiryPriorityTrendIcon(trend: row.priorityTrend, size: 16),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: FontConstant.interNormal(
+                color: Colors.white,
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -1127,34 +1187,12 @@ class _AssigneeAvatars extends StatelessWidget {
 class _LeadTrendIcon extends StatelessWidget {
   const _LeadTrendIcon({required this.trend});
 
-  final _Trend trend;
+  final InquiryPriorityTrend trend;
 
   @override
-  Widget build(BuildContext context) {
-    switch (trend) {
-      case _Trend.up:
-        return const Icon(
-          Icons.north_rounded,
-          size: 16,
-          color: Color(0xFFFF383C),
-        );
-      case _Trend.down:
-        return const Icon(
-          Icons.south_rounded,
-          size: 16,
-          color: Color(0xFF34C759),
-        );
-      case _Trend.swap:
-        return const Icon(
-          Icons.swap_horiz_rounded,
-          size: 16,
-          color: Color(0xFFFF8D28),
-        );
-    }
-  }
+  Widget build(BuildContext context) =>
+      InquiryPriorityTrendIcon(trend: trend, size: 16);
 }
-
-enum _Trend { up, down, swap }
 
 class _LeadCardData {
   const _LeadCardData({
@@ -1168,7 +1206,7 @@ class _LeadCardData {
 
   final String name;
   final String subtitle;
-  final _Trend trend;
+  final InquiryPriorityTrend trend;
   final String updateText;
   final String updateDateTime;
   final String chipText;
@@ -1212,26 +1250,3 @@ class _TableColumnData {
   final double width;
 }
 
-class _VendorRowData {
-  const _VendorRowData({
-    required this.inquiryNo,
-    required this.generatedAt,
-    required this.name,
-    required this.bookingType,
-    required this.priorityType,
-    required this.priorityText,
-    required this.assignedToNames,
-    required this.assignedToText,
-    required this.status,
-  });
-
-  final String inquiryNo;
-  final String generatedAt;
-  final String name;
-  final String bookingType;
-  final _Trend priorityType;
-  final String priorityText;
-  final List<String> assignedToNames;
-  final String assignedToText;
-  final String status;
-}

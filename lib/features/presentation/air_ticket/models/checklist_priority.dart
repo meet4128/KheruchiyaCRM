@@ -1,15 +1,16 @@
-/// Checklist priority / status values (aligned with inquiry management statuses).
+import 'package:travel_crm/core/constants/string_constants.dart';
+
+/// Checklist priority — matches GET/POST `priority` (HIGH / MEDIUM / LOW).
 enum ChecklistPriority {
-  inProgress('IN PROGRESS', 'IN_PROGRESS'),
-  pending('PENDING', 'PENDING'),
-  cancelled('CANCELLED', 'CANCELLED'),
-  completed('COMPLETED', 'COMPLETED');
+  high(StringConstant.high, 'HIGH'),
+  medium(StringConstant.medium, 'MEDIUM'),
+  low(StringConstant.low, 'LOW');
 
   const ChecklistPriority(this.displayLabel, this.apiValue);
 
-  /// Shown in the dropdown UI.
+  /// Shown in the Set Priority dropdown.
   final String displayLabel;
 
-  /// Value sent to the API on submit.
+  /// Value sent in the `checklist[].priority` field.
   final String apiValue;
 }

@@ -14,6 +14,7 @@ import '../../inquiry_form/bloc/inquiry_state.dart';
 import 'air_ticket_event.dart';
 import 'air_ticket_state.dart';
 import '../models/booking_type.dart';
+import '../models/checklist_category_api.dart';
 import '../models/checklist_item.dart';
 import '../models/flight_segment.dart';
 
@@ -525,6 +526,56 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     return date.toUtc().toIso8601String();
   }
 
+  /// POST body `checklist`: each `{ user, dueDate, priority, category }` (no inLoop/repeat).
+  List<dynamic> _buildChecklistPayload(AirTicketState state) {
+    final out = <Map<String, dynamic>>[];
+    for (final item in state.checklistItems) {
+      final m = _checklistItemToJson(item);
+      if (m != null) out.add(m);
+    }
+    if (_hasDraftChecklist(state)) {
+      final draft = ChecklistItem(
+        user: state.checklistUser,
+        dueDate: state.checklistDueDate,
+        priority: state.checklistPriority,
+        category: state.checklistCategory,
+        inLoop: state.checklistInLoop,
+        repeat: state.checklistRepeat,
+      );
+      final m = _checklistItemToJson(draft);
+      if (m != null) out.add(m);
+    }
+    return out;
+  }
+
+  bool _hasDraftChecklist(AirTicketState state) {
+    if (state.checklistUser.trim().isNotEmpty) return true;
+    if (state.checklistDueDate != null) return true;
+    if (state.checklistPriority != null) return true;
+    if (state.checklistCategory.trim().isNotEmpty) return true;
+    return false;
+  }
+
+  /// One checklist row for the API, or null if nothing meaningful was filled.
+  Map<String, dynamic>? _checklistItemToJson(ChecklistItem item) {
+    final user = item.user.trim();
+    final due = item.dueDate;
+    final priority = item.priorityApiValue ?? '';
+    final category = checklistCategoryToApi(item.category);
+    if (user.isEmpty &&
+        due == null &&
+        priority.isEmpty &&
+        category.isEmpty) {
+      return null;
+    }
+    return <String, dynamic>{
+      'user': user,
+      'dueDate': due != null ? _toIso8601(due) : '',
+      'priority': priority,
+      'category': category,
+    };
+  }
+
   CreateInquiryRequest _buildCreateInquiryRequest(
     AirTicketState state,
     dynamic inquiryState,
@@ -588,7 +639,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
       typeOfBooking: typeOfBooking,
       status: 'PENDING',
       airTicket: airTicket,
-      checklist: [],
+      checklist: _buildChecklistPayload(state),
     );
   }
 

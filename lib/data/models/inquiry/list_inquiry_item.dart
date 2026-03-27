@@ -1,8 +1,10 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import 'inquiry_checklist_item.dart';
+
 part 'list_inquiry_item.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class ListInquiryItem {
   const ListInquiryItem({
     this.id,
@@ -12,6 +14,7 @@ class ListInquiryItem {
     this.typeOfClient,
     this.status,
     this.createdAt,
+    this.checklist = const [],
   });
 
   factory ListInquiryItem.fromJson(Map<String, dynamic> json) =>
@@ -28,4 +31,7 @@ class ListInquiryItem {
   final String? typeOfClient;
   final String? status;
   final String? createdAt;
+
+  @JsonKey(defaultValue: [])
+  final List<InquiryChecklistItem> checklist;
 }

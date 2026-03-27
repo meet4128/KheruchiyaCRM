@@ -19,7 +19,7 @@ class ChecklistItem extends Equatable {
   final bool inLoop;
   final bool repeat;
 
-  /// Backend value for [priority] (e.g. `IN_PROGRESS`), not the UI label.
+  /// Backend value for [priority] (e.g. `HIGH`), not the UI label.
   String? get priorityApiValue => priority?.apiValue;
 
   ChecklistItem copyWith({
