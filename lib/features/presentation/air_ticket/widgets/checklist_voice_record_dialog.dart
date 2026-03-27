@@ -5,14 +5,25 @@ import 'package:travel_crm/core/theme/app_theme.dart';
 import 'package:travel_crm/features/presentation/air_ticket/bloc/checklist_voice_record_cubit.dart';
 
 /// Shows the themed voice-record dialog. State is driven by [ChecklistVoiceRecordCubit].
+///
+/// If [existingRecordingPath] is set, opens with playback controls (no new recording)
+/// until the user taps "Record again".
 Future<void> showChecklistVoiceRecordDialog(
   BuildContext context, {
   ValueChanged<String?>? onRecordingSaved,
+  String? existingRecordingPath,
 }) {
   return showDialog<void>(
     context: context,
     builder: (dialogContext) => BlocProvider(
-      create: (_) => ChecklistVoiceRecordCubit(),
+      create: (_) {
+        final cubit = ChecklistVoiceRecordCubit();
+        final existing = existingRecordingPath?.trim();
+        if (existing != null && existing.isNotEmpty) {
+          cubit.setExistingRecording(existing);
+        }
+        return cubit;
+      },
       child: _ChecklistVoiceRecordDialog(onRecordingSaved: onRecordingSaved),
     ),
   );

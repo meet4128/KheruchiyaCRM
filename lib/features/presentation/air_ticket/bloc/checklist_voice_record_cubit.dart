@@ -168,6 +168,24 @@ class ChecklistVoiceRecordCubit extends Cubit<ChecklistVoiceRecordState> {
     );
   }
 
+  /// Opens the dialog in playback mode (e.g. user re-taps mic after saving).
+  void setExistingRecording(String path) {
+    if (path.isEmpty) return;
+    emit(
+      state.copyWith(
+        phase: ChecklistVoiceRecordPhase.stopped,
+        recordedPath: path,
+        waveformBars: List<double>.filled(waveBarCount, _idleBar),
+        durationSeconds: 0,
+        clearRecordedDuration: true,
+        playbackPlaying: false,
+        playbackPosition: Duration.zero,
+        clearPlaybackTotalDuration: true,
+        clearError: true,
+      ),
+    );
+  }
+
   Future<void> toggleRecording() async {
     if (state.phase == ChecklistVoiceRecordPhase.recording) {
       await stopRecording();

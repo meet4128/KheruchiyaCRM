@@ -211,6 +211,7 @@ class StringConstant {
       'Microphone permission is required to record a voice note.';
   static const String recordAgain = 'Record again';
   static const String playRecording = 'Play recording';
+  static const String deleteRecording = 'Delete recording';
   static const String pausePlayback = 'Pause';
 
   // ========== Checklist Categories ==========

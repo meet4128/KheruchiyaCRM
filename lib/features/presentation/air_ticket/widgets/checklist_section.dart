@@ -6,10 +6,97 @@ import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/theme/app_theme.dart';
 import 'package:travel_crm/core/widgets/app_date_picker.dart';
 import 'package:travel_crm/core/widgets/app_dropdown.dart';
+import '../delete_recording_file.dart';
 import '../models/checklist_item.dart';
 import '../models/checklist_priority.dart';
 import 'checklist_users_picker_dialog.dart';
 import 'checklist_voice_record_dialog.dart';
+
+/// Mic / play control: after Done, icon switches to play; tap opens playback instead of a new recording.
+class _ChecklistVoiceControl extends StatefulWidget {
+  const _ChecklistVoiceControl();
+
+  @override
+  State<_ChecklistVoiceControl> createState() => _ChecklistVoiceControlState();
+}
+
+class _ChecklistVoiceControlState extends State<_ChecklistVoiceControl> {
+  String? _voicePath;
+
+  void _deleteRecording() {
+    final path = _voicePath;
+    if (path == null || path.trim().isEmpty) return;
+    deleteRecordingFileIfExists(path);
+    setState(() => _voicePath = null);
+  }
+
+  Future<void> _onTap() async {
+    final hasRecording =
+        _voicePath != null && _voicePath!.trim().isNotEmpty;
+    await showChecklistVoiceRecordDialog(
+      context,
+      existingRecordingPath: hasRecording ? _voicePath : null,
+      onRecordingSaved: (path) {
+        if (!mounted) return;
+        setState(() {
+          _voicePath = path;
+        });
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
+    final hasRecording =
+        _voicePath != null && _voicePath!.trim().isNotEmpty;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: hasRecording
+              ? Icon(
+                  Icons.play_circle_outline_rounded,
+                  size: 32,
+                  color: colors.secondary,
+                )
+              : SvgPicture.asset(
+                  AssetConstants.icMicrophoneSlash,
+                  width: 30,
+                  height: 30,
+                  colorFilter: ColorFilter.mode(
+                    colors.textSecondary,
+                    BlendMode.srcIn,
+                  ),
+                ),
+          onPressed: _onTap,
+          tooltip: hasRecording
+              ? StringConstant.playRecording
+              : StringConstant.voiceNoteTitle,
+        ),
+        if (hasRecording)
+          IconButton(
+            icon: Icon(
+              Icons.delete_outline_rounded,
+              size: 24,
+              color: colors.textSecondary,
+            ),
+            onPressed: _deleteRecording,
+            tooltip: StringConstant.deleteRecording,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(
+              minWidth: 36,
+              minHeight: 36,
+            ),
+            style: IconButton.styleFrom(
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+      ],
+    );
+  }
+}
 
 /// Checklist section widget
 /// Displays checklist input fields and action buttons
@@ -282,19 +369,7 @@ class ChecklistSection extends StatelessWidget {
                 onPressed: () {},
                 tooltip: StringConstant.time,
               ),
-              IconButton(
-                icon: SvgPicture.asset(
-                  AssetConstants.icMicrophoneSlash,
-                  width: 30,
-                  height: 30,
-                  colorFilter: ColorFilter.mode(
-                    colors.textSecondary,
-                    BlendMode.srcIn,
-                  ),
-                ),
-                onPressed: () => showChecklistVoiceRecordDialog(context),
-                tooltip: StringConstant.voiceNoteTitle,
-              ),
+              const _ChecklistVoiceControl(),
               const Spacer(),
               // Vertical dots directly adjacent to Submit button (match screenshot)
               Row(
