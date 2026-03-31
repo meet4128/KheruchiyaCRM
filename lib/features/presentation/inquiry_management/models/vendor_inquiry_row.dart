@@ -13,6 +13,15 @@ class VendorInquiryRow {
     required this.generatedAt,
     required this.name,
     required this.bookingType,
+    required this.title,
+    required this.typeOfClient,
+    required this.bookingId,
+    required this.phoneDisplay,
+    required this.emailDisplay,
+    required this.addressDisplay,
+    required this.orderTypeDisplay,
+    required this.referenceNumberDisplay,
+    required this.referenceNameDisplay,
     required this.priorityTrend,
     required this.priorityText,
     this.checklist = const [],
@@ -26,6 +35,23 @@ class VendorInquiryRow {
   final String generatedAt;
   final String name;
   final String bookingType;
+
+  /// From [ListInquiryItem.title]; shown in inquiry detail basic details.
+  final String title;
+
+  /// From [ListInquiryItem.typeOfClient].
+  final String typeOfClient;
+
+  /// Raw inquiry id for Booking ID line (not the short [inquiryNo]).
+  final String bookingId;
+
+  /// Single-line phone display until API exposes structured phone fields.
+  final String phoneDisplay;
+  final String emailDisplay;
+  final String addressDisplay;
+  final String orderTypeDisplay;
+  final String referenceNumberDisplay;
+  final String referenceNameDisplay;
   final InquiryPriorityTrend priorityTrend;
   final String priorityText;
 
@@ -63,6 +89,15 @@ class VendorInquiryRow {
       generatedAt: _formatInquiryGenerated(e.createdAt),
       name: e.fullName ?? '-',
       bookingType: e.typeOfBooking ?? '-',
+      title: _nonEmptyOrDash(e.title),
+      typeOfClient: _nonEmptyOrDash(e.typeOfClient),
+      bookingId: id.isEmpty ? '—' : id,
+      phoneDisplay: '—',
+      emailDisplay: '—',
+      addressDisplay: '—',
+      orderTypeDisplay: _nonEmptyOrDash(e.typeOfBooking),
+      referenceNumberDisplay: '—',
+      referenceNameDisplay: '—',
       priorityTrend: _priorityTrendFromChecklist(checklist),
       priorityText: _priorityLabelFromChecklist(checklist),
       checklist: checklist,
@@ -71,6 +106,12 @@ class VendorInquiryRow {
       assignedToText: assignee.text,
       status: e.status ?? '-',
     );
+  }
+
+  static String _nonEmptyOrDash(String? v) {
+    final t = v?.trim();
+    if (t == null || t.isEmpty) return '—';
+    return t;
   }
 
   /// `user` / `assignedTo` on inquiry, else unique `checklist[].user` values.

@@ -332,14 +332,240 @@ class _InquiryInformationState extends State<InquiryInformation> {
                     padding: const EdgeInsets.symmetric(vertical: DimensionConstant.d25),
                     child: Divider(color: ColorConstant.whiteColor.withValues(alpha: .3)),
                   ),
+                  _InquiryDetailMetaAndBasicDetails(row: r),
                 ],
               ),
             );
           },
           bodyBuilder: (BuildContext context, Animation<double> animation) {
-            return Offstage();
+            return const SizedBox.shrink();
           },
         ),
+      ),
+    );
+  }
+}
+
+/// Read-only label + value text (same typography as inquiry number row); no [TextField].
+class _InquiryDetailMetaAndBasicDetails extends StatelessWidget {
+  const _InquiryDetailMetaAndBasicDetails({required this.row});
+
+  final VendorInquiryRow? row;
+
+  static TextStyle get _labelStyle => FontConstant.interNormal(
+        color: ColorConstant.whiteColor.withValues(alpha: .5),
+        fontSize: DimensionConstant.d12,
+      );
+
+  static TextStyle get _valueStyle => FontConstant.interNormal(
+        color: ColorConstant.whiteColor,
+        fontSize: DimensionConstant.d12,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final r = row;
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final w = constraints.maxWidth;
+              final fourCol = w >= 900;
+              final metaChildren = <Widget>[
+                _metaPair('Booking ID', r?.bookingId ?? '—'),
+                _metaPair('Order Type', r?.orderTypeDisplay ?? '—'),
+                _metaPair('Reference Number', r?.referenceNumberDisplay ?? '—'),
+                _metaPair('Reference Name', r?.referenceNameDisplay ?? '—'),
+              ];
+              if (fourCol) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (int i = 0; i < metaChildren.length; i++) ...[
+                      Expanded(child: metaChildren[i]),
+                      if (i < metaChildren.length - 1) const SizedBox(width: DimensionConstant.d16),
+                    ],
+                  ],
+                );
+              }
+              return Wrap(
+                spacing: DimensionConstant.d16,
+                runSpacing: DimensionConstant.d12,
+                children: metaChildren
+                    .map((e) => SizedBox(width: (w - DimensionConstant.d16) / 2, child: e))
+                    .toList(),
+              );
+            },
+          ),
+          const SizedBox(height: DimensionConstant.d25),
+          Text(
+            'Basic Details',
+            style: FontConstant.interMedium(
+              color: ColorConstant.whiteColor,
+              fontSize: DimensionConstant.d16,
+            ),
+          ),
+          const SizedBox(height: DimensionConstant.d16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final w = constraints.maxWidth;
+              final wide = w >= 1000;
+              if (wide) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _readonlyBox(
+                            label: 'Title',
+                            value: r?.title ?? '—',
+                            requiredField: true,
+                          ),
+                        ),
+                        const SizedBox(width: DimensionConstant.d12),
+                        Expanded(
+                          child: _readonlyBox(
+                            label: 'Full Name',
+                            value: r?.name ?? '—',
+                          ),
+                        ),
+                        const SizedBox(width: DimensionConstant.d12),
+                        Expanded(
+                          child: _readonlyBox(
+                            label: 'Phone Number',
+                            value: r?.phoneDisplay ?? '—',
+                            requiredField: true,
+                          ),
+                        ),
+                        const SizedBox(width: DimensionConstant.d12),
+                        Expanded(
+                          child: _readonlyBox(
+                            label: 'E-mail',
+                            value: r?.emailDisplay ?? '—',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: DimensionConstant.d12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _readonlyBox(
+                            label: 'Type of Client',
+                            value: r?.typeOfClient ?? '—',
+                            requiredField: true,
+                          ),
+                        ),
+                        const SizedBox(width: DimensionConstant.d12),
+                        Expanded(
+                          child: _readonlyBox(
+                            label: 'Address',
+                            value: r?.addressDisplay ?? '—',
+                          ),
+                        ),
+                        const SizedBox(width: DimensionConstant.d12),
+                        Expanded(
+                          child: _readonlyBox(
+                            label: 'Type of Booking',
+                            value: r?.bookingType ?? '—',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _readonlyBox(label: 'Title', value: r?.title ?? '—', requiredField: true),
+                  const SizedBox(height: DimensionConstant.d12),
+                  _readonlyBox(label: 'Full Name', value: r?.name ?? '—'),
+                  const SizedBox(height: DimensionConstant.d12),
+                  _readonlyBox(
+                    label: 'Phone Number',
+                    value: r?.phoneDisplay ?? '—',
+                    requiredField: true,
+                  ),
+                  const SizedBox(height: DimensionConstant.d12),
+                  _readonlyBox(label: 'E-mail', value: r?.emailDisplay ?? '—'),
+                  const SizedBox(height: DimensionConstant.d12),
+                  _readonlyBox(
+                    label: 'Type of Client',
+                    value: r?.typeOfClient ?? '—',
+                    requiredField: true,
+                  ),
+                  const SizedBox(height: DimensionConstant.d12),
+                  _readonlyBox(label: 'Address', value: r?.addressDisplay ?? '—'),
+                  const SizedBox(height: DimensionConstant.d12),
+                  _readonlyBox(label: 'Type of Booking', value: r?.bookingType ?? '—'),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _metaPair(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('$label: ', style: _labelStyle),
+        Expanded(
+          child: Text(value, style: _valueStyle),
+        ),
+      ],
+    );
+  }
+
+  Widget _readonlyBox({
+    required String label,
+    required String value,
+    bool requiredField = false,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: DimensionConstant.d12,
+        vertical: DimensionConstant.d10,
+      ),
+      decoration: BoxDecoration(
+        color: ColorConstant.whiteColor.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(DimensionConstant.d4),
+        border: Border.all(
+          color: ColorConstant.whiteColor.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text.rich(
+            TextSpan(
+              style: _labelStyle,
+              children: [
+                TextSpan(text: label),
+                if (requiredField)
+                  TextSpan(
+                    text: '*',
+                    style: _labelStyle.copyWith(
+                      color: const Color(0xFFFF383C),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: DimensionConstant.d6),
+          Text(value, style: _valueStyle),
+        ],
       ),
     );
   }
