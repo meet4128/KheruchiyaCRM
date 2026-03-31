@@ -15,6 +15,8 @@ class ListInquiryItem {
     this.status,
     this.createdAt,
     this.checklist = const [],
+    this.user,
+    this.assignedTo,
   });
 
   factory ListInquiryItem.fromJson(Map<String, dynamic> json) =>
@@ -34,4 +36,10 @@ class ListInquiryItem {
 
   @JsonKey(defaultValue: [])
   final List<InquiryChecklistItem> checklist;
+
+  /// Inquiry assignee(s) from GET — may be comma-separated or `"A & B"` style.
+  final String? user;
+
+  /// Alternative key some APIs use for assignee display string.
+  final String? assignedTo;
 }

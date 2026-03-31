@@ -56,6 +56,8 @@ class VendorInquiryRow {
     final deadline =
         createdLocal != null && sla != null ? createdLocal.add(sla) : null;
 
+    final assignee = _assignedFromInquiry(e);
+
     return VendorInquiryRow(
       inquiryNo: inquiryNo,
       generatedAt: _formatInquiryGenerated(e.createdAt),
@@ -65,10 +67,68 @@ class VendorInquiryRow {
       priorityText: _priorityLabelFromChecklist(checklist),
       checklist: checklist,
       slaDeadline: deadline,
-      assignedToNames: const [],
-      assignedToText: '-',
+      assignedToNames: assignee.names,
+      assignedToText: assignee.text,
       status: e.status ?? '-',
     );
+  }
+
+  /// `user` / `assignedTo` on inquiry, else unique `checklist[].user` values.
+  static ({List<String> names, String text}) _assignedFromInquiry(
+    ListInquiryItem e,
+  ) {
+    final root = _firstNonEmpty([e.user, e.assignedTo]);
+    if (root != null) {
+      final names = _parseAssigneeNames(root);
+      if (names.isNotEmpty) {
+        return (names: names, text: _formatAssigneeLine(names));
+      }
+    }
+
+    final fromChecklist = <String>[];
+    for (final c in e.checklist) {
+      final u = c.user?.trim();
+      if (u != null && u.isNotEmpty) {
+        fromChecklist.addAll(_parseAssigneeNames(u));
+      }
+    }
+    final unique = _dedupeAssignees(fromChecklist);
+    if (unique.isEmpty) {
+      return (names: const <String>[], text: 'Yet to assign');
+    }
+    return (names: unique, text: _formatAssigneeLine(unique));
+  }
+
+  static String? _firstNonEmpty(List<String?> values) {
+    for (final v in values) {
+      final t = v?.trim();
+      if (t != null && t.isNotEmpty) return t;
+    }
+    return null;
+  }
+
+  static List<String> _parseAssigneeNames(String raw) {
+    return raw
+        .split(RegExp(r',|&'))
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+  }
+
+  static List<String> _dedupeAssignees(List<String> names) {
+    final seen = <String>{};
+    final out = <String>[];
+    for (final n in names) {
+      if (seen.add(n.toLowerCase())) out.add(n);
+    }
+    return out;
+  }
+
+  static String _formatAssigneeLine(List<String> names) {
+    if (names.isEmpty) return 'Yet to assign';
+    if (names.length == 1) return names.first;
+    if (names.length == 2) return '${names[0]} & ${names[1]}';
+    return '${names.take(names.length - 1).join(', ')} & ${names.last}';
   }
 
   /// SLA window from first checklist priority: HIGH 15m, MEDIUM 1h, LOW 8h.

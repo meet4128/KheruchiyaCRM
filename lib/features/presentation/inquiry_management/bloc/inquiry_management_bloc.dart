@@ -147,6 +147,8 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
           (e.title?.toLowerCase().contains(term) ?? false) ||
           (e.status?.toLowerCase().contains(term) ?? false) ||
           (e.typeOfBooking?.toLowerCase().contains(term) ?? false) ||
+          (e.user?.toLowerCase().contains(term) ?? false) ||
+          (e.assignedTo?.toLowerCase().contains(term) ?? false) ||
           id.toLowerCase().contains(term) ||
           inquiryNo.toLowerCase().contains(term);
     }).toList();

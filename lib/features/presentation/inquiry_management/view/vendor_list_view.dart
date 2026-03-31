@@ -723,30 +723,75 @@ class _VendorListViewState extends State<VendorListView> {
         );
       case 'assign':
         return Center(
-          child: Container(
-            width: 77,
-            height: 30,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [Color(0xFF903A8C), Color(0xFF393285)],
-              ),
-              borderRadius: BorderRadius.circular(4),
+          child: PopupMenuButton<String>(
+            tooltip: 'Assign',
+            offset: const Offset(0, 36),
+            color: const Color(0xFF2A1F3D),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
             ),
-            alignment: Alignment.center,
+            child: Container(
+              width: 77,
+              height: 30,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [Color(0xFF903A8C), Color(0xFF393285)],
+                ),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                'Assign to',
+                style: FontConstant.interNormal(
+                  color: Colors.white,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            itemBuilder: (context) => _assignToMenuItems(row),
+            onSelected: (_) {},
+          ),
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  /// Names from the same row as **Assigned to** (comma/`&`-parsed [VendorInquiryRow.assignedToNames]).
+  List<PopupMenuEntry<String>> _assignToMenuItems(VendorInquiryRow row) {
+    if (row.assignedToNames.isEmpty) {
+      return [
+        PopupMenuItem<String>(
+          enabled: false,
+          child: Text(
+            'Yet to assign',
+            style: FontConstant.interNormal(
+              color: Colors.white70,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      ];
+    }
+    return row.assignedToNames
+        .map(
+          (name) => PopupMenuItem<String>(
+            value: name,
             child: Text(
-              'Assign to',
+              name,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: FontConstant.interNormal(
                 color: Colors.white,
                 fontSize: 12,
               ),
             ),
           ),
-        );
-      default:
-        return const SizedBox.shrink();
-    }
+        )
+        .toList();
   }
 
   Widget _buildTableCell({
