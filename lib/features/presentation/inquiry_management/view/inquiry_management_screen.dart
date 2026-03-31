@@ -9,12 +9,16 @@ import 'package:travel_crm/core/constants/font_constant.dart';
 import 'package:travel_crm/core/widgets/inquiry_management_items.dart';
 import 'package:travel_crm/di/injector.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_management_bloc.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widget/amendment_info_card.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widget/inquiry_information.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widget/qna_notes.dart';
 
 class InquiryManagementScreen extends StatefulWidget {
-  const InquiryManagementScreen({super.key});
+  const InquiryManagementScreen({super.key, this.vendorRow});
+
+  /// From vendor list row tap ([VendorListView]); null if opened without navigation extra.
+  final VendorInquiryRow? vendorRow;
 
   @override
   State<InquiryManagementScreen> createState() => _InquiryManagementScreenState();
@@ -58,7 +62,7 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
                               ),
                               _hierarchyHeader(title: 'Pending ', icon: AssetConstants.icRightArrow),
                               _hierarchyHeader(
-                                title: '#85913 - Hardik Kheruchiya',
+                                title: _breadcrumbDetailTitle(),
                                 color: ColorConstant.whiteColor,
                               ),
                               const Spacer(),
@@ -105,7 +109,7 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
                     const SizedBox(height: DimensionConstant.d25),
 
                     /// Card Body 1
-                    InquiryInformation(),
+                    InquiryInformation(row: widget.vendorRow),
                     const SizedBox(height: DimensionConstant.d10),
                     AmendmentInfoCard(),
                     const SizedBox(height: DimensionConstant.d10),
@@ -124,6 +128,12 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
         },
       ),
     );
+  }
+
+  String _breadcrumbDetailTitle() {
+    final r = widget.vendorRow;
+    if (r == null) return '—';
+    return '${r.inquiryNo} - ${r.name}';
   }
 
   Widget _hierarchyHeader({required String title, String? icon, Color? color}) {

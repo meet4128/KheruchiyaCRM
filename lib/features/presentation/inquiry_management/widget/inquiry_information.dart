@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:travel_crm/core/constants/asset_constants.dart';
@@ -5,10 +7,14 @@ import 'package:travel_crm/core/constants/color_constants.dart';
 import 'package:travel_crm/core/constants/dimension_constant.dart';
 import 'package:travel_crm/core/constants/font_constant.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
-import 'package:travel_crm/features/presentation/inquiry_management/widget/overlapping_avatar.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/widgets/inquiry_priority_trend_icon.dart';
 
 class InquiryInformation extends StatefulWidget {
-  const InquiryInformation({super.key});
+  const InquiryInformation({super.key, this.row});
+
+  /// Row from vendor list tap; when null, placeholders are shown.
+  final VendorInquiryRow? row;
 
   @override
   State<InquiryInformation> createState() => _InquiryInformationState();
@@ -16,15 +22,68 @@ class InquiryInformation extends StatefulWidget {
 
 class _InquiryInformationState extends State<InquiryInformation> {
   final ExpansibleController _controller = ExpansibleController();
+  Timer? _slaTimer;
 
-  final List<String> peopleImages = [
-    "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
-    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
-    "https://images.unsplash.com/photo-1531123897727-8f129e1688ce",
-  ];
+  @override
+  void initState() {
+    super.initState();
+    if (widget.row?.slaDeadline != null) {
+      _slaTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant InquiryInformation oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.row?.slaDeadline != widget.row?.slaDeadline) {
+      _slaTimer?.cancel();
+      _slaTimer = null;
+      if (widget.row?.slaDeadline != null) {
+        _slaTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+          if (mounted) setState(() {});
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _slaTimer?.cancel();
+    super.dispose();
+  }
+
+  String get _inquiryNoDisplay {
+    final r = widget.row;
+    if (r == null) return ' —';
+    return ' ${r.inquiryNo}';
+  }
+
+  String get _generatedDisplay {
+    final r = widget.row;
+    if (r == null) return ' —';
+    return ' ${r.generatedAt}';
+  }
+
+  String get _assignedDisplay {
+    final r = widget.row;
+    if (r == null) return '—';
+    return r.assignedToText;
+  }
+
+  String _priorityLabel(VendorInquiryRow r) {
+    final d = r.slaDeadline;
+    if (d != null) {
+      return VendorInquiryRow.formatSlaCountdownLabel(d, DateTime.now());
+    }
+    return r.priorityText;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final r = widget.row;
+
     return Container(
       color: ColorConstant.card1BgColor,
       width: double.infinity,
@@ -38,7 +97,6 @@ class _InquiryInformationState extends State<InquiryInformation> {
                 right: DimensionConstant.d25,
                 left: DimensionConstant.d25,
                 top: DimensionConstant.d30,
-                // bottom: DimensionConstant.d30,
               ),
         child: Expansible(
           controller: _controller,
@@ -60,7 +118,7 @@ class _InquiryInformationState extends State<InquiryInformation> {
                         ),
                       ),
                       Text(
-                        ' #85913',
+                        _inquiryNoDisplay,
                         style: FontConstant.interNormal(
                           color: ColorConstant.inquiryInfoTxtColor,
                           fontSize: DimensionConstant.d16,
@@ -171,7 +229,7 @@ class _InquiryInformationState extends State<InquiryInformation> {
                         ),
                       ),
                       Text(
-                        ' #85913',
+                        _inquiryNoDisplay,
                         style: FontConstant.interNormal(
                           color: ColorConstant.whiteColor,
                           fontSize: DimensionConstant.d12,
@@ -186,7 +244,7 @@ class _InquiryInformationState extends State<InquiryInformation> {
                         ),
                       ),
                       Text(
-                        ' #17/12/2025 @ 8:50PM',
+                        _generatedDisplay,
                         style: FontConstant.interNormal(
                           color: ColorConstant.whiteColor,
                           fontSize: DimensionConstant.d12,
@@ -200,10 +258,12 @@ class _InquiryInformationState extends State<InquiryInformation> {
                           fontSize: DimensionConstant.d12,
                         ),
                       ),
-                      OverlappingAvatars(images: peopleImages),
-                      const SizedBox(width: DimensionConstant.d5),
+                      if (r != null && r.assignedToNames.isNotEmpty) ...[
+                        _AssigneeInitialsAvatars(names: r.assignedToNames),
+                        const SizedBox(width: DimensionConstant.d5),
+                      ],
                       Text(
-                        'Amit, Jenny & Helly',
+                        _assignedDisplay,
                         style: FontConstant.interNormal(
                           color: ColorConstant.whiteColor,
                           fontSize: DimensionConstant.d12,
@@ -218,19 +278,28 @@ class _InquiryInformationState extends State<InquiryInformation> {
                         ),
                       ),
                       const SizedBox(width: DimensionConstant.d5),
-                      SvgPicture.asset(
-                        AssetConstants.icRedUpArrow,
-                        height: DimensionConstant.d16,
-                        width: DimensionConstant.d16,
-                      ),
-                      const SizedBox(width: DimensionConstant.d5),
-                      Text(
-                        '00:15 min Left',
-                        style: FontConstant.interNormal(
-                          color: ColorConstant.whiteColor.withValues(alpha: .5),
-                          fontSize: DimensionConstant.d12,
+                      if (r != null) ...[
+                        InquiryPriorityTrendIcon(trend: r.priorityTrend, size: DimensionConstant.d16),
+                        const SizedBox(width: DimensionConstant.d5),
+                        Flexible(
+                          child: Text(
+                            _priorityLabel(r),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: FontConstant.interNormal(
+                              color: ColorConstant.whiteColor.withValues(alpha: .5),
+                              fontSize: DimensionConstant.d12,
+                            ),
+                          ),
                         ),
-                      ),
+                      ] else
+                        Text(
+                          '—',
+                          style: FontConstant.interNormal(
+                            color: ColorConstant.whiteColor.withValues(alpha: .5),
+                            fontSize: DimensionConstant.d12,
+                          ),
+                        ),
                       const SizedBox(width: DimensionConstant.d15),
                       Text(
                         StringConstant.statusColon,
@@ -246,11 +315,15 @@ class _InquiryInformationState extends State<InquiryInformation> {
                         width: DimensionConstant.d16,
                       ),
                       const SizedBox(width: DimensionConstant.d5),
-                      Text(
-                        StringConstant.inProgress,
-                        style: FontConstant.interNormal(
-                          color: ColorConstant.whiteColor.withValues(alpha: .5),
-                          fontSize: DimensionConstant.d12,
+                      Flexible(
+                        child: Text(
+                          r?.status ?? '—',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: FontConstant.interNormal(
+                            color: ColorConstant.whiteColor.withValues(alpha: .5),
+                            fontSize: DimensionConstant.d12,
+                          ),
                         ),
                       ),
                     ],
@@ -267,6 +340,50 @@ class _InquiryInformationState extends State<InquiryInformation> {
             return Offstage();
           },
         ),
+      ),
+    );
+  }
+}
+
+/// Same visual idea as [VendorListView] assignee avatars: initials in overlapping circles.
+class _AssigneeInitialsAvatars extends StatelessWidget {
+  const _AssigneeInitialsAvatars({required this.names});
+
+  final List<String> names;
+
+  @override
+  Widget build(BuildContext context) {
+    const double size = 18;
+    const double overlap = 8;
+    final double width = size + ((names.length - 1) * (size - overlap));
+
+    return SizedBox(
+      width: width,
+      height: size,
+      child: Stack(
+        children: List.generate(names.length, (index) {
+          final String initial = names[index].substring(0, 1).toUpperCase();
+          return Positioned(
+            left: index * (size - overlap),
+            child: Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.25),
+                border: Border.all(color: Colors.white, width: 1),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                initial,
+                style: FontConstant.interNormal(
+                  color: ColorConstant.whiteColor,
+                  fontSize: 9,
+                ),
+              ),
+            ),
+          );
+        }),
       ),
     );
   }

@@ -1,8 +1,10 @@
 // presentation/pages/pages.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/inquiry_view.dart';
 import 'package:travel_crm/features/presentation/air_ticket/air_ticket_view.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/view/inquiry_management_screen.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/view/vendor_list_view.dart';
 
@@ -26,7 +28,11 @@ class InquiryManagementDetailPage extends StatelessWidget {
   const InquiryManagementDetailPage({super.key});
 
   @override
-  Widget build(BuildContext context) => const InquiryManagementScreen();
+  Widget build(BuildContext context) {
+    final extra = GoRouterState.of(context).extra;
+    final row = extra is VendorInquiryRow ? extra : null;
+    return InquiryManagementScreen(vendorRow: row);
+  }
 }
 
 class ClientLeadsPage extends StatelessWidget {

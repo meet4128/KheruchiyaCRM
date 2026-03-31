@@ -677,7 +677,7 @@ class _VendorListViewState extends State<VendorListView> {
         return Center(
           child: InkWell(
             onTap: () {
-              context.push(PathConstant.inquiryManagementDetail);
+              context.push(PathConstant.inquiryManagementDetail, extra: row);
             },
             child: const Icon(
               Icons.keyboard_arrow_down_rounded,
