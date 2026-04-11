@@ -3,6 +3,7 @@ class AssetConstants {
   static const String basePath = 'assets/icons';
 
   /// Icons
+  static const String icLoginBackgroundView = '$basePath/ic_login_background_view.jpg';
   static const String icRightArrow = '$basePath/ic_right_arrow.svg';
   static const String icRepeat = '$basePath/ic_repeat.svg';
   static const String icUpRoundArrow = '$basePath/ic_up_round_arrow.svg';

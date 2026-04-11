@@ -3,25 +3,31 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../utils/shared_pref_utils.dart';
 import '../../features/pages/pages.dart';
 import '../../features/presentation/dashboard/bloc/navigation_bloc.dart';
 import '../../features/presentation/dashboard/bloc/navigation_event.dart';
 import '../../features/presentation/dashboard/view/dashboard_shell.dart';
 
 FutureOr<String?> globalRedirect(BuildContext context, GoRouterState state) async {
-  // bool isLoggedIn = SharedPrefUtils.getValue(SharedPrefUtilsKeys.isLoggedIn, false);
-  // bool isRememberMe = SharedPrefUtils.getValue(SharedPrefUtilsKeys.isRememberMe, false);
-  //
-  // if (state.uri.toString() == PathConstant.forgotPassword) {
-  //   return PathConstant.forgotPassword;
-  // }
-  // if ((isLoggedIn || isRememberMe) && state.uri.toString() == PathConstant.login) {
-  //   return PathConstant.dashBoard;
-  // }
-  // if (!isLoggedIn && !isRememberMe) {
-  //   return PathConstant.login;
-  // }
+  final path = state.uri.path.isEmpty ? PathConstant.dashboard : state.uri.path;
+  final hasToken = _sessionHasAccessToken();
+
+  if (hasToken && path == PathConstant.login) {
+    return PathConstant.dashboard;
+  }
+
+  if (!hasToken && path != PathConstant.login) {
+    return PathConstant.login;
+  }
+
   return null;
+}
+
+/// True when a non-empty access token is stored (same source as [DioClient] Bearer).
+bool _sessionHasAccessToken() {
+  final token = SharedPrefUtils.getValue(SharedPrefUtilsKeys.userToken, '');
+  return token.toString().trim().isNotEmpty;
 }
 
 String _pathFor(NavPage page) {
@@ -172,6 +178,13 @@ GoRouter createRouter(NavigationBloc navBloc) {
           ),
         ],
       ),
+      GoRoute(
+        path: PathConstant.login,
+        name: 'login',
+        pageBuilder: (context, state) => NoTransitionPage(
+          child: const LoginPage(),
+        ),
+      ),
     ],
 
     /// When the router location changes (back/forward in browser or direct URL),
@@ -309,6 +322,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
 
 class PathConstant {
   static const String dashboard = '/';
+  static const String login = '/login';
   static const String clientLeads = '/client-leads';
   static const String inquiryManagement = '/inquiry-management';
   static const String inquiryManagementDetail = '/inquiry-management/detail';

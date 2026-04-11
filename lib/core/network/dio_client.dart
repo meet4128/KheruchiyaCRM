@@ -11,7 +11,6 @@ class DioClient {
   static final Dio _dio = Dio(BaseOptions(baseUrl: Apis.baseUrl));
   static const String contentType = 'application/json';
 
-  static Completer<void>? _loginLock;
   static Completer<void>? _refreshTokenLock;
 
   static Dio getInstance() {
@@ -56,8 +55,7 @@ class DioClient {
           final requestUri = e.requestOptions.uri.toString();
           if (e.response?.statusCode == 401 && _needsAuth(requestUri)) {
             final refreshed = await _refreshTokenAndStoreAccessToken();
-            final relogged = refreshed ? true : await _loginAndStoreAccessToken();
-            if (relogged) {
+            if (refreshed) {
               final token =
                   SharedPrefUtils.getValue(SharedPrefUtilsKeys.userToken, '');
               if (token.toString().trim().isNotEmpty) {
@@ -89,51 +87,6 @@ class DioClient {
       requestBody: true,
       logPrint: (object) => log(object.toString()),
     ));
-  }
-
-  /// Calls inquiry-auth login API, saves new access token. Returns true if successful.
-  /// Uses a lock so only one login runs at a time; concurrent 401s wait for the same login.
-  static Future<bool> _loginAndStoreAccessToken() async {
-    if (_loginLock != null && !_loginLock!.isCompleted) {
-      await _loginLock!.future;
-      final token =
-          SharedPrefUtils.getValue(SharedPrefUtilsKeys.userToken, '');
-      return token.toString().trim().isNotEmpty;
-    }
-
-    _loginLock = Completer<void>();
-    try {
-      // Use a plain Dio so we don't add Bearer or trigger our interceptors
-      final dio = Dio(BaseOptions(baseUrl: Apis.inquiryBaseUrl));
-      dio.options.headers['Content-Type'] = contentType;
-
-      final response = await dio.post<Map<String, dynamic>>(
-        Apis.inquiryAuthLoginPath,
-        data: const {
-          'userId': 'dev-user',
-          'email': 'meet@example.com',
-          'role': 'user',
-        },
-      );
-
-      final body = response.data;
-      if (body == null) return false;
-      final parsed = AuthTokensResponse.fromJson(body);
-      final accessToken = parsed.data.accessToken.trim();
-      final refreshToken = parsed.data.refreshToken.trim();
-      if (accessToken.isEmpty) return false;
-      SharedPrefUtils.setValue(SharedPrefUtilsKeys.userToken, accessToken);
-      if (refreshToken.isNotEmpty) {
-        SharedPrefUtils.setValue(SharedPrefUtilsKeys.refreshToken, refreshToken);
-      }
-      return true;
-    } catch (e) {
-      log('Login failed: $e');
-      return false;
-    } finally {
-      _loginLock?.complete();
-      _loginLock = null;
-    }
   }
 
   /// Calls inquiry refresh-token API using stored refreshToken, saves new access token.

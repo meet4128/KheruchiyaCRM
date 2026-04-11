@@ -1,7 +1,12 @@
 // presentation/pages/pages.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
+import 'package:travel_crm/di/injector.dart';
+import 'package:travel_crm/features/presentation/login/bloc/login_bloc.dart';
+import 'package:travel_crm/features/presentation/login/bloc/login_state.dart';
+import 'package:travel_crm/features/presentation/login/view/login_screen.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/inquiry_view.dart';
 import 'package:travel_crm/features/presentation/air_ticket/air_ticket_view.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
@@ -13,6 +18,29 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _page(StringConstant.dashboard);
+}
+
+/// Operations Portal login — route-level [BlocProvider]; shell routes use [DashboardShell] only.
+class LoginPage extends StatelessWidget {
+  const LoginPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => LoginBloc(authRepository: sl()),
+      child: BlocListener<LoginBloc, LoginState>(
+        listenWhen: (previous, current) =>
+            previous.status != current.status &&
+            current.status == LoginStatus.success,
+        listener: (context, state) {
+          if (!context.mounted) return;
+          // Same as [PathConstant.dashboard] — avoid importing path_constants here (it imports this file).
+          context.go('/');
+        },
+        child: const LoginScreen(),
+      ),
+    );
+  }
 }
 
 /// The whole Inquiry Management Module
