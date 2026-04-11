@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:travel_crm/core/constants/asset_constants.dart';
 import 'package:travel_crm/core/constants/color_constants.dart';
 import 'package:travel_crm/core/constants/dimension_constant.dart';
@@ -95,7 +94,7 @@ class _BrandPane extends StatelessWidget {
               final assetWidth = (maxW - horizontal).clamp(120.0, 440.0);
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: DimensionConstant.d24),
-                child: SvgPicture.asset(
+                child: Image.asset(
                   AssetConstants.icKheruchiyaBgLogo,
                   width: assetWidth,
                   fit: BoxFit.contain,
