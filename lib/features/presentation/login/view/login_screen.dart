@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:travel_crm/core/constants/asset_constants.dart';
 import 'package:travel_crm/core/constants/color_constants.dart';
 import 'package:travel_crm/core/constants/dimension_constant.dart';
 import 'package:travel_crm/core/constants/font_constant.dart';
+import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/features/presentation/login/bloc/login_bloc.dart';
 import 'package:travel_crm/features/presentation/login/bloc/login_event.dart';
 import 'package:travel_crm/features/presentation/login/bloc/login_state.dart';
@@ -86,33 +88,21 @@ class _BrandPane extends StatelessWidget {
         ),
         const CustomPaint(painter: _BrandArcPainter(), size: Size.infinite),
         Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: DimensionConstant.d24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  'KHERUCHIYA',
-                  textAlign: TextAlign.center,
-                  style: FontConstant.interBold(
-                    color: ColorConstant.whiteColor,
-                    fontSize: 36,
-                    fontWeight: FontWeight.w700,
-                    height: 1.05,
-                  ).copyWith(letterSpacing: 1.2),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxW = constraints.maxWidth;
+              const horizontal = DimensionConstant.d24 * 2;
+              final assetWidth = (maxW - horizontal).clamp(120.0, 440.0);
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: DimensionConstant.d24),
+                child: SvgPicture.asset(
+                  AssetConstants.icKheruchiyaBgLogo,
+                  width: assetWidth,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.center,
                 ),
-                const SizedBox(height: DimensionConstant.d8),
-                Text(
-                  'TRAVEL HUB PVT. LTD.',
-                  style: FontConstant.interNormal(
-                    color: ColorConstant.whiteColor.withValues(alpha: 0.92),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ).copyWith(letterSpacing: 1.0),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ],
@@ -270,7 +260,7 @@ class _LoginCardState extends State<_LoginCard> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'OPERATIONS PORTAL',
+                    StringConstant.operationsPortalTitle,
                     textAlign: TextAlign.center,
                     style: FontConstant.interBold(
                       color: ColorConstant.whiteColor,
@@ -280,7 +270,7 @@ class _LoginCardState extends State<_LoginCard> {
                   ),
                   const SizedBox(height: DimensionConstant.d8),
                   Text(
-                    'Login with Kheruchiya Travels',
+                    StringConstant.loginWithKheruchiyaTravels,
                     textAlign: TextAlign.center,
                     style: FontConstant.interNormal(
                       color: ColorConstant.whiteColor.withValues(alpha: 0.95),
@@ -289,7 +279,7 @@ class _LoginCardState extends State<_LoginCard> {
                   ),
                   const SizedBox(height: DimensionConstant.d12),
                   Text(
-                    'Authorized team access only. Sign in with admin-provided credentials.',
+                    StringConstant.loginAuthorizedAccessDisclaimer,
                     textAlign: TextAlign.center,
                     style: FontConstant.interNormal(
                       color: Colors.white.withValues(alpha: 0.55),
@@ -299,7 +289,7 @@ class _LoginCardState extends State<_LoginCard> {
                   ),
                   const SizedBox(height: DimensionConstant.d28),
                   Text(
-                    'E-mail',
+                    StringConstant.email,
                     style: FontConstant.interNormal(
                       color: ColorConstant.whiteColor.withValues(alpha: 0.9),
                       fontSize: 12,
@@ -319,7 +309,7 @@ class _LoginCardState extends State<_LoginCard> {
                   ),
                   const SizedBox(height: DimensionConstant.d18),
                   Text(
-                    'Password',
+                    StringConstant.password,
                     style: FontConstant.interNormal(
                       color: ColorConstant.whiteColor.withValues(alpha: 0.9),
                       fontSize: 12,
@@ -337,7 +327,9 @@ class _LoginCardState extends State<_LoginCard> {
                     cursorColor: ColorConstant.whiteColor,
                     decoration: fieldDecoration(errorText: state.passwordError).copyWith(
                       suffixIcon: IconButton(
-                        tooltip: state.obscurePassword ? 'Show password' : 'Hide password',
+                        tooltip: state.obscurePassword
+                            ? StringConstant.loginTooltipShowPassword
+                            : StringConstant.loginTooltipHidePassword,
                         onPressed: loading
                             ? null
                             : () => context
@@ -377,7 +369,7 @@ class _LoginCardState extends State<_LoginCard> {
                       ),
                       Expanded(
                         child: Text(
-                          'Keep me signed in',
+                          StringConstant.keepMeSignedIn,
                           style: FontConstant.interNormal(
                             color: ColorConstant.whiteColor.withValues(alpha: 0.92),
                             fontSize: 13,
@@ -387,7 +379,7 @@ class _LoginCardState extends State<_LoginCard> {
                       TextButton(
                         onPressed: null,
                         child: Text(
-                          'Forgot Password?',
+                          StringConstant.forgotPasswordQuestion,
                           style: FontConstant.interNormal(
                             color: ColorConstant.whiteColor.withValues(alpha: 0.95),
                             fontSize: 13,
@@ -411,11 +403,11 @@ class _LoginCardState extends State<_LoginCard> {
                               ..add(LoginPasswordChanged(_passwordController.text))
                               ..add(const LoginSubmitted());
                           },
-                    label: 'Submit',
+                    label: StringConstant.submit,
                   ),
                   const SizedBox(height: DimensionConstant.d20),
                   Text(
-                    "If you don't have login credentials, please contact your administrator.",
+                    StringConstant.loginContactAdministratorNote,
                     textAlign: TextAlign.center,
                     style: FontConstant.interNormal(
                       color: Colors.white.withValues(alpha: 0.45),
@@ -573,9 +565,12 @@ class _GlobalFooter extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('©$year KTHPL CRM', style: small),
                     Text(
-                      'Powered by ZEEMO DIGITAL',
+                      '${StringConstant.copyrightSymbol}$year${StringConstant.loginFooterKthplCrmSuffix}',
+                      style: small,
+                    ),
+                    Text(
+                      StringConstant.poweredByZeemoDigitalLine,
                       style: FontConstant.interNormal(
                         color: ColorConstant.whiteColor.withValues(alpha: 0.55),
                         fontSize: 11,
@@ -591,12 +586,12 @@ class _GlobalFooter extends StatelessWidget {
                 children: [
                   TextButton(
                     onPressed: null,
-                    child: Text('COOKIES', style: dim),
+                    child: Text(StringConstant.cookies, style: dim),
                   ),
-                  Text('  |  ', style: dim),
+                  Text(StringConstant.loginFooterLinksSeparator, style: dim),
                   TextButton(
                     onPressed: null,
-                    child: Text('LEGAL POLICIES', style: dim),
+                    child: Text(StringConstant.legalPolicies, style: dim),
                   ),
                 ],
               ),
@@ -604,7 +599,7 @@ class _GlobalFooter extends StatelessWidget {
             Expanded(
               child: Align(
                 alignment: Alignment.centerRight,
-                child: Text('Version 1.0.0', style: small),
+                child: Text(StringConstant.loginAppVersionDisplay, style: small),
               ),
             ),
           ],

@@ -29,6 +29,27 @@ class StringConstant {
   static const String emoDigital = 'EMO DIGITAL';
   static const String version = 'Version 1.0';
 
+  // ========== Operations Portal (Login) ==========
+  static const String operationsPortalTitle = 'OPERATIONS PORTAL';
+  static const String loginWithKheruchiyaTravels = 'Login with Kheruchiya Travels';
+  static const String loginAuthorizedAccessDisclaimer =
+      'Authorized team access only. Sign in with admin-provided credentials.';
+  static const String password = 'Password';
+  static const String loginTooltipShowPassword = 'Show password';
+  static const String loginTooltipHidePassword = 'Hide password';
+  static const String keepMeSignedIn = 'Keep me signed in';
+  static const String forgotPasswordQuestion = 'Forgot Password?';
+  static const String loginContactAdministratorNote =
+      "If you don't have login credentials, please contact your administrator.";
+  static const String copyrightSymbol = '©';
+  /// Use after year: `'$copyrightSymbol$year$loginFooterKthplCrmSuffix'`.
+  static const String loginFooterKthplCrmSuffix = ' KTHPL CRM';
+  static const String poweredByZeemoDigitalLine = 'Powered by ZEEMO DIGITAL';
+  static const String cookies = 'COOKIES';
+  static const String legalPolicies = 'LEGAL POLICIES';
+  static const String loginFooterLinksSeparator = '  |  ';
+  static const String loginAppVersionDisplay = 'Version 1.0.0';
+
   // ========== Inquiry Form ==========
   static const String inquiryForm = 'Inquiry Form';
   static const String inquiryFormTitle = 'INQUIRY FORM';
