@@ -35,6 +35,19 @@ class TeamMembersSortFilterTapped extends TeamMembersEvent {
   const TeamMembersSortFilterTapped();
 }
 
+class TeamCategoryTabChanged extends TeamMembersEvent {
+  const TeamCategoryTabChanged({
+    required this.section,
+    required this.tab,
+  });
+
+  final TeamSection section;
+  final TeamCategoryTab tab;
+
+  @override
+  List<Object?> get props => [section, tab];
+}
+
 class TeamMemberEditTapped extends TeamMembersEvent {
   const TeamMemberEditTapped(this.memberId);
 

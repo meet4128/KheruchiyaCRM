@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:travel_crm/core/theme/app_colors.dart';
-import 'package:travel_crm/features/presentation/admin_panel/team_members/bloc/team_members_bloc.dart';
-import 'package:travel_crm/features/presentation/admin_panel/team_members/bloc/team_members_event.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/bloc/team_members_state.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/widgets/team_member_row_actions.dart';
 
 class TeamMembersTable extends StatelessWidget {
-  const TeamMembersTable({super.key});
+  const TeamMembersTable({
+    super.key,
+    required this.members,
+    required this.showStatus,
+    required this.showDepartment,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final List<TeamMemberUiModel> members;
+  final bool showStatus;
+  final bool showDepartment;
+  final ValueChanged<String> onEdit;
+  final ValueChanged<String> onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -20,34 +30,39 @@ class TeamMembersTable extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const _TableHeader(),
+          _TableHeader(
+            showStatus: showStatus,
+            showDepartment: showDepartment,
+          ),
           const SizedBox(height: 8),
-          Expanded(
-            child: BlocBuilder<TeamMembersBloc, TeamMembersState>(
-              buildWhen: (previous, current) => previous.visibleMembers != current.visibleMembers,
-              builder: (context, state) {
-                if (state.visibleMembers.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'No team members found.',
-                      style: TextStyle(color: AppColors.dark().textSecondary),
-                    ),
-                  );
-                }
-                return ListView.separated(
-                  itemCount: state.visibleMembers.length,
-                  separatorBuilder: (_, __) => Divider(
-                    color: AppColors.dark().borderPrimary.withValues(alpha: 0.3),
-                    height: 14,
-                  ),
-                  itemBuilder: (context, index) {
-                    final member = state.visibleMembers[index];
-                    return _MemberRow(member: member);
-                  },
+          if (members.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                'No team members found.',
+                style: TextStyle(color: AppColors.dark().textSecondary),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: members.length,
+              separatorBuilder: (_, __) => Divider(
+                color: AppColors.dark().borderPrimary.withValues(alpha: 0.3),
+                height: 14,
+              ),
+              itemBuilder: (context, index) {
+                final member = members[index];
+                return _MemberRow(
+                  member: member,
+                  showStatus: showStatus,
+                  showDepartment: showDepartment,
+                  onEdit: onEdit,
+                  onDelete: onDelete,
                 );
               },
             ),
-          ),
         ],
       ),
     );
@@ -55,7 +70,13 @@ class TeamMembersTable extends StatelessWidget {
 }
 
 class _TableHeader extends StatelessWidget {
-  const _TableHeader();
+  const _TableHeader({
+    required this.showStatus,
+    required this.showDepartment,
+  });
+
+  final bool showStatus;
+  final bool showDepartment;
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +85,7 @@ class _TableHeader extends StatelessWidget {
       fontSize: 12,
       fontWeight: FontWeight.w600,
     );
+    final dynamicColumnLabel = showStatus ? 'Status' : (showDepartment ? 'Department' : '');
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
@@ -72,7 +94,7 @@ class _TableHeader extends StatelessWidget {
           Expanded(flex: 3, child: Text('Name', style: textStyle)),
           Expanded(flex: 2, child: Text('D.O.J', style: textStyle)),
           Expanded(flex: 4, child: Text('Email', style: textStyle)),
-          Expanded(flex: 2, child: Text('Status', style: textStyle)),
+          Expanded(flex: 2, child: Text(dynamicColumnLabel, style: textStyle)),
           Expanded(flex: 2, child: Text('Action', style: textStyle)),
         ],
       ),
@@ -81,9 +103,19 @@ class _TableHeader extends StatelessWidget {
 }
 
 class _MemberRow extends StatelessWidget {
-  const _MemberRow({required this.member});
+  const _MemberRow({
+    required this.member,
+    required this.showStatus,
+    required this.showDepartment,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   final TeamMemberUiModel member;
+  final bool showStatus;
+  final bool showDepartment;
+  final ValueChanged<String> onEdit;
+  final ValueChanged<String> onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -131,17 +163,19 @@ class _MemberRow extends StatelessWidget {
           ),
           Expanded(
             flex: 2,
-            child: _StatusTag(status: member.status),
+            child: showStatus
+                ? _StatusTag(status: member.status)
+                : Text(
+                    showDepartment ? member.department : '',
+                    style: textStyle.copyWith(color: AppColors.dark().textSecondary),
+                    overflow: TextOverflow.ellipsis,
+                  ),
           ),
           Expanded(
             flex: 2,
             child: TeamMemberRowActions(
-              onEdit: () {
-                context.read<TeamMembersBloc>().add(TeamMemberEditTapped(member.id));
-              },
-              onDelete: () {
-                context.read<TeamMembersBloc>().add(TeamMemberDeleteTapped(member.id));
-              },
+              onEdit: () => onEdit(member.id),
+              onDelete: () => onDelete(member.id),
             ),
           ),
         ],

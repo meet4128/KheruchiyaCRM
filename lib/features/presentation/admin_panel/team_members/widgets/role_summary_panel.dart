@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:travel_crm/core/theme/app_colors.dart';
 
 class RoleSummaryPanel extends StatelessWidget {
-  const RoleSummaryPanel({super.key, required this.memberCount});
+  const RoleSummaryPanel({
+    super.key,
+    required this.title,
+    required this.memberCount,
+    required this.description,
+  });
 
+  final String title;
   final int memberCount;
+  final String description;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +26,7 @@ class RoleSummaryPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Admin ($memberCount)',
+            '$title ($memberCount)',
             style: TextStyle(
               color: AppColors.dark().textPrimary,
               fontSize: 22,
@@ -28,7 +35,7 @@ class RoleSummaryPanel extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Manage user accounts, permissions, and access levels within the app to ensure smooth operation and security.',
+            description,
             style: TextStyle(
               color: AppColors.dark().textSecondary,
               fontSize: 13,
