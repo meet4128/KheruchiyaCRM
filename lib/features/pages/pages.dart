@@ -34,7 +34,10 @@ class LoginPage extends StatelessWidget {
             current.status == LoginStatus.success,
         listener: (context, state) {
           if (!context.mounted) return;
-          // Same as [PathConstant.dashboard] — avoid importing path_constants here (it imports this file).
+          if (state.userRole == 'admin') {
+            context.go('/admin');
+            return;
+          }
           context.go('/');
         },
         child: const LoginScreen(),

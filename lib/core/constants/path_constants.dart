@@ -2,23 +2,35 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../utils/shared_pref_utils.dart';
 import '../../features/pages/pages.dart';
+import '../../features/presentation/admin_panel/bloc/admin_navigation_bloc.dart';
 import '../../features/presentation/dashboard/bloc/navigation_bloc.dart';
 import '../../features/presentation/dashboard/bloc/navigation_event.dart';
+import '../../features/presentation/admin_panel/view/admin_panel_shell.dart';
 import '../../features/presentation/dashboard/view/dashboard_shell.dart';
 
 FutureOr<String?> globalRedirect(BuildContext context, GoRouterState state) async {
   final path = state.uri.path.isEmpty ? PathConstant.dashboard : state.uri.path;
   final hasToken = _sessionHasAccessToken();
+  final isAdmin = _sessionIsAdmin();
 
   if (hasToken && path == PathConstant.login) {
-    return PathConstant.dashboard;
+    return isAdmin ? PathConstant.adminPanel : PathConstant.dashboard;
   }
 
   if (!hasToken && path != PathConstant.login) {
     return PathConstant.login;
+  }
+
+  if (hasToken && isAdmin && path != PathConstant.adminPanel && path != PathConstant.login) {
+    return PathConstant.adminPanel;
+  }
+
+  if (hasToken && !isAdmin && path == PathConstant.adminPanel) {
+    return PathConstant.dashboard;
   }
 
   return null;
@@ -28,6 +40,11 @@ FutureOr<String?> globalRedirect(BuildContext context, GoRouterState state) asyn
 bool _sessionHasAccessToken() {
   final token = SharedPrefUtils.getValue(SharedPrefUtilsKeys.userToken, '');
   return token.toString().trim().isNotEmpty;
+}
+
+bool _sessionIsAdmin() {
+  final role = SharedPrefUtils.getValue(SharedPrefUtilsKeys.userRole, '');
+  return role.toString().trim().toLowerCase() == 'admin';
 }
 
 String _pathFor(NavPage page) {
@@ -88,7 +105,7 @@ NavPage _pageFromPath(String path) {
 }
 
 /// Provides a GoRouter that syncs with the NavigationBloc.
-/// Usage: Wrap app with BlocProvider<NavigationBloc> and pass the bloc here.
+/// Usage: Wrap app with BlocProvider and pass the nav bloc here.
 String _currentRouterLocation(GoRouter router) {
   return router.routeInformationProvider.value.uri.toString();
 }
@@ -179,6 +196,16 @@ GoRouter createRouter(NavigationBloc navBloc) {
         ],
       ),
       GoRoute(
+        path: PathConstant.adminPanel,
+        name: 'adminPanel',
+        pageBuilder: (context, state) => NoTransitionPage(
+          child: BlocProvider(
+            create: (_) => AdminNavigationBloc(),
+            child: const AdminPanelShell(),
+          ),
+        ),
+      ),
+      GoRoute(
         path: PathConstant.login,
         name: 'login',
         pageBuilder: (context, state) => NoTransitionPage(
@@ -232,7 +259,7 @@ GoRouter createRouter(NavigationBloc navBloc) {
   }*/
 
   // Track if we're currently syncing from router to prevent navigation loops
-  bool _isSyncingFromRouter = false;
+  bool isSyncingFromRouter = false;
 
   void syncBlocWithRouter() {
     final currentPath = _currentRouterLocation(router);
@@ -257,11 +284,11 @@ GoRouter createRouter(NavigationBloc navBloc) {
     if (knownPaths.contains(pathWithoutQuery)) {
       // Only sync if the page actually changed to prevent unnecessary updates
       if (navBloc.state.currentPage != page) {
-        _isSyncingFromRouter = true;
+        isSyncingFromRouter = true;
         navBloc.add(SyncPageFromRouteEvent(page));
         // Reset flag after bloc processes the event
         Future.microtask(() {
-          _isSyncingFromRouter = false;
+          isSyncingFromRouter = false;
         });
       }
     }
@@ -273,7 +300,7 @@ GoRouter createRouter(NavigationBloc navBloc) {
   // Also listen to bloc changes and push router navigation (menu click).
   navBloc.stream.listen((navState) {
     // Don't navigate if we're currently syncing from router (browser back/forward)
-    if (_isSyncingFromRouter) return;
+    if (isSyncingFromRouter) return;
 
     final desiredPath = _pathFor(navState.currentPage);
     final currentPath = _currentRouterLocation(router).split('?').first;
@@ -322,6 +349,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
 
 class PathConstant {
   static const String dashboard = '/';
+  static const String adminPanel = '/admin';
   static const String login = '/login';
   static const String clientLeads = '/client-leads';
   static const String inquiryManagement = '/inquiry-management';

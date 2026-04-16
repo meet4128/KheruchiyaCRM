@@ -66,6 +66,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           password: state.password,
           obscurePassword: state.obscurePassword,
           rememberMe: state.rememberMe,
+          userRole: state.userRole,
           emailError: emailErr,
           passwordError: passwordErr,
           status: LoginStatus.initial,
@@ -87,6 +88,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       final response = await _authRepository.login(
         email: state.email.trim(),
         password: state.password,
+        isAdmin: true
       );
       _persistLoginSession(
         response: response,
@@ -95,6 +97,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       emit(
         state.copyWith(
           status: LoginStatus.success,
+          userRole: response.data.user.role.trim().toLowerCase(),
           emailError: null,
           passwordError: null,
           errorMessage: null,
@@ -129,4 +132,8 @@ void _persistLoginSession({
   if (email.isNotEmpty) {
     SharedPrefUtils.setValue(SharedPrefUtilsKeys.userName, email);
   }
+  SharedPrefUtils.setValue(
+    SharedPrefUtilsKeys.userRole,
+    data.user.role.trim().toLowerCase(),
+  );
 }

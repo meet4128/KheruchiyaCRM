@@ -26,6 +26,7 @@ class AuthRepository {
   Future<AuthTokensResponse> login({
     required String email,
     required String password,
+    required bool isAdmin,
   }) async {
     final dio = Dio(
       BaseOptions(
@@ -39,7 +40,7 @@ class AuthRepository {
     try {
       final response = await dio.post<Map<String, dynamic>>(
         Apis.inquiryAuthLoginPath,
-        data: _loginBody(email, password),
+        data: _loginBody(email, password,isAdmin),
       );
 
       final body = response.data;
@@ -61,13 +62,13 @@ class AuthRepository {
     }
   }
 
-  Map<String, dynamic> _loginBody(String email, String password) {
+  Map<String, dynamic> _loginBody(String email, String password, bool isAdmin) {
     final trimmed = email.trim();
     return <String, dynamic>{
       'email': trimmed,
       'password': password,
       'userId': _userIdFromEmail(trimmed),
-      'role': 'user',
+      'role': isAdmin?'admin':'user',
     };
   }
 }

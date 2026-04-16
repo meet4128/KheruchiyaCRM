@@ -16,6 +16,7 @@ class LoginState extends Equatable {
     this.password = '',
     this.obscurePassword = true,
     this.rememberMe = false,
+    this.userRole = '',
     this.emailError,
     this.passwordError,
     this.status = LoginStatus.initial,
@@ -26,6 +27,7 @@ class LoginState extends Equatable {
   final String password;
   final bool obscurePassword;
   final bool rememberMe;
+  final String userRole;
   final String? emailError;
   final String? passwordError;
   final LoginStatus status;
@@ -36,6 +38,7 @@ class LoginState extends Equatable {
     String? password,
     bool? obscurePassword,
     bool? rememberMe,
+    String? userRole,
     String? emailError,
     String? passwordError,
     LoginStatus? status,
@@ -49,6 +52,7 @@ class LoginState extends Equatable {
       password: password ?? this.password,
       obscurePassword: obscurePassword ?? this.obscurePassword,
       rememberMe: rememberMe ?? this.rememberMe,
+      userRole: userRole ?? this.userRole,
       emailError: clearEmailError ? null : (emailError ?? this.emailError),
       passwordError: clearPasswordError ? null : (passwordError ?? this.passwordError),
       status: status ?? this.status,
@@ -62,6 +66,7 @@ class LoginState extends Equatable {
         password,
         obscurePassword,
         rememberMe,
+        userRole,
         emailError,
         passwordError,
         status,
