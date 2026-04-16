@@ -1,24 +1,24 @@
-# Admin Panel (BLoC Plan) — Left Drawer First
+# Admin Panel (BLoC Plan) — Phase 2 Team Members UI
 
-This document defines the first implementation phase for the Admin Panel in this CRM.
+This document defines **Phase 2** for the Admin Panel in this CRM.
 
 Scope for this phase:
-- Role-based redirect after login to Admin Panel when user role is `admin`.
-- Build only the left-side admin drawer/navigation based on the provided screenshot style.
-- Do not render real right-side data/list content yet (use placeholder content only).
+- Keep existing role-based admin routing flow from login.
+- Build/update the admin left drawer (navigation) to match the new design direction.
+- Build the Team Members screen UI based on the latest attached design.
+- Add left-side role block, members table/list, row actions (edit/delete), and right-side filter menu.
 - Follow current project structure and BLoC pattern already used in the app.
 
 ---
 
-## 1. Goal
+## 1. Goal (Phase 2)
 
-When a user logs in:
-- If role is `admin`, open Admin Panel.
-- If role is non-admin, keep current user flow (existing dashboard/modules).
-
-For Admin Panel UI (Phase 1):
-- Implement branded left navigation drawer.
-- Keep right content panel minimal/placeholder (no table/list/cards data yet).
+When a user enters Admin Panel:
+- Show admin drawer on the left with selected menu state and navigation items.
+- Open Team Members management screen when user taps `Manage Team` in drawer.
+- Show role section on left (example: `Admin (3)` with description).
+- Show members list/table with row-level `edit` and `delete` actions.
+- Show right-side/top-right menu options: `Sort & Filter`, `All`, `Online`, `Idle`, `Offline`.
 
 ---
 
@@ -41,99 +41,134 @@ Reference patterns already present:
 
 ---
 
-## 3. Phase 1 Scope (What to Build Now)
+## 3. Phase 2 Scope (What to Build Now)
 
-### 3.1 Role-based entry point
+### 3.1 Admin route and feature entry
 
-After successful login:
-- Read role from auth response (`AuthUser.role`).
-- If role is `admin`, route to Admin Panel root route (example: `/admin`).
-- Else route to existing non-admin flow.
+Reuse current logic:
+- Read role from auth response (`AuthUser.role`) and stored session.
+- If role is `admin`, route to admin root route (example: `/admin`).
+- Team members view should be active from admin shell navigation.
 
-Note:
-- Routing decision should be triggered from login success state handling (BLoC listener + router), not from ad-hoc widget conditions.
+### 3.2 Admin drawer (mandatory)
 
-### 3.2 Admin shell with left drawer
+Build or update the left admin drawer first so it stays visible while Team Members content changes on the right.
 
-Create an Admin shell layout:
-- Left: fixed/collapsible drawer (styled similar to screenshot).
-- Right: placeholder widget (for now), such as:
-  - title text `Admin Content Coming Soon`
-  - optional empty-state icon/message
+Drawer requirements:
+- Reuse existing side menu patterns from dashboard and adapt for admin panel.
+- Include menu items with active/selected state, icon + label.
+- Keep spacing, typography, and colors aligned with the attached design and current app theme.
+- Tapping `Manage Team` must render Phase 2 Team Members UI on the right content area.
 
-No real data widgets in right panel for this phase.
+### 3.3 Team Members screen layout (design parity)
 
-### 3.3 Drawer menu items (initial static set)
+Create the Team Members area with these sections:
+- Header area:
+  - Title: `Team Members`
+  - Subtitle: `Manage your members and edit their roles and permissions.`
+  - CTA button: `Add Members`
+- Search and filter area:
+  - Search text field (example placeholder: `Search members...`)
+  - Right-aligned controls: `Sort & Filter`, `All`, `Online`, `Idle`, `Offline`
+- Body split:
+  - Left block: selected role info (example `Admin (3)` + helper text)
+  - Right block: members table/list
 
-Use static items first, with icon + label + selected state:
-- Dashboard
-- Manage Team
-- Invoices
-- Payments
-- Inventory
-- Team
-- Reminders
-- Analytics
+### 3.4 Members table/list
 
-These can map to enum values in admin navigation state.
+Table columns:
+- Select checkbox
+- Name
+- D.O.J
+- Email
+- Status
+- Action
+
+Row action expectations:
+- Edit icon/button -> open edit-member flow.
+- Delete icon/button -> open delete confirmation flow.
+- Status display should support at least: `Online`, `Idle`, `Offline`.
 
 ---
 
-## 4. BLoC Design for Admin Drawer
+## 4. BLoC Design for Drawer + Team Members
 
-Introduce a dedicated admin navigation bloc to avoid mixing user-dashboard state.
+Keep admin navigation bloc separate, and add a dedicated Team Members bloc.
 
 Suggested location:
 - `lib/features/presentation/admin_panel/bloc/admin_navigation_bloc.dart`
 - `lib/features/presentation/admin_panel/bloc/admin_navigation_event.dart`
 - `lib/features/presentation/admin_panel/bloc/admin_navigation_state.dart`
+- `lib/features/presentation/admin_panel/team_members/bloc/team_members_bloc.dart`
+- `lib/features/presentation/admin_panel/team_members/bloc/team_members_event.dart`
+- `lib/features/presentation/admin_panel/team_members/bloc/team_members_state.dart`
 
-### 4.1 Events
+### 4.1 Team Members events
 
-- `AdminMenuChanged(AdminMenu menu)`  
-  Selects drawer item.
-- `AdminDrawerToggled(bool isCollapsed)`  
-  Handles collapse/expand behavior.
+- `TeamMembersFetched()`
+- `TeamMembersSearchChanged(String query)`
+- `TeamMembersFilterChanged(MemberStatusFilter filter)`  
+  (`all`, `online`, `idle`, `offline`)
+- `TeamMembersSortFilterTapped()`  
+  (opens sort/filter panel or menu in UI layer)
+- `TeamMemberEditTapped(String memberId)`
+- `TeamMemberDeleteTapped(String memberId)`
 
-### 4.2 State
+Admin navigation events (existing or updated):
+- `AdminMenuChanged(AdminMenu menu)`
+- `AdminDrawerToggled(bool isCollapsed)`
+
+### 4.2 Team Members state
 
 State fields:
-- `AdminMenu currentMenu`
-- `bool isDrawerCollapsed`
+- `List<TeamMemberUiModel> allMembers`
+- `List<TeamMemberUiModel> visibleMembers`
+- `String searchQuery`
+- `MemberStatusFilter selectedFilter`
+- `bool isLoading`
+- `String? errorMessage`
 
 Use immutable state with `copyWith` + `Equatable`.
 
 ### 4.3 UI usage
 
-- Drawer taps dispatch `AdminMenuChanged`.
-- Shell listens via `BlocBuilder` to:
-  - highlight selected drawer item
-  - update right-side placeholder title based on selected menu
-- Drawer collapse/expand is controlled by bloc state.
+- Search field changes dispatch `TeamMembersSearchChanged`.
+- Filter chips dispatch `TeamMembersFilterChanged`.
+- Table rows are rendered from `visibleMembers`.
+- Edit/Delete icons dispatch row actions.
+- Sort & Filter button can trigger a local menu/sheet and then dispatch appropriate bloc event.
+- Drawer taps dispatch `AdminMenuChanged` to swap right-side content screen.
+- `AdminMenu.manageTeam` should map to `TeamMembersScreen` (Phase 2 UI).
 
 ---
 
-## 5. Suggested File Plan (Phase 1)
+## 5. Suggested File Plan (Phase 2)
 
 New files:
-- `lib/features/presentation/admin_panel/bloc/admin_navigation_event.dart`
-- `lib/features/presentation/admin_panel/bloc/admin_navigation_state.dart`
-- `lib/features/presentation/admin_panel/bloc/admin_navigation_bloc.dart`
-- `lib/features/presentation/admin_panel/view/admin_panel_shell.dart`
-- `lib/features/presentation/admin_panel/widgets/admin_side_menu.dart`
-- `lib/features/presentation/admin_panel/widgets/admin_placeholder_content.dart`
+- `lib/features/presentation/admin_panel/widgets/admin_side_menu.dart` (if not already present)
+- `lib/features/presentation/admin_panel/team_members/bloc/team_members_event.dart`
+- `lib/features/presentation/admin_panel/team_members/bloc/team_members_state.dart`
+- `lib/features/presentation/admin_panel/team_members/bloc/team_members_bloc.dart`
+- `lib/features/presentation/admin_panel/team_members/view/team_members_screen.dart`
+- `lib/features/presentation/admin_panel/team_members/widgets/team_members_header.dart`
+- `lib/features/presentation/admin_panel/team_members/widgets/team_members_filters_bar.dart`
+- `lib/features/presentation/admin_panel/team_members/widgets/role_summary_panel.dart`
+- `lib/features/presentation/admin_panel/team_members/widgets/team_members_table.dart`
+- `lib/features/presentation/admin_panel/team_members/widgets/team_member_row_actions.dart`
 
 Possible updates:
-- `lib/core/constants/path_constants.dart` (add admin route path)
-- Login success navigation handler (where role-based route decision is made)
-- Router configuration (register admin route/shell)
+- `lib/features/presentation/admin_panel/view/admin_panel_shell.dart` (render Team Members page)
+- `lib/features/presentation/admin_panel/bloc/admin_navigation_bloc.dart` (wire drawer selection)
+- `lib/core/constants/path_constants.dart` (ensure admin/team-members path exists)
+- Router configuration (register team members route under admin)
 
 ---
 
 ## 6. Routing Plan
 
-Add route for admin panel:
-- Example path: `/admin`
+Add/confirm routes:
+- `/admin`
+- `/admin/team-members`
 
 Role-based redirect logic:
 - `role == 'admin'` -> `/admin`
@@ -141,38 +176,43 @@ Role-based redirect logic:
 
 Keep this role check centralized (login success handler and/or global redirect), not scattered in multiple screens.
 
----
-
-## 7. UI Notes for Drawer (Screenshot-inspired)
-
-- Dark gradient background for drawer.
-- Logo at top.
-- Vertical menu list with icon + label.
-- Selected item visual state (highlight background/text).
-- Optional collapsed mode for icon-only drawer.
-- Consistent spacing, padding, hover/tap feedback for web UX.
-
-Use current app colors/assets/constants wherever possible to remain visually consistent.
+Navigation behavior inside admin shell:
+- Default screen can remain existing admin default.
+- On tap of drawer `Manage Team`, navigate/render `/admin/team-members` (or equivalent in-shell state route).
+- Keep the selected drawer state in sync with the currently rendered admin content.
 
 ---
 
-## 8. Out of Scope (Current Phase)
+## 7. UI Notes (Screenshot-inspired)
 
-- Team table/list rendering on right side.
-- Filters, search, tabs, and member details content.
-- API integration for admin modules.
-- Permission matrix per admin submenu.
-
-These will be done in next phases after drawer shell is finalized.
+- Keep the current admin theme (dark/purple surface and contrast hierarchy).
+- Drawer should stay fixed on the left and clearly separate navigation from content.
+- Drawer item selection must be visually strong (highlight/contrast) to match design intent.
+- Left role panel and right table card should be visually separated with clear borders/background.
+- Status indicators should use colored dots + text (`Online`, `Idle`, `Offline`).
+- Filter chips (`All`, `Online`, `Idle`, `Offline`) must show clear selected/unselected states.
+- `Sort & Filter` should appear on the same row, right side aligned, before status chips.
+- Row actions (edit/delete) should be compact icon buttons with hover feedback.
 
 ---
 
-## 9. Next Step After This Doc
+## 8. Out of Scope (Current Phase 2)
 
-Implement Phase 1 code in this order:
-1. Add admin route and shell.
-2. Add admin navigation bloc (event/state/bloc).
-3. Build drawer widget and wire it to bloc.
-4. Add right-side placeholder only (no data rendering).
-5. Hook login success to role-based route (`admin` -> admin panel).
+- Backend API integration for edit/delete (can use mock/static data first).
+- Advanced server-side sort, pagination, and permission matrix rules.
+- Real-time presence sync (status can be UI/mock-driven initially).
+
+---
+
+## 9. Implementation Flow (Phase 2)
+
+Implement in this order:
+1. Finalize admin route to open admin shell for admin users.
+2. Build/update admin drawer and wire it with `admin_navigation_bloc`.
+3. Create Team Members bloc (event/state/bloc) with search + status filter.
+4. Map drawer `Manage Team` selection to `TeamMembersScreen` render/route.
+5. Build header, search, right-side filter menu, and left role summary panel.
+6. Build members table with status badge and edit/delete row actions.
+7. Wire bloc updates to UI interactions and selected filter chip states.
+8. Keep styles consistent with existing admin shell/theme widgets.
 

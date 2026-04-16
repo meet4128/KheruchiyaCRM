@@ -5,6 +5,7 @@ import 'package:travel_crm/core/theme/app_colors.dart';
 import 'package:travel_crm/features/presentation/admin_panel/bloc/admin_navigation_bloc.dart';
 import 'package:travel_crm/features/presentation/admin_panel/bloc/admin_navigation_event.dart';
 import 'package:travel_crm/features/presentation/admin_panel/bloc/admin_navigation_state.dart';
+import 'package:travel_crm/features/presentation/admin_panel/team_members/view/team_members_screen.dart';
 import 'package:travel_crm/features/presentation/admin_panel/widgets/admin_placeholder_content.dart';
 import 'package:travel_crm/features/presentation/admin_panel/widgets/admin_side_menu.dart';
 
@@ -40,6 +41,9 @@ class AdminPanelShell extends StatelessWidget {
                 color: AppColors.dark().backgroundDark,
                 child: BlocBuilder<AdminNavigationBloc, AdminNavigationState>(
                   builder: (context, state) {
+                    if (state.currentMenu == AdminMenu.manageTeam) {
+                      return const TeamMembersScreen();
+                    }
                     return AdminPlaceholderContent(title: state.currentMenu.label);
                   },
                 ),
