@@ -1,28 +1,26 @@
-# Admin Panel (BLoC Plan) — Phase 3 Multi-Section Team Management UI
+# Admin Panel (BLoC Plan) — Phase 4 Add Member Dialog Flow
 
-This document defines **Phase 3** for the Admin Panel in this CRM.
+This document defines **Phase 4** for the Admin Panel in this CRM.
 
 Scope for this phase:
 - Keep existing role-based admin routing flow from login.
 - Keep the left admin drawer visible and functional at all times.
-- Extend `Manage Team` screen to support **multiple list sections** in a single scrollable page.
-- Divide the page into 4 sections:
-  - `Admin Data`
-  - `Sales Team Data`
-  - `Purchase Team Data`
-  - `Accounts Team Data`
+- Keep existing Phase 3 multi-section list layout under `Manage Team`.
+- Add `Add Member` dialog flow when tapping `Add Members` button.
+- Build the form UI based on attached screenshot (personal information step).
+- Follow the current project structure and BLoC pattern already used in the app.
 - Follow the current project structure and BLoC pattern already used in the app.
 
 ---
 
-## 1. Goal (Phase 3)
+## 1. Goal (Phase 4)
 
 When a user enters Admin Panel:
 - Show admin drawer on the left with selected menu state and navigation items.
 - Open Team Members management screen when user taps `Manage Team` in drawer.
-- Render a unified page with multiple data sections (`Admin`, `Sales`, `Purchase`, `Accounts`) as per attached design.
-- Keep each section styled consistently with card/list table layout and row actions (`edit`, `delete`).
-- Keep top controls (`Sort & Filter`, status chips, search) where applicable per section block.
+- Keep Phase 3 multi-section team list behavior unchanged.
+- When user taps `Add Members`, show modal dialog exactly in the visual structure of attached screenshot.
+- Dialog should collect personal information fields and validate required inputs via BLoC-driven state.
 
 ---
 
@@ -45,7 +43,7 @@ Reference patterns already present:
 
 ---
 
-## 3. Phase 3 Scope (What to Build Now)
+## 3. Phase 4 Scope (What to Build Now)
 
 ### 3.1 Admin route and feature entry
 
@@ -64,46 +62,59 @@ Drawer requirements:
 - Keep spacing, typography, and colors aligned with the attached design and current app theme.
 - Tapping `Manage Team` must render Phase 3 Team Members multi-section UI on the right content area.
 
-### 3.3 Team Members multi-section layout (design parity)
+### 3.3 `Add Members` dialog trigger and visibility
 
-Create the Team Members area with this high-level structure:
-- Header area:
-  - Title: `Team Members`
-  - Subtitle: `Manage your members and edit their roles and permissions.`
-  - CTA button: `Add Members`
-- Search and filter area:
-  - Search text field (example placeholder: `Search members...`)
-  - Right-aligned controls: `Sort & Filter`, `All`, `Online`, `Idle`, `Offline`
-- Body sections (single vertical scroll):
-  1. `Admin Data` section:
-     - Left info panel (role title + description)
-     - Right list/table with `Status` + `Action`
-  2. `Sales Team Data` section:
-     - Left info panel + top performers mini list
-     - Right category tabs (e.g. `All`, `Flight`, `Hotel`, etc.)
-     - Team list/table with department/action columns
-  3. `Purchase Team Data` section:
-     - Same structural pattern as Sales section
-  4. `Accounts Team Data` section:
-     - Same structural pattern as Sales section
+`Add Members` button behavior:
+- Located in `Team Members` header.
+- On tap, open centered modal dialog overlay (desktop/web style) with dismiss icon.
+- Dialog should support close via:
+  - close icon tap,
+  - optional outside-tap (configurable),
+  - explicit cancel/close action if included later.
 
-### 3.4 List/Table behavior by section
+Use bloc event-driven approach instead of local ad-hoc booleans where possible.
 
-Common list behavior:
-- Row checkbox (single or bulk future support)
-- Name, D.O.J, Email columns
-- Row `Edit` and `Delete` actions
-- Consistent table header, row spacing, and hover states
+### 3.4 Add Member dialog layout (design parity)
 
-Section-specific fields:
-- `Admin Data` table uses `Status` (`Online`, `Idle`, `Offline`)
-- `Sales/Purchase/Accounts` tables use `Department` (or matching business attribute), based on design
+Dialog structure:
+- Title row:
+  - `Add Member`
+  - close icon on top-right
+- Section heading:
+  - `Personal Information`
+  - helper subtitle text
+- Form grid (2-column layout on desktop):
+  - Full name
+  - Personal E-mail Id
+  - Phone Number (country code + number)
+  - Home Phone Number (country code + number)
+  - D.O.B (date picker)
+  - Gender (Male / Female)
+  - Marital Status (dropdown)
+  - Date of Anniversary
+  - Address
+  - Address Line 2
+  - Zip code
+  - City
+- Footer:
+  - Primary button: `Next`
+  - Helper text: complete required details before next operational form
+
+### 3.5 Phase relationship with Phase 3 sections
+
+Phase 4 should not remove existing sections:
+- `Admin Data`
+- `Sales Team Data`
+- `Purchase Team Data`
+- `Accounts Team Data`
+
+Dialog opens above current screen regardless of active section state.
 
 ---
 
-## 4. BLoC Design for Drawer + Team Members (Phase 3)
+## 4. BLoC Design for Drawer + Team Members + Add Member Dialog (Phase 4)
 
-Keep admin navigation bloc separate, and expand Team Members state to support multi-section data.
+Keep admin navigation bloc separate, keep team members bloc for list sections, and add dedicated dialog/form bloc.
 
 Suggested location:
 - `lib/features/presentation/admin_panel/bloc/admin_navigation_bloc.dart`
@@ -112,6 +123,9 @@ Suggested location:
 - `lib/features/presentation/admin_panel/team_members/bloc/team_members_bloc.dart`
 - `lib/features/presentation/admin_panel/team_members/bloc/team_members_event.dart`
 - `lib/features/presentation/admin_panel/team_members/bloc/team_members_state.dart`
+- `lib/features/presentation/admin_panel/team_members/add_member/bloc/add_member_bloc.dart`
+- `lib/features/presentation/admin_panel/team_members/add_member/bloc/add_member_event.dart`
+- `lib/features/presentation/admin_panel/team_members/add_member/bloc/add_member_state.dart`
 
 ### 4.1 Team Members events
 
@@ -125,14 +139,34 @@ Suggested location:
   (`admin`, `sales`, `purchase`, `accounts`) where needed for focused interactions
 - `TeamCategoryTabChanged(TeamSection section, TeamCategoryTab tab)`  
   (for Sales/Purchase/Accounts category tabs)
+- `AddMemberTapped()`  
+  (request dialog open)
 - `TeamMemberEditTapped(String memberId)`
 - `TeamMemberDeleteTapped(String memberId)`
+
+### 4.2 Add Member dialog events
+
+- `AddMemberDialogOpened()`
+- `AddMemberDialogClosed()`
+- `AddMemberFullNameChanged(String value)`
+- `AddMemberPersonalEmailChanged(String value)`
+- `AddMemberPhoneChanged(String dialCode, String number)`
+- `AddMemberHomePhoneChanged(String dialCode, String number)`
+- `AddMemberDobChanged(DateTime value)`
+- `AddMemberGenderChanged(AddMemberGender value)`
+- `AddMemberMaritalStatusChanged(String value)`
+- `AddMemberAnniversaryChanged(DateTime value)`
+- `AddMemberAddressChanged(String value)`
+- `AddMemberAddressLine2Changed(String value)`
+- `AddMemberZipCodeChanged(String value)`
+- `AddMemberCityChanged(String value)`
+- `AddMemberNextPressed()`
 
 Admin navigation events (existing or updated):
 - `AdminMenuChanged(AdminMenu menu)`
 - `AdminDrawerToggled(bool isCollapsed)`
 
-### 4.2 Team Members state
+### 4.3 Team Members state
 
 State fields:
 - `List<TeamMemberUiModel> adminMembers`
@@ -143,12 +177,36 @@ State fields:
 - `String searchQuery`
 - `MemberStatusFilter selectedFilter`
 - `Map<TeamSection, TeamCategoryTab> selectedCategoryTabBySection`
+- `bool isAddMemberDialogOpen` (or UI listener trigger)
 - `bool isLoading`
 - `String? errorMessage`
 
 Use immutable state with `copyWith` + `Equatable`.
 
-### 4.3 UI usage
+### 4.4 Add Member state
+
+State fields:
+- `bool isDialogOpen`
+- `String fullName`
+- `String personalEmail`
+- `String phoneDialCode`
+- `String phoneNumber`
+- `String homePhoneDialCode`
+- `String homePhoneNumber`
+- `DateTime? dob`
+- `AddMemberGender? gender`
+- `String maritalStatus`
+- `DateTime? anniversaryDate`
+- `String address`
+- `String addressLine2`
+- `String zipCode`
+- `String city`
+- Validation error fields for required inputs
+- `AddMemberSubmitStatus status` (`initial`, `invalid`, `valid`, `submitting`, `success`, `failure`)
+
+Use immutable state + `copyWith` + `Equatable`.
+
+### 4.5 UI usage
 
 - Search field changes dispatch `TeamMembersSearchChanged`.
 - Filter chips dispatch `TeamMembersFilterChanged`.
@@ -157,11 +215,14 @@ Use immutable state with `copyWith` + `Equatable`.
 - Edit/Delete icons dispatch row actions.
 - Sort & Filter button can trigger a local menu/sheet and then dispatch appropriate bloc event.
 - Drawer taps dispatch `AdminMenuChanged` to swap right-side content screen.
-- `AdminMenu.manageTeam` should map to `TeamMembersScreen` (Phase 3 multi-section UI).
+- `AdminMenu.manageTeam` maps to `TeamMembersScreen` (Phase 3 multi-section UI).
+- `Add Members` button dispatches open-dialog event and shows `AddMemberDialog`.
+- Form fields dispatch granular change events to `AddMemberBloc`.
+- `Next` button validates required fields and moves to next step only on valid state.
 
 ---
 
-## 5. Suggested File Plan (Phase 3)
+## 5. Suggested File Plan (Phase 4)
 
 New files:
 - `lib/features/presentation/admin_panel/widgets/admin_side_menu.dart` (if not already present)
@@ -177,12 +238,21 @@ New files:
 - `lib/features/presentation/admin_panel/team_members/widgets/team_section_block.dart`
 - `lib/features/presentation/admin_panel/team_members/widgets/team_section_tabs.dart`
 - `lib/features/presentation/admin_panel/team_members/widgets/top_performer_card.dart`
+- `lib/features/presentation/admin_panel/team_members/add_member/bloc/add_member_event.dart`
+- `lib/features/presentation/admin_panel/team_members/add_member/bloc/add_member_state.dart`
+- `lib/features/presentation/admin_panel/team_members/add_member/bloc/add_member_bloc.dart`
+- `lib/features/presentation/admin_panel/team_members/add_member/view/add_member_dialog.dart`
+- `lib/features/presentation/admin_panel/team_members/add_member/widgets/add_member_personal_info_form.dart`
+- `lib/features/presentation/admin_panel/team_members/add_member/widgets/add_member_phone_field.dart`
+- `lib/features/presentation/admin_panel/team_members/add_member/widgets/add_member_gender_field.dart`
 
 Possible updates:
 - `lib/features/presentation/admin_panel/view/admin_panel_shell.dart` (render Team Members page)
 - `lib/features/presentation/admin_panel/bloc/admin_navigation_bloc.dart` (wire drawer selection)
 - `lib/core/constants/path_constants.dart` (ensure admin/team-members path exists)
 - Router configuration (register team members route under admin)
+- `lib/features/presentation/admin_panel/team_members/widgets/team_members_header.dart` (`Add Members` click wiring)
+- `lib/features/presentation/admin_panel/team_members/view/team_members_screen.dart` (dialog host/listener)
 
 ---
 
@@ -218,30 +288,35 @@ Navigation behavior inside admin shell:
 - Row actions (edit/delete) should be compact icon buttons with hover feedback.
 - Sales/Purchase/Accounts sections should include category tabs exactly as in design rhythm.
 - Multi-section page must scroll smoothly and maintain consistent section spacing/dividers.
+- Add Member dialog should use dark translucent backdrop and centered card container.
+- Dialog uses clear section dividers and compact form spacing similar to attached screenshot.
+- Input controls should match existing field style language (border radius, border color, text color).
+- `Next` button should be full-width and visually primary within dialog footer.
 
 ---
 
-## 8. Out of Scope (Current Phase 3)
+## 8. Out of Scope (Current Phase 4)
 
 - Backend API integration for edit/delete (can use mock/static data first).
 - Advanced server-side sort, pagination, and permission matrix rules.
 - Real-time presence sync (status can be UI/mock-driven initially).
 - Cross-section analytics and performance calculations beyond UI placeholders.
+- Final backend create-member API integration (can keep submit mocked in Phase 4).
+- Multi-step operational form screens after `Next` (Phase 5+).
 
 ---
 
-## 9. Implementation Flow (Phase 3)
+## 9. Implementation Flow (Phase 4)
 
 Implement in this order:
 1. Finalize admin route to open admin shell for admin users.
 2. Build/update admin drawer and wire it with `admin_navigation_bloc`.
-3. Expand Team Members bloc (event/state/bloc) for section-wise data models.
-4. Map drawer `Manage Team` selection to Phase 3 `TeamMembersScreen`.
-5. Build page header and global search/filter controls.
-6. Build `Admin Data` block (left panel + status-based table).
-7. Build `Sales Team Data` block (left panel + top performers + tabbed table).
-8. Build `Purchase Team Data` block (same component pattern as Sales).
-9. Build `Accounts Team Data` block (same component pattern as Sales).
-10. Wire bloc updates to section-wise filters, tabs, and row actions.
-11. Keep styles consistent with existing admin shell/theme widgets.
+3. Keep existing Phase 3 multi-section team screen as baseline.
+4. Add `Add Members` CTA wiring from header to dialog open event.
+5. Create `add_member` bloc (event/state/bloc) for personal information form step.
+6. Build dialog shell (`Add Member`, close icon, section heading, divider layout).
+7. Build 2-column personal info form widgets and bind to `AddMemberBloc`.
+8. Implement form validation and `Next` button submission guard.
+9. Keep dialog lifecycle controlled through bloc events and UI listeners.
+10. Keep styles consistent with existing admin shell/theme widgets.
 

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:travel_crm/core/theme/app_colors.dart';
 
 class TeamMembersHeader extends StatelessWidget {
-  const TeamMembersHeader({super.key});
+  const TeamMembersHeader({super.key, required this.onAddMembersTap});
+
+  final VoidCallback onAddMembersTap;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +34,7 @@ class TeamMembersHeader extends StatelessWidget {
           ),
         ),
         ElevatedButton(
-          onPressed: () {},
+          onPressed: onAddMembersTap,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.dark().secondary,
             foregroundColor: AppColors.dark().textPrimary,
