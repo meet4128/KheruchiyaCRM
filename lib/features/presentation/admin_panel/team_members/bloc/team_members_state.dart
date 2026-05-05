@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 enum MemberStatusFilter { all, online, idle, offline }
 
 enum TeamMemberStatus { online, idle, offline }
+enum EmploymentStatusFilter { active, inactive, all }
 
 enum TeamSection { admin, sales, purchase, accounts }
 
@@ -114,6 +115,10 @@ class TeamMembersState extends Equatable {
     this.selectedFilter = MemberStatusFilter.all,
     this.selectedCategoryTabBySection = const {},
     this.isLoading = false,
+    this.isLoadingMore = false,
+    this.currentPage = 1,
+    this.totalPages = 1,
+    this.employmentStatusFilter = EmploymentStatusFilter.active,
     this.errorMessage,
   });
 
@@ -124,7 +129,13 @@ class TeamMembersState extends Equatable {
   final MemberStatusFilter selectedFilter;
   final Map<TeamSection, TeamCategoryTab> selectedCategoryTabBySection;
   final bool isLoading;
+  final bool isLoadingMore;
+  final int currentPage;
+  final int totalPages;
+  final EmploymentStatusFilter employmentStatusFilter;
   final String? errorMessage;
+
+  bool get hasMorePages => currentPage < totalPages;
 
   TeamMembersState copyWith({
     Map<TeamSection, List<TeamMemberUiModel>>? membersBySection,
@@ -134,6 +145,10 @@ class TeamMembersState extends Equatable {
     MemberStatusFilter? selectedFilter,
     Map<TeamSection, TeamCategoryTab>? selectedCategoryTabBySection,
     bool? isLoading,
+    bool? isLoadingMore,
+    int? currentPage,
+    int? totalPages,
+    EmploymentStatusFilter? employmentStatusFilter,
     String? errorMessage,
     bool clearError = false,
   }) {
@@ -146,6 +161,10 @@ class TeamMembersState extends Equatable {
       selectedCategoryTabBySection:
           selectedCategoryTabBySection ?? this.selectedCategoryTabBySection,
       isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      currentPage: currentPage ?? this.currentPage,
+      totalPages: totalPages ?? this.totalPages,
+      employmentStatusFilter: employmentStatusFilter ?? this.employmentStatusFilter,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -159,6 +178,10 @@ class TeamMembersState extends Equatable {
         selectedFilter,
         selectedCategoryTabBySection,
         isLoading,
+        isLoadingMore,
+        currentPage,
+        totalPages,
+        employmentStatusFilter,
         errorMessage,
       ];
 }

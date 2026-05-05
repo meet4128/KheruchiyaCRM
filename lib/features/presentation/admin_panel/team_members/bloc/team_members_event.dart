@@ -35,6 +35,19 @@ class TeamMembersSortFilterTapped extends TeamMembersEvent {
   const TeamMembersSortFilterTapped();
 }
 
+class TeamMembersEmploymentStatusChanged extends TeamMembersEvent {
+  const TeamMembersEmploymentStatusChanged(this.filter);
+
+  final EmploymentStatusFilter filter;
+
+  @override
+  List<Object?> get props => [filter];
+}
+
+class TeamMembersLoadMoreRequested extends TeamMembersEvent {
+  const TeamMembersLoadMoreRequested();
+}
+
 class TeamCategoryTabChanged extends TeamMembersEvent {
   const TeamCategoryTabChanged({
     required this.section,

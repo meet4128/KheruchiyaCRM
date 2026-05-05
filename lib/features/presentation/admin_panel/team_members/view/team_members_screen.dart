@@ -20,7 +20,7 @@ class TeamMembersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => TeamMembersBloc()..add(const TeamMembersFetched()),
+      create: (_) => TeamMembersBloc(sl<MembersRepository>())..add(const TeamMembersFetched()),
       child: Builder(
         builder: (context) {
           return Container(
@@ -31,6 +31,32 @@ class TeamMembersScreen extends StatelessWidget {
                 TeamMembersHeader(onAddMembersTap: () => _openAddMemberDialog(context, null)),
                 SizedBox(height: 18),
                 const TeamMembersFiltersBar(),
+                BlocBuilder<TeamMembersBloc, TeamMembersState>(
+                  buildWhen: (previous, current) =>
+                      previous.isLoading != current.isLoading ||
+                      previous.errorMessage != current.errorMessage,
+                  builder: (context, state) {
+                    if (state.isLoading) {
+                      return const Padding(
+                        padding: EdgeInsets.only(top: 12),
+                        child: LinearProgressIndicator(minHeight: 2),
+                      );
+                    }
+                    if (state.errorMessage == null || state.errorMessage!.trim().isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Text(
+                        state.errorMessage!,
+                        style: TextStyle(
+                          color: AppColors.dark().error,
+                          fontSize: 12,
+                        ),
+                      ),
+                    );
+                  },
+                ),
                 const SizedBox(height: 18),
                 TeamSectionBlock(
                   section: TeamSection.admin,
@@ -78,6 +104,42 @@ class TeamMembersScreen extends StatelessWidget {
                   onMemberEdit: (id) => _openAddMemberDialog(context, id),
                 ),
                 const SizedBox(height: 10),
+                BlocBuilder<TeamMembersBloc, TeamMembersState>(
+                  buildWhen: (previous, current) =>
+                      previous.isLoadingMore != current.isLoadingMore ||
+                      previous.currentPage != current.currentPage ||
+                      previous.totalPages != current.totalPages,
+                  builder: (context, state) {
+                    if (!state.hasMorePages) {
+                      return const SizedBox.shrink();
+                    }
+                    return Align(
+                      alignment: Alignment.center,
+                      child: OutlinedButton(
+                        onPressed: state.isLoadingMore
+                            ? null
+                            : () {
+                                context.read<TeamMembersBloc>().add(
+                                      const TeamMembersLoadMoreRequested(),
+                                    );
+                              },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.dark().textSecondary,
+                          side: BorderSide(
+                            color: AppColors.dark().borderPrimary.withValues(alpha: 0.45),
+                          ),
+                        ),
+                        child: state.isLoadingMore
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Text('Load More (${state.currentPage}/${state.totalPages})'),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           );

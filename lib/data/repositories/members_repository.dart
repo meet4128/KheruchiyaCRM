@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:travel_crm/core/network/inquiry_api_client.dart';
 import 'package:travel_crm/data/models/members/create_member_request.dart';
+import 'package:travel_crm/data/models/members/list_members_response.dart';
 import 'package:travel_crm/data/models/members/update_member_request.dart';
 
 class MembersRepository {
@@ -23,6 +24,27 @@ class MembersRepository {
       await _apiClient.updateMember(id, request);
     } on DioException catch (e) {
       _handleDio(e, 'MembersRepository.updateMember');
+    }
+  }
+
+  Future<ListMembersResponse> listMembers({
+    int page = 1,
+    int limit = 10,
+    String sort = '-createdAt',
+    String? employmentStatus = 'active',
+  }) async {
+    try {
+      return await _apiClient.listMembers(
+        ListMembersQuery(
+          page: page,
+          limit: limit,
+          sort: sort,
+          employmentStatus: employmentStatus,
+        ).toQuery(),
+      );
+    } on DioException catch (e) {
+      _handleDio(e, 'MembersRepository.listMembers');
+      rethrow;
     }
   }
 

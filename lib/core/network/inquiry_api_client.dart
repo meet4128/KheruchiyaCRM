@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:travel_crm/data/models/inquiry/list_inquiries_response.dart';
 import 'package:travel_crm/data/models/members/create_member_request.dart';
+import 'package:travel_crm/data/models/members/list_members_response.dart';
 import 'package:travel_crm/data/models/members/update_member_request.dart';
 
 import '../models/inquiry/create_inquiry_request.dart';
@@ -43,6 +44,31 @@ class ListInquiriesQuery {
   }
 }
 
+class ListMembersQuery {
+  const ListMembersQuery({
+    required this.page,
+    required this.limit,
+    this.sort,
+    this.employmentStatus,
+  });
+
+  final int page;
+  final int limit;
+  final String? sort;
+  final String? employmentStatus;
+
+  Map<String, dynamic> toQuery() {
+    final queries = <String, dynamic>{
+      'page': page,
+      'limit': limit,
+      'sort': sort,
+      'employmentStatus': employmentStatus,
+    };
+    queries.removeWhere((key, value) => value == null);
+    return queries;
+  }
+}
+
 @RestApi(baseUrl: Apis.inquiryBaseUrl)
 abstract class InquiryApiClient {
   factory InquiryApiClient(Dio dio, {String baseUrl}) = _InquiryApiClient;
@@ -62,5 +88,10 @@ abstract class InquiryApiClient {
   Future<void> updateMember(
     @Path('id') String id,
     @Body() UpdateMemberRequest body,
+  );
+
+  @GET('/api/v1/members')
+  Future<ListMembersResponse> listMembers(
+    @Queries() Map<String, dynamic> queries,
   );
 }

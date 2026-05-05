@@ -61,6 +61,8 @@ class TeamMembersFiltersBar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
+        const _EmploymentStatusDropdown(),
+        const SizedBox(width: 8),
         _FilterChipButton(
           filter: MemberStatusFilter.all,
           label: 'All',
@@ -81,6 +83,59 @@ class TeamMembersFiltersBar extends StatelessWidget {
           label: 'Offline',
         ),
       ],
+    );
+  }
+}
+
+class _EmploymentStatusDropdown extends StatelessWidget {
+  const _EmploymentStatusDropdown();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<TeamMembersBloc, TeamMembersState>(
+      buildWhen: (previous, current) =>
+          previous.employmentStatusFilter != current.employmentStatusFilter ||
+          previous.isLoading != current.isLoading,
+      builder: (context, state) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: AppColors.dark().backgroundMedium,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.dark().borderPrimary.withValues(alpha: 0.40)),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<EmploymentStatusFilter>(
+              value: state.employmentStatusFilter,
+              dropdownColor: AppColors.dark().backgroundMedium,
+              iconEnabledColor: AppColors.dark().textSecondary,
+              style: TextStyle(color: AppColors.dark().textSecondary, fontSize: 12),
+              onChanged: state.isLoading
+                  ? null
+                  : (value) {
+                      if (value == null) return;
+                      context.read<TeamMembersBloc>().add(
+                            TeamMembersEmploymentStatusChanged(value),
+                          );
+                    },
+              items: const [
+                DropdownMenuItem(
+                  value: EmploymentStatusFilter.active,
+                  child: Text('Active'),
+                ),
+                DropdownMenuItem(
+                  value: EmploymentStatusFilter.inactive,
+                  child: Text('Inactive'),
+                ),
+                DropdownMenuItem(
+                  value: EmploymentStatusFilter.all,
+                  child: Text('All Employment'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

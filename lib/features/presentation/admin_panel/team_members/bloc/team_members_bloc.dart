@@ -1,14 +1,19 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:travel_crm/data/models/members/list_members_item.dart';
+import 'package:travel_crm/data/repositories/members_repository.dart';
+import 'package:travel_crm/features/presentation/admin_panel/team_members/helpers/team_member_from_api.dart';
 
 import 'team_members_event.dart';
 import 'team_members_state.dart';
 
 class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
-  TeamMembersBloc() : super(const TeamMembersState()) {
+  TeamMembersBloc(this._membersRepository) : super(const TeamMembersState()) {
     on<TeamMembersFetched>(_onFetched);
     on<TeamMembersSearchChanged>(_onSearchChanged);
     on<TeamMembersFilterChanged>(_onFilterChanged);
     on<TeamMembersSortFilterTapped>(_onSortFilterTapped);
+    on<TeamMembersEmploymentStatusChanged>(_onEmploymentStatusChanged);
+    on<TeamMembersLoadMoreRequested>(_onLoadMoreRequested);
     on<TeamCategoryTabChanged>(_onCategoryTabChanged);
     on<TeamMemberEditTapped>(_onEditTapped);
     on<TeamMemberDeleteTapped>(_onDeleteTapped);
@@ -16,39 +21,95 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
     on<TeamMemberUpdated>(_onMemberUpdated);
   }
 
-  /// Members created this session (merged on top of seed data until a real list API exists).
-  final List<TeamMemberSessionAdd> _sessionAdds = [];
+  final MembersRepository _membersRepository;
 
-  void _onFetched(TeamMembersFetched event, Emitter<TeamMembersState> emit) {
+  /// Members created this session (merged on top of fetched data).
+  final List<TeamMemberSessionAdd> _sessionAdds = [];
+  Map<TeamSection, List<TeamMemberUiModel>> _fetchedMembersBySection = _emptyMembersBySection();
+
+  Future<void> _onFetched(TeamMembersFetched event, Emitter<TeamMembersState> emit) async {
+    await _fetchPage(
+      emit: emit,
+      page: 1,
+      replace: true,
+      selectedTabsFallback: const {
+        TeamSection.sales: TeamCategoryTab.all,
+        TeamSection.purchase: TeamCategoryTab.all,
+        TeamSection.accounts: TeamCategoryTab.all,
+      },
+    );
+  }
+
+  Future<void> _fetchPage({
+    required Emitter<TeamMembersState> emit,
+    required int page,
+    required bool replace,
+    Map<TeamSection, TeamCategoryTab>? selectedTabsFallback,
+  }) async {
     final selectedTabs = <TeamSection, TeamCategoryTab>{
-      TeamSection.sales: TeamCategoryTab.all,
-      TeamSection.purchase: TeamCategoryTab.all,
-      TeamSection.accounts: TeamCategoryTab.all,
+      TeamSection.sales: state.selectedCategoryTabBySection[TeamSection.sales] ?? TeamCategoryTab.all,
+      TeamSection.purchase:
+          state.selectedCategoryTabBySection[TeamSection.purchase] ?? TeamCategoryTab.all,
+      TeamSection.accounts:
+          state.selectedCategoryTabBySection[TeamSection.accounts] ?? TeamCategoryTab.all,
+      ...?selectedTabsFallback,
     };
-    final membersBySection = _mergeFromSeedAndAdds();
     emit(
       state.copyWith(
-        membersBySection: membersBySection,
-        topPerformersBySection: _seedTopPerformersBySection,
-        selectedCategoryTabBySection: selectedTabs,
-        visibleMembersBySection: _applyAllFilters(
-          membersBySection: membersBySection,
-          query: state.searchQuery,
-          filter: state.selectedFilter,
-          selectedTabs: selectedTabs,
-        ),
-        isLoading: false,
+        isLoading: replace,
+        isLoadingMore: !replace,
         clearError: true,
       ),
     );
+
+    try {
+      final response = await _membersRepository.listMembers(
+        page: page,
+        employmentStatus: _employmentStatusQueryValue(state.employmentStatusFilter),
+      );
+      final fetchedPageMembers = _groupMembersBySection(response.data.items);
+      if (replace) {
+        _fetchedMembersBySection = fetchedPageMembers;
+      } else {
+        _fetchedMembersBySection = _mergeSections(_fetchedMembersBySection, fetchedPageMembers);
+      }
+      final membersBySection = _mergeFromFetchedAndAdds();
+      emit(
+        state.copyWith(
+          membersBySection: membersBySection,
+          topPerformersBySection: _topPerformersFromMembers(membersBySection),
+          selectedCategoryTabBySection: selectedTabs,
+          visibleMembersBySection: _applyAllFilters(
+            membersBySection: membersBySection,
+            query: state.searchQuery,
+            filter: state.selectedFilter,
+            selectedTabs: selectedTabs,
+          ),
+          currentPage: response.data.page,
+          totalPages: response.data.totalPages,
+          isLoading: false,
+          isLoadingMore: false,
+          clearError: true,
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          isLoading: false,
+          isLoadingMore: false,
+          errorMessage: e.toString(),
+        ),
+      );
+    }
   }
 
   void _onMemberAdded(TeamMemberAdded event, Emitter<TeamMembersState> emit) {
     _sessionAdds.add(TeamMemberSessionAdd(sections: event.sections, member: event.member));
-    final membersBySection = _mergeFromSeedAndAdds();
+    final membersBySection = _mergeFromFetchedAndAdds();
     emit(
       state.copyWith(
         membersBySection: membersBySection,
+        topPerformersBySection: _topPerformersFromMembers(membersBySection),
         visibleMembersBySection: _applyAllFilters(
           membersBySection: membersBySection,
           query: state.searchQuery,
@@ -67,10 +128,11 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
     final sessionIdx = _sessionAdds.indexWhere((a) => a.member.id == id);
     if (sessionIdx >= 0) {
       _sessionAdds[sessionIdx] = TeamMemberSessionAdd(sections: targets, member: model);
-      final membersBySection = _mergeFromSeedAndAdds();
+      final membersBySection = _mergeFromFetchedAndAdds();
       emit(
         state.copyWith(
           membersBySection: membersBySection,
+          topPerformersBySection: _topPerformersFromMembers(membersBySection),
           visibleMembersBySection: _applyAllFilters(
             membersBySection: membersBySection,
             query: state.searchQuery,
@@ -83,6 +145,7 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
     }
 
     final next = <TeamSection, List<TeamMemberUiModel>>{};
+    final nextFetched = <TeamSection, List<TeamMemberUiModel>>{};
     for (final section in TeamSection.values) {
       final list = List<TeamMemberUiModel>.from(state.membersBySection[section] ?? const []);
       list.removeWhere((m) => m.id == id);
@@ -90,10 +153,19 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
         list.add(model);
       }
       next[section] = list;
+
+      final fetchedList = List<TeamMemberUiModel>.from(_fetchedMembersBySection[section] ?? const []);
+      fetchedList.removeWhere((m) => m.id == id);
+      if (targets.contains(section)) {
+        fetchedList.add(model);
+      }
+      nextFetched[section] = fetchedList;
     }
+    _fetchedMembersBySection = nextFetched;
     emit(
       state.copyWith(
         membersBySection: next,
+        topPerformersBySection: _topPerformersFromMembers(next),
         visibleMembersBySection: _applyAllFilters(
           membersBySection: next,
           query: state.searchQuery,
@@ -104,16 +176,52 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
     );
   }
 
-  Map<TeamSection, List<TeamMemberUiModel>> _mergeFromSeedAndAdds() {
+  Map<TeamSection, List<TeamMemberUiModel>> _mergeFromFetchedAndAdds() {
     final out = <TeamSection, List<TeamMemberUiModel>>{
-      for (final e in _seedMembersBySection.entries) e.key: List<TeamMemberUiModel>.from(e.value),
+      for (final e in _fetchedMembersBySection.entries) e.key: List<TeamMemberUiModel>.from(e.value),
     };
     for (final add in _sessionAdds) {
       for (final s in add.sections) {
-        out[s]!.add(add.member);
+        (out[s] ??= []).add(add.member);
       }
     }
     return out;
+  }
+
+  Map<TeamSection, List<TeamMemberUiModel>> _groupMembersBySection(List<ListMembersItem> items) {
+    final out = _emptyMembersBySection();
+    for (final item in items) {
+      final departmentRoles = extractDepartmentRoles(item);
+      final sections = teamSectionsFromDepartmentRoles(departmentRoles);
+      if (sections.isEmpty) {
+        continue;
+      }
+      final departmentLabel = formatDepartmentRoleDisplay(departmentRoles);
+      final ui = teamMemberUiModelFromApi(item, department: departmentLabel);
+      for (final section in sections) {
+        out[section]!.add(ui);
+      }
+    }
+    return out;
+  }
+
+  Map<TeamSection, List<TopPerformerUiModel>> _topPerformersFromMembers(
+    Map<TeamSection, List<TeamMemberUiModel>> membersBySection,
+  ) {
+    final output = <TeamSection, List<TopPerformerUiModel>>{};
+    for (final section in [TeamSection.sales, TeamSection.purchase, TeamSection.accounts]) {
+      output[section] = membersBySection[section]
+              ?.take(5)
+              .map(
+                (member) => TopPerformerUiModel(
+                  name: member.name,
+                  team: member.department.isEmpty ? section.roleLabel : member.department,
+                ),
+              )
+              .toList() ??
+          const [];
+    }
+    return output;
   }
 
   void _onSearchChanged(TeamMembersSearchChanged event, Emitter<TeamMembersState> emit) {
@@ -150,6 +258,31 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
     Emitter<TeamMembersState> emit,
   ) {
     // Reserved for sort/filter options panel integration.
+  }
+
+  Future<void> _onEmploymentStatusChanged(
+    TeamMembersEmploymentStatusChanged event,
+    Emitter<TeamMembersState> emit,
+  ) async {
+    if (event.filter == state.employmentStatusFilter) {
+      return;
+    }
+    emit(state.copyWith(employmentStatusFilter: event.filter));
+    await _fetchPage(emit: emit, page: 1, replace: true);
+  }
+
+  Future<void> _onLoadMoreRequested(
+    TeamMembersLoadMoreRequested event,
+    Emitter<TeamMembersState> emit,
+  ) async {
+    if (state.isLoading || state.isLoadingMore || !state.hasMorePages) {
+      return;
+    }
+    await _fetchPage(
+      emit: emit,
+      page: state.currentPage + 1,
+      replace: false,
+    );
   }
 
   void _onCategoryTabChanged(TeamCategoryTabChanged event, Emitter<TeamMembersState> emit) {
@@ -236,98 +369,39 @@ class TeamMemberSessionAdd {
   final TeamMemberUiModel member;
 }
 
-final Map<TeamSection, List<TeamMemberUiModel>> _seedMembersBySection = {
-  TeamSection.admin: const [
-    TeamMemberUiModel(
-      id: 'a1',
-      name: 'Harik Kheruchiya',
-      doj: '17/12/2025',
-      email: 'harik.kheruchiya@kheruchiya.com',
-      status: TeamMemberStatus.online,
-    ),
-    TeamMemberUiModel(
-      id: 'a2',
-      name: 'Katha Raval',
-      doj: '17/12/2025',
-      email: 'katha.raval@kheruchiya.com',
-      status: TeamMemberStatus.offline,
-    ),
-    TeamMemberUiModel(
-      id: 'a3',
-      name: 'Meet Raval',
-      doj: '17/12/2025',
-      email: 'meet.raval@kheruchiya.com',
-      status: TeamMemberStatus.idle,
-    ),
-  ],
-  TeamSection.sales: _sharedTeamMembers,
-  TeamSection.purchase: _sharedTeamMembers,
-  TeamSection.accounts: _sharedTeamMembers,
-};
+Map<TeamSection, List<TeamMemberUiModel>> _emptyMembersBySection() => {
+      TeamSection.admin: <TeamMemberUiModel>[],
+      TeamSection.sales: <TeamMemberUiModel>[],
+      TeamSection.purchase: <TeamMemberUiModel>[],
+      TeamSection.accounts: <TeamMemberUiModel>[],
+    };
 
-const List<TeamMemberUiModel> _sharedTeamMembers = [
-  TeamMemberUiModel(
-    id: 's1',
-    name: 'Goldie Bumrah',
-    doj: '17/12/2025',
-    email: 'goldie.bumrah@kheruchiya.com',
-    status: TeamMemberStatus.online,
-    department: 'Visa',
-  ),
-  TeamMemberUiModel(
-    id: 's2',
-    name: 'Hootiya Singh',
-    doj: '17/12/2025',
-    email: 'hootiya.singh@kheruchiya.com',
-    status: TeamMemberStatus.offline,
-    department: 'Forex',
-  ),
-  TeamMemberUiModel(
-    id: 's3',
-    name: 'Tejpal Samosa',
-    doj: '17/12/2025',
-    email: 'tejpal.samosa@kheruchiya.com',
-    status: TeamMemberStatus.online,
-    department: 'Holiday',
-  ),
-  TeamMemberUiModel(
-    id: 's4',
-    name: 'Moong Dal',
-    doj: '17/12/2025',
-    email: 'moong.dal@kheruchiya.com',
-    status: TeamMemberStatus.idle,
-    department: 'Hotel',
-  ),
-  TeamMemberUiModel(
-    id: 's5',
-    name: 'Kheer Puri',
-    doj: '17/12/2025',
-    email: 'kheer.puri@kheruchiya.com',
-    status: TeamMemberStatus.offline,
-    department: 'Flight',
-  ),
-];
+String? _employmentStatusQueryValue(EmploymentStatusFilter filter) {
+  switch (filter) {
+    case EmploymentStatusFilter.active:
+      return 'active';
+    case EmploymentStatusFilter.inactive:
+      return 'inactive';
+    case EmploymentStatusFilter.all:
+      return null;
+  }
+}
 
-final Map<TeamSection, List<TopPerformerUiModel>> _seedTopPerformersBySection = {
-  TeamSection.sales: const [
-    TopPerformerUiModel(name: 'Goldie Bumrah', team: 'Visa'),
-    TopPerformerUiModel(name: 'Hootiya Singh', team: 'Forex'),
-    TopPerformerUiModel(name: 'Tejpal Samosa', team: 'Holiday'),
-    TopPerformerUiModel(name: 'Moong Dal', team: 'Hotel'),
-    TopPerformerUiModel(name: 'Kheer Puri', team: 'Flight'),
-  ],
-  TeamSection.purchase: const [
-    TopPerformerUiModel(name: 'Goldie Bumrah', team: 'Visa'),
-    TopPerformerUiModel(name: 'Hootiya Singh', team: 'Forex'),
-    TopPerformerUiModel(name: 'Tejpal Samosa', team: 'Holiday'),
-    TopPerformerUiModel(name: 'Moong Dal', team: 'Hotel'),
-    TopPerformerUiModel(name: 'Kheer Puri', team: 'Flight'),
-  ],
-  TeamSection.accounts: const [
-    TopPerformerUiModel(name: 'Goldie Bumrah', team: 'Visa'),
-    TopPerformerUiModel(name: 'Hootiya Singh', team: 'Forex'),
-    TopPerformerUiModel(name: 'Tejpal Samosa', team: 'Holiday'),
-    TopPerformerUiModel(name: 'Moong Dal', team: 'Hotel'),
-    TopPerformerUiModel(name: 'Kheer Puri', team: 'Flight'),
-  ],
-};
+Map<TeamSection, List<TeamMemberUiModel>> _mergeSections(
+  Map<TeamSection, List<TeamMemberUiModel>> base,
+  Map<TeamSection, List<TeamMemberUiModel>> incoming,
+) {
+  final out = _emptyMembersBySection();
+  for (final section in TeamSection.values) {
+    final list = <TeamMemberUiModel>[
+      ...?base[section],
+      ...?incoming[section],
+    ];
+    final deduped = <String, TeamMemberUiModel>{};
+    for (final member in list) {
+      deduped[member.id] = member;
+    }
+    out[section] = deduped.values.toList();
+  }
+  return out;
+}
