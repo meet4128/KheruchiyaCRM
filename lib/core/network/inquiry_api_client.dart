@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:travel_crm/data/models/inquiry/list_inquiries_response.dart';
+import 'package:travel_crm/data/models/members/create_member_request.dart';
+import 'package:travel_crm/data/models/members/update_member_request.dart';
 
 import '../models/inquiry/create_inquiry_request.dart';
 import 'apis.dart';
@@ -51,5 +53,14 @@ abstract class InquiryApiClient {
   @GET('/api/v1/inquiries')
   Future<ListInquiriesResponse> listInquiries(
     @Queries() Map<String, dynamic> queries,
+  );
+
+  @POST('/api/v1/members')
+  Future<void> createMember(@Body() CreateMemberRequest body);
+
+  @PATCH('/api/v1/members/{id}')
+  Future<void> updateMember(
+    @Path('id') String id,
+    @Body() UpdateMemberRequest body,
   );
 }

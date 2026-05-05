@@ -310,4 +310,50 @@ class StringConstant {
   static const String priority = 'Priority:';
   static const String statusColon = 'Status:';
   static const String inProgress = 'In Progress';
+
+  // ========== Admin — Add Member dialog ==========
+  static const String addMemberDialogTitle = 'Add Member';
+  static const String addMemberPersonalInformationTitle = 'Personal Information';
+  static const String addMemberOperationInformationTitle = 'Operation Information';
+  static const String addMemberFillFormSubtitle = 'Fill the form with correct details';
+  static const String addMemberNext = 'Next';
+  static const String addMemberBack = 'Back';
+  static const String addMemberSubmit = 'Submit';
+  static const String addMemberNextStepHelper =
+      'Please fill all the required details and then click to the next to move on operational form';
+  static const String addMemberSubmitFooterNote =
+      'You can edit even after submitting this form using edit from action column';
+  static const String addMemberTypeOfRole = 'Type of Role';
+  static const String addMemberAddRoleButton = '+ Add Role';
+  static const String addMemberAddRoleLabelCompact = 'Add Role';
+  static const String addMemberRemoveRoleTooltip = 'Remove role';
+  static const String addMemberAllottedLabel = 'Allotted';
+  static const String addMemberOfficePhoneLabel = 'Office Phone Number';
+  static const String addMemberOfficePhoneNumberHint = '123456789';
+  static const String addMemberAttachDocuments = 'Attach Documents';
+  static const String addMemberAttachmentAadhar = 'Aadhar card';
+  static const String addMemberAttachmentPan = 'PAN Card';
+  static const String addMemberAttachmentCancelCheque = 'Cancel Cheque';
+  static const String addMemberAttachmentPickHint = 'Tap to attach';
+  static const String addMemberEmployeeIdLabel = 'Employee ID';
+  static const String addMemberEmployeeIdHint = 'Enter employee ID';
+  static const String addMemberDesignationLabel = 'Designation';
+  static const String addMemberDesignationHint = 'Enter your work designation';
+  static const String addMemberEmploymentStatusLabel = 'Employment Status';
+  static const String addMemberEmploymentStatusHint = 'Status';
+  static const String addMemberDateOfJoiningLabel = 'Date of Joining';
+  static const String addMemberDateOfJoiningHint = 'Select date of joining';
+  static const String addMemberSelectDepartmentLabel = 'Select Department';
+  static const String addMemberSelectDepartmentHint = 'Department';
+  static const String addMemberSelectRoleLabel = 'Select Role';
+  static const String addMemberSelectRoleHint = 'Role';
+  static const String addMemberFirstNameHint = 'Enter first name';
+  static const String addMemberLastNameHint = 'Enter last name';
+  static const String addMemberEmployeeIdRequired = 'Employee ID is required';
+  static const String addMemberDesignationRequired = 'Designation is required';
+  static const String addMemberEmploymentStatusRequired = 'Employment status is required';
+  static const String addMemberDateOfJoiningRequired = 'Date of joining is required';
+  static const String addMemberRoleRowsIncomplete = 'Select department and role for each row.';
+  static const String addMemberSubmitSuccessMessage = 'Member saved successfully.';
+  static const String addMemberSubmitErrorGeneric = 'Something went wrong. Please try again.';
 }

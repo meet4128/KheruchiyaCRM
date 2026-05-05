@@ -4,8 +4,50 @@ enum AddMemberGender { male, female }
 
 enum AddMemberSubmitStatus { initial, invalid, valid, submitting, success, failure }
 
+/// Wizard step for Add Member dialog ([add_member_submit.md] Phase 1+).
+enum AddMemberStep {
+  personal,
+  operation,
+}
+
+/// Document slot for Step 2 ([add_member_submit.md] Phase 4).
+enum AddMemberAttachmentKind {
+  aadhar,
+  pan,
+  cancelCheque,
+}
+
+class AddMemberAttachment extends Equatable {
+  const AddMemberAttachment({required this.fileName, this.path});
+
+  final String fileName;
+  final String? path;
+
+  @override
+  List<Object?> get props => [fileName, path];
+}
+
+/// One department + role pair ([add_member_submit.md] Phase 3).
+class AddMemberRoleRow extends Equatable {
+  const AddMemberRoleRow({this.department = '', this.role = ''});
+
+  final String department;
+  final String role;
+
+  AddMemberRoleRow copyWith({String? department, String? role}) {
+    return AddMemberRoleRow(
+      department: department ?? this.department,
+      role: role ?? this.role,
+    );
+  }
+
+  @override
+  List<Object?> get props => [department, role];
+}
+
 class AddMemberState extends Equatable {
   const AddMemberState({
+    this.currentStep = AddMemberStep.personal,
     this.fullName = '',
     this.personalEmail = '',
     this.phoneDialCode = '+91',
@@ -20,6 +62,18 @@ class AddMemberState extends Equatable {
     this.addressLine2 = '',
     this.zipCode = '',
     this.city = '',
+    this.firstName = '',
+    this.lastName = '',
+    this.employeeId = '',
+    this.designation = '',
+    this.employmentStatus = '',
+    this.dateOfJoining,
+    this.roleRows = const [AddMemberRoleRow()],
+    this.officePhoneDialCode = '+91',
+    this.officePhoneNumber = '',
+    this.aadharAttachment,
+    this.panAttachment,
+    this.cancelChequeAttachment,
     this.fullNameError,
     this.personalEmailError,
     this.phoneNumberError,
@@ -30,9 +84,20 @@ class AddMemberState extends Equatable {
     this.addressError,
     this.zipCodeError,
     this.cityError,
+    this.firstNameError,
+    this.lastNameError,
+    this.employeeIdError,
+    this.designationError,
+    this.employmentStatusError,
+    this.dateOfJoiningError,
+    this.roleRowsError,
+    this.officePhoneNumberError,
     this.status = AddMemberSubmitStatus.initial,
+    this.editingMemberId,
+    this.submitErrorMessage,
   });
 
+  final AddMemberStep currentStep;
   final String fullName;
   final String personalEmail;
   final String phoneDialCode;
@@ -48,6 +113,20 @@ class AddMemberState extends Equatable {
   final String zipCode;
   final String city;
 
+  /// Step 2 — Operation Information ([add_member_submit.md] Phase 2–4).
+  final String firstName;
+  final String lastName;
+  final String employeeId;
+  final String designation;
+  final String employmentStatus;
+  final DateTime? dateOfJoining;
+  final List<AddMemberRoleRow> roleRows;
+  final String officePhoneDialCode;
+  final String officePhoneNumber;
+  final AddMemberAttachment? aadharAttachment;
+  final AddMemberAttachment? panAttachment;
+  final AddMemberAttachment? cancelChequeAttachment;
+
   final String? fullNameError;
   final String? personalEmailError;
   final String? phoneNumberError;
@@ -58,9 +137,24 @@ class AddMemberState extends Equatable {
   final String? addressError;
   final String? zipCodeError;
   final String? cityError;
+  final String? firstNameError;
+  final String? lastNameError;
+  final String? employeeIdError;
+  final String? designationError;
+  final String? employmentStatusError;
+  final String? dateOfJoiningError;
+  final String? roleRowsError;
+  final String? officePhoneNumberError;
   final AddMemberSubmitStatus status;
 
+  /// Server member id when opened from team table **Edit** (PATCH on submit).
+  final String? editingMemberId;
+
+  /// Last submit failure message (shown in SnackBar; cleared on next submit).
+  final String? submitErrorMessage;
+
   AddMemberState copyWith({
+    AddMemberStep? currentStep,
     String? fullName,
     String? personalEmail,
     String? phoneDialCode,
@@ -78,6 +172,22 @@ class AddMemberState extends Equatable {
     String? addressLine2,
     String? zipCode,
     String? city,
+    String? firstName,
+    String? lastName,
+    String? employeeId,
+    String? designation,
+    String? employmentStatus,
+    DateTime? dateOfJoining,
+    bool clearDateOfJoining = false,
+    List<AddMemberRoleRow>? roleRows,
+    String? officePhoneDialCode,
+    String? officePhoneNumber,
+    AddMemberAttachment? aadharAttachment,
+    bool clearAadharAttachment = false,
+    AddMemberAttachment? panAttachment,
+    bool clearPanAttachment = false,
+    AddMemberAttachment? cancelChequeAttachment,
+    bool clearCancelChequeAttachment = false,
     String? fullNameError,
     String? personalEmailError,
     String? phoneNumberError,
@@ -88,10 +198,23 @@ class AddMemberState extends Equatable {
     String? addressError,
     String? zipCodeError,
     String? cityError,
+    String? firstNameError,
+    String? lastNameError,
+    String? employeeIdError,
+    String? designationError,
+    String? employmentStatusError,
+    String? dateOfJoiningError,
+    String? roleRowsError,
+    String? officePhoneNumberError,
     bool clearFieldErrors = false,
     AddMemberSubmitStatus? status,
+    String? editingMemberId,
+    bool clearEditingMemberId = false,
+    String? submitErrorMessage,
+    bool clearSubmitErrorMessage = false,
   }) {
     return AddMemberState(
+      currentStep: currentStep ?? this.currentStep,
       fullName: fullName ?? this.fullName,
       personalEmail: personalEmail ?? this.personalEmail,
       phoneDialCode: phoneDialCode ?? this.phoneDialCode,
@@ -106,6 +229,20 @@ class AddMemberState extends Equatable {
       addressLine2: addressLine2 ?? this.addressLine2,
       zipCode: zipCode ?? this.zipCode,
       city: city ?? this.city,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      employeeId: employeeId ?? this.employeeId,
+      designation: designation ?? this.designation,
+      employmentStatus: employmentStatus ?? this.employmentStatus,
+      dateOfJoining: clearDateOfJoining ? null : (dateOfJoining ?? this.dateOfJoining),
+      roleRows: roleRows ?? this.roleRows,
+      officePhoneDialCode: officePhoneDialCode ?? this.officePhoneDialCode,
+      officePhoneNumber: officePhoneNumber ?? this.officePhoneNumber,
+      aadharAttachment: clearAadharAttachment ? null : (aadharAttachment ?? this.aadharAttachment),
+      panAttachment: clearPanAttachment ? null : (panAttachment ?? this.panAttachment),
+      cancelChequeAttachment: clearCancelChequeAttachment
+          ? null
+          : (cancelChequeAttachment ?? this.cancelChequeAttachment),
       fullNameError: clearFieldErrors ? null : fullNameError,
       personalEmailError: clearFieldErrors ? null : personalEmailError,
       phoneNumberError: clearFieldErrors ? null : phoneNumberError,
@@ -116,12 +253,23 @@ class AddMemberState extends Equatable {
       addressError: clearFieldErrors ? null : addressError,
       zipCodeError: clearFieldErrors ? null : zipCodeError,
       cityError: clearFieldErrors ? null : cityError,
+      firstNameError: clearFieldErrors ? null : firstNameError,
+      lastNameError: clearFieldErrors ? null : lastNameError,
+      employeeIdError: clearFieldErrors ? null : employeeIdError,
+      designationError: clearFieldErrors ? null : designationError,
+      employmentStatusError: clearFieldErrors ? null : employmentStatusError,
+      dateOfJoiningError: clearFieldErrors ? null : dateOfJoiningError,
+      roleRowsError: clearFieldErrors ? null : roleRowsError,
+      officePhoneNumberError: clearFieldErrors ? null : officePhoneNumberError,
       status: status ?? this.status,
+      editingMemberId: clearEditingMemberId ? null : (editingMemberId ?? this.editingMemberId),
+      submitErrorMessage: clearSubmitErrorMessage ? null : (submitErrorMessage ?? this.submitErrorMessage),
     );
   }
 
   @override
   List<Object?> get props => [
+        currentStep,
         fullName,
         personalEmail,
         phoneDialCode,
@@ -136,6 +284,18 @@ class AddMemberState extends Equatable {
         addressLine2,
         zipCode,
         city,
+        firstName,
+        lastName,
+        employeeId,
+        designation,
+        employmentStatus,
+        dateOfJoining,
+        roleRows,
+        officePhoneDialCode,
+        officePhoneNumber,
+        aadharAttachment,
+        panAttachment,
+        cancelChequeAttachment,
         fullNameError,
         personalEmailError,
         phoneNumberError,
@@ -146,6 +306,16 @@ class AddMemberState extends Equatable {
         addressError,
         zipCodeError,
         cityError,
+        firstNameError,
+        lastNameError,
+        employeeIdError,
+        designationError,
+        employmentStatusError,
+        dateOfJoiningError,
+        roleRowsError,
+        officePhoneNumberError,
         status,
+        editingMemberId,
+        submitErrorMessage,
       ];
 }

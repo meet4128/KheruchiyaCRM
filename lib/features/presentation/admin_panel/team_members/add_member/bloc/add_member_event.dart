@@ -10,7 +10,19 @@ abstract class AddMemberEvent extends Equatable {
 }
 
 class AddMemberDialogOpened extends AddMemberEvent {
-  const AddMemberDialogOpened();
+  const AddMemberDialogOpened({
+    this.editingMemberId,
+    this.prefillFullName,
+    this.prefillPersonalEmail,
+  });
+
+  /// When set, submit uses PATCH `/api/v1/members/{id}` instead of POST create.
+  final String? editingMemberId;
+  final String? prefillFullName;
+  final String? prefillPersonalEmail;
+
+  @override
+  List<Object?> get props => [editingMemberId, prefillFullName, prefillPersonalEmail];
 }
 
 class AddMemberDialogClosed extends AddMemberEvent {
@@ -135,4 +147,136 @@ class AddMemberCityChanged extends AddMemberEvent {
 
 class AddMemberNextPressed extends AddMemberEvent {
   const AddMemberNextPressed();
+}
+
+class AddMemberBackPressed extends AddMemberEvent {
+  const AddMemberBackPressed();
+}
+
+class AddMemberFirstNameChanged extends AddMemberEvent {
+  const AddMemberFirstNameChanged(this.value);
+
+  final String value;
+
+  @override
+  List<Object?> get props => [value];
+}
+
+class AddMemberLastNameChanged extends AddMemberEvent {
+  const AddMemberLastNameChanged(this.value);
+
+  final String value;
+
+  @override
+  List<Object?> get props => [value];
+}
+
+class AddMemberEmployeeIdChanged extends AddMemberEvent {
+  const AddMemberEmployeeIdChanged(this.value);
+
+  final String value;
+
+  @override
+  List<Object?> get props => [value];
+}
+
+class AddMemberDesignationChanged extends AddMemberEvent {
+  const AddMemberDesignationChanged(this.value);
+
+  final String value;
+
+  @override
+  List<Object?> get props => [value];
+}
+
+class AddMemberEmploymentStatusChanged extends AddMemberEvent {
+  const AddMemberEmploymentStatusChanged(this.value);
+
+  final String value;
+
+  @override
+  List<Object?> get props => [value];
+}
+
+class AddMemberDateOfJoiningChanged extends AddMemberEvent {
+  const AddMemberDateOfJoiningChanged(this.value);
+
+  final DateTime value;
+
+  @override
+  List<Object?> get props => [value];
+}
+
+class AddMemberRoleRowDepartmentChanged extends AddMemberEvent {
+  const AddMemberRoleRowDepartmentChanged({required this.index, required this.value});
+
+  final int index;
+  final String value;
+
+  @override
+  List<Object?> get props => [index, value];
+}
+
+class AddMemberRoleRowRoleChanged extends AddMemberEvent {
+  const AddMemberRoleRowRoleChanged({required this.index, required this.value});
+
+  final int index;
+  final String value;
+
+  @override
+  List<Object?> get props => [index, value];
+}
+
+class AddMemberRoleRowAdded extends AddMemberEvent {
+  const AddMemberRoleRowAdded();
+}
+
+class AddMemberRoleRowRemoved extends AddMemberEvent {
+  const AddMemberRoleRowRemoved(this.index);
+
+  final int index;
+
+  @override
+  List<Object?> get props => [index];
+}
+
+class AddMemberOfficePhoneChanged extends AddMemberEvent {
+  const AddMemberOfficePhoneChanged({
+    required this.dialCode,
+    required this.number,
+  });
+
+  final String dialCode;
+  final String number;
+
+  @override
+  List<Object?> get props => [dialCode, number];
+}
+
+class AddMemberAttachmentPicked extends AddMemberEvent {
+  const AddMemberAttachmentPicked({
+    required this.kind,
+    required this.fileName,
+    this.path,
+  });
+
+  final AddMemberAttachmentKind kind;
+  final String fileName;
+  final String? path;
+
+  @override
+  List<Object?> get props => [kind, fileName, path];
+}
+
+class AddMemberAttachmentCleared extends AddMemberEvent {
+  const AddMemberAttachmentCleared(this.kind);
+
+  final AddMemberAttachmentKind kind;
+
+  @override
+  List<Object?> get props => [kind];
+}
+
+class AddMemberSubmitPressed extends AddMemberEvent {
+  const AddMemberSubmitPressed();
 }

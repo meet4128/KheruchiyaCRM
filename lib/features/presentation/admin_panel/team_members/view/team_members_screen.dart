@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:travel_crm/core/theme/app_colors.dart';
+import 'package:travel_crm/data/repositories/members_repository.dart';
+import 'package:travel_crm/di/injector.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/add_member/bloc/add_member_bloc.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/add_member/bloc/add_member_event.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/add_member/view/add_member_dialog.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/bloc/team_members_bloc.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/bloc/team_members_event.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/bloc/team_members_state.dart';
+import 'package:travel_crm/features/presentation/admin_panel/team_members/helpers/team_member_from_add_member_state.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/widgets/team_members_filters_bar.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/widgets/team_members_header.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/widgets/team_section_block.dart';
@@ -18,71 +21,125 @@ class TeamMembersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => TeamMembersBloc()..add(const TeamMembersFetched()),
-      child: Container(
-        color: AppColors.dark().backgroundDark,
-        padding: const EdgeInsets.all(24),
-        child: ListView(
-          children: [
-            TeamMembersHeader(onAddMembersTap: () => _openAddMemberDialog(context)),
-            SizedBox(height: 18),
-            const TeamMembersFiltersBar(),
-            const SizedBox(height: 18),
-            const TeamSectionBlock(
-              section: TeamSection.admin,
-              description:
-                  'Manage user accounts, permissions, and access levels within the app to ensure smooth operation and security.',
-              showStatusColumn: true,
-              showTopPerformers: false,
-              showTabs: false,
+      child: Builder(
+        builder: (context) {
+          return Container(
+            color: AppColors.dark().backgroundDark,
+            padding: const EdgeInsets.all(24),
+            child: ListView(
+              children: [
+                TeamMembersHeader(onAddMembersTap: () => _openAddMemberDialog(context, null)),
+                SizedBox(height: 18),
+                const TeamMembersFiltersBar(),
+                const SizedBox(height: 18),
+                TeamSectionBlock(
+                  section: TeamSection.admin,
+                  description:
+                      'Manage user accounts, permissions, and access levels within the app to ensure smooth operation and security.',
+                  showStatusColumn: true,
+                  showTopPerformers: false,
+                  showTabs: false,
+                  onMemberEdit: (id) => _openAddMemberDialog(context, id),
+                ),
+                const SizedBox(height: 18),
+                const _SectionDivider(),
+                const SizedBox(height: 18),
+                TeamSectionBlock(
+                  section: TeamSection.sales,
+                  description:
+                      'Manage user accounts, permissions, and access levels within the app to ensure smooth operation and security.',
+                  showStatusColumn: false,
+                  showTopPerformers: true,
+                  showTabs: true,
+                  onMemberEdit: (id) => _openAddMemberDialog(context, id),
+                ),
+                const SizedBox(height: 18),
+                const _SectionDivider(),
+                const SizedBox(height: 18),
+                TeamSectionBlock(
+                  section: TeamSection.purchase,
+                  description:
+                      'Manage user accounts, permissions, and access levels within the app to ensure smooth operation and security.',
+                  showStatusColumn: false,
+                  showTopPerformers: true,
+                  showTabs: true,
+                  onMemberEdit: (id) => _openAddMemberDialog(context, id),
+                ),
+                const SizedBox(height: 18),
+                const _SectionDivider(),
+                const SizedBox(height: 18),
+                TeamSectionBlock(
+                  section: TeamSection.accounts,
+                  description:
+                      'Manage user accounts, permissions, and access levels within the app to ensure smooth operation and security.',
+                  showStatusColumn: false,
+                  showTopPerformers: true,
+                  showTabs: true,
+                  onMemberEdit: (id) => _openAddMemberDialog(context, id),
+                ),
+                const SizedBox(height: 10),
+              ],
             ),
-            const SizedBox(height: 18),
-            const _SectionDivider(),
-            const SizedBox(height: 18),
-            const TeamSectionBlock(
-              section: TeamSection.sales,
-              description:
-                  'Manage user accounts, permissions, and access levels within the app to ensure smooth operation and security.',
-              showStatusColumn: false,
-              showTopPerformers: true,
-              showTabs: true,
-            ),
-            const SizedBox(height: 18),
-            const _SectionDivider(),
-            const SizedBox(height: 18),
-            const TeamSectionBlock(
-              section: TeamSection.purchase,
-              description:
-                  'Manage user accounts, permissions, and access levels within the app to ensure smooth operation and security.',
-              showStatusColumn: false,
-              showTopPerformers: true,
-              showTabs: true,
-            ),
-            const SizedBox(height: 18),
-            const _SectionDivider(),
-            const SizedBox(height: 18),
-            const TeamSectionBlock(
-              section: TeamSection.accounts,
-              description:
-                  'Manage user accounts, permissions, and access levels within the app to ensure smooth operation and security.',
-              showStatusColumn: false,
-              showTopPerformers: true,
-              showTabs: true,
-            ),
-            const SizedBox(height: 10),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Future<void> _openAddMemberDialog(BuildContext context) async {
+  Future<void> _openAddMemberDialog(BuildContext context, String? editingMemberId) async {
+    final teamMembersBloc = context.read<TeamMembersBloc>();
+    String? prefillName;
+    String? prefillEmail;
+    if (editingMemberId != null) {
+      for (final list in teamMembersBloc.state.membersBySection.values) {
+        for (final m in list) {
+          if (m.id == editingMemberId) {
+            prefillName = m.name;
+            prefillEmail = m.email;
+            break;
+          }
+        }
+      }
+    }
     await showDialog<void>(
       context: context,
       barrierDismissible: true,
       builder: (_) {
         return BlocProvider(
-          create: (_) => AddMemberBloc()..add(const AddMemberDialogOpened()),
-          child: const AddMemberDialog(),
+          create: (_) => AddMemberBloc(sl<MembersRepository>())
+            ..add(
+              editingMemberId == null
+                  ? const AddMemberDialogOpened()
+                  : AddMemberDialogOpened(
+                      editingMemberId: editingMemberId,
+                      prefillFullName: prefillName,
+                      prefillPersonalEmail: prefillEmail,
+                    ),
+            ),
+          child: AddMemberDialog(
+            onMemberSaved: (addState) {
+              final sections = teamSectionsFromRoleRows(addState.roleRows);
+              if (addState.editingMemberId != null) {
+                teamMembersBloc.add(
+                  TeamMemberUpdated(
+                    memberId: addState.editingMemberId!,
+                    updated: teamMemberUiModelForUpdatedMember(
+                      addState,
+                      addState.editingMemberId!,
+                    ),
+                    sections: sections,
+                  ),
+                );
+              } else {
+                teamMembersBloc.add(
+                  TeamMemberAdded(
+                    member: teamMemberUiModelForNewMember(addState),
+                    sections: sections,
+                  ),
+                );
+              }
+            },
+          ),
         );
       },
     );

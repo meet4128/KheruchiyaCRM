@@ -65,3 +65,30 @@ class TeamMemberDeleteTapped extends TeamMembersEvent {
   @override
   List<Object?> get props => [memberId];
 }
+
+/// New member saved from the add-member wizard (session-only until API list exists).
+class TeamMemberAdded extends TeamMembersEvent {
+  const TeamMemberAdded({required this.member, required this.sections});
+
+  final TeamMemberUiModel member;
+  final Set<TeamSection> sections;
+
+  @override
+  List<Object?> get props => [member, sections];
+}
+
+/// Existing member updated from the wizard; [sections] is where they should appear after save.
+class TeamMemberUpdated extends TeamMembersEvent {
+  const TeamMemberUpdated({
+    required this.memberId,
+    required this.updated,
+    required this.sections,
+  });
+
+  final String memberId;
+  final TeamMemberUiModel updated;
+  final Set<TeamSection> sections;
+
+  @override
+  List<Object?> get props => [memberId, updated, sections];
+}

@@ -12,7 +12,12 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
     on<TeamCategoryTabChanged>(_onCategoryTabChanged);
     on<TeamMemberEditTapped>(_onEditTapped);
     on<TeamMemberDeleteTapped>(_onDeleteTapped);
+    on<TeamMemberAdded>(_onMemberAdded);
+    on<TeamMemberUpdated>(_onMemberUpdated);
   }
+
+  /// Members created this session (merged on top of seed data until a real list API exists).
+  final List<TeamMemberSessionAdd> _sessionAdds = [];
 
   void _onFetched(TeamMembersFetched event, Emitter<TeamMembersState> emit) {
     final selectedTabs = <TeamSection, TeamCategoryTab>{
@@ -20,7 +25,7 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
       TeamSection.purchase: TeamCategoryTab.all,
       TeamSection.accounts: TeamCategoryTab.all,
     };
-    final membersBySection = _seedMembersBySection;
+    final membersBySection = _mergeFromSeedAndAdds();
     emit(
       state.copyWith(
         membersBySection: membersBySection,
@@ -36,6 +41,79 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
         clearError: true,
       ),
     );
+  }
+
+  void _onMemberAdded(TeamMemberAdded event, Emitter<TeamMembersState> emit) {
+    _sessionAdds.add(TeamMemberSessionAdd(sections: event.sections, member: event.member));
+    final membersBySection = _mergeFromSeedAndAdds();
+    emit(
+      state.copyWith(
+        membersBySection: membersBySection,
+        visibleMembersBySection: _applyAllFilters(
+          membersBySection: membersBySection,
+          query: state.searchQuery,
+          filter: state.selectedFilter,
+          selectedTabs: state.selectedCategoryTabBySection,
+        ),
+      ),
+    );
+  }
+
+  void _onMemberUpdated(TeamMemberUpdated event, Emitter<TeamMembersState> emit) {
+    final id = event.memberId;
+    final model = event.updated;
+    final targets = event.sections;
+
+    final sessionIdx = _sessionAdds.indexWhere((a) => a.member.id == id);
+    if (sessionIdx >= 0) {
+      _sessionAdds[sessionIdx] = TeamMemberSessionAdd(sections: targets, member: model);
+      final membersBySection = _mergeFromSeedAndAdds();
+      emit(
+        state.copyWith(
+          membersBySection: membersBySection,
+          visibleMembersBySection: _applyAllFilters(
+            membersBySection: membersBySection,
+            query: state.searchQuery,
+            filter: state.selectedFilter,
+            selectedTabs: state.selectedCategoryTabBySection,
+          ),
+        ),
+      );
+      return;
+    }
+
+    final next = <TeamSection, List<TeamMemberUiModel>>{};
+    for (final section in TeamSection.values) {
+      final list = List<TeamMemberUiModel>.from(state.membersBySection[section] ?? const []);
+      list.removeWhere((m) => m.id == id);
+      if (targets.contains(section)) {
+        list.add(model);
+      }
+      next[section] = list;
+    }
+    emit(
+      state.copyWith(
+        membersBySection: next,
+        visibleMembersBySection: _applyAllFilters(
+          membersBySection: next,
+          query: state.searchQuery,
+          filter: state.selectedFilter,
+          selectedTabs: state.selectedCategoryTabBySection,
+        ),
+      ),
+    );
+  }
+
+  Map<TeamSection, List<TeamMemberUiModel>> _mergeFromSeedAndAdds() {
+    final out = <TeamSection, List<TeamMemberUiModel>>{
+      for (final e in _seedMembersBySection.entries) e.key: List<TeamMemberUiModel>.from(e.value),
+    };
+    for (final add in _sessionAdds) {
+      for (final s in add.sections) {
+        out[s]!.add(add.member);
+      }
+    }
+    return out;
   }
 
   void _onSearchChanged(TeamMembersSearchChanged event, Emitter<TeamMembersState> emit) {
@@ -148,6 +226,14 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
       return matchesFilter && matchesCategory && matchesQuery;
     }).toList();
   }
+}
+
+/// One member added in-session with the team blocks they belong to.
+class TeamMemberSessionAdd {
+  TeamMemberSessionAdd({required this.sections, required this.member});
+
+  final Set<TeamSection> sections;
+  final TeamMemberUiModel member;
 }
 
 final Map<TeamSection, List<TeamMemberUiModel>> _seedMembersBySection = {
