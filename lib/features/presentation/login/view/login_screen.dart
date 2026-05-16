@@ -161,12 +161,15 @@ class _LoginImagePane extends StatelessWidget {
       ),
       child: Container(
         color: Colors.black.withValues(alpha: 0.25),
-        alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(
           horizontal: DimensionConstant.d24,
           vertical: DimensionConstant.d24,
         ),
-        child: const _LoginCard(),
+        child: Center(
+          child: SingleChildScrollView(
+            child: const _LoginCard(),
+          ),
+        ),
       ),
     );
   }

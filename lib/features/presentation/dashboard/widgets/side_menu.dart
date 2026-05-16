@@ -174,6 +174,7 @@ class _SideMenuState extends State<SideMenu> with SingleTickerProviderStateMixin
                         NavPage.analysis,
                         widget.state,
                       ),
+                      _logoutItem(context),
                     ],
                   ),
                 ),
@@ -214,6 +215,40 @@ class _SideMenuState extends State<SideMenu> with SingleTickerProviderStateMixin
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(title, style:  TextStyle(color: selected?Colors.white:AppColors.dark().textSecondary)),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _logoutItem(BuildContext context) {
+    final collapsed = effectiveCollapsed;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          context.read<NavigationBloc>().add(UserLogoutRequested());
+        },
+        child: SizedBox(
+          height: 56,
+          child: Row(
+            children: [
+              const SizedBox(width: 12),
+              Icon(
+                Icons.logout_rounded,
+                size: 20,
+                color: AppColors.dark().textSecondary,
+              ),
+              if (!collapsed) ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Logout',
+                    style: TextStyle(color: AppColors.dark().textSecondary),
+                  ),
                 ),
               ],
             ],

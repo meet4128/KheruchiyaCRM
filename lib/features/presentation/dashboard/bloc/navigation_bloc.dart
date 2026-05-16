@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:travel_crm/core/utils/shared_pref_utils.dart';
 import 'navigation_event.dart';
 import 'navigation_state.dart';
 
@@ -19,6 +20,26 @@ class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
     on<OpenCloseDrawerEvent>((event, emit) {
       if (event.isDrawerOpen != state.isDrawerOpen) {
         emit(state.copyWith(isDrawerOpen: event.isDrawerOpen));
+      }
+    });
+
+    on<UserLogoutRequested>((event, emit) {
+      emit(state.copyWith(logoutStatus: UserLogoutStatus.confirmationRequired));
+    });
+
+    on<UserLogoutCancelled>((event, emit) {
+      emit(state.copyWith(logoutStatus: UserLogoutStatus.idle));
+    });
+
+    on<UserLogoutConfirmed>((event, emit) async {
+      emit(state.copyWith(logoutStatus: UserLogoutStatus.inProgress));
+      await SharedPrefUtils.clearSharedPref();
+      emit(state.copyWith(logoutStatus: UserLogoutStatus.success));
+    });
+
+    on<UserLogoutStatusReset>((event, emit) {
+      if (state.logoutStatus != UserLogoutStatus.idle) {
+        emit(state.copyWith(logoutStatus: UserLogoutStatus.idle));
       }
     });
   }

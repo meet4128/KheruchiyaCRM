@@ -43,3 +43,23 @@ class OpenCloseDrawerEvent extends NavigationEvent {
   @override
   List<Object?> get props => [isDrawerOpen];
 }
+
+class UserLogoutRequested extends NavigationEvent {
+  @override
+  List<Object?> get props => [];
+}
+
+class UserLogoutConfirmed extends NavigationEvent {
+  @override
+  List<Object?> get props => [];
+}
+
+class UserLogoutCancelled extends NavigationEvent {
+  @override
+  List<Object?> get props => [];
+}
+
+class UserLogoutStatusReset extends NavigationEvent {
+  @override
+  List<Object?> get props => [];
+}
