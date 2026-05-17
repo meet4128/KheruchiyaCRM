@@ -157,6 +157,11 @@ class InquiryRepository {
     developer.log('$logTag error $status: $data', name: 'InquiryRepository');
 
     if (status == 401) return InquiryUnauthorizedException();
+    if (status == 403) {
+      return InquiryForbiddenException(
+        _parseApiMessage(data) ?? 'Sales or admin access required for WhatsApp messaging.',
+      );
+    }
     if (status == 502) {
       return InquiryServiceUnavailableException(
         _parseMessage(data) ?? 'WhatsApp service unavailable.',
@@ -202,6 +207,19 @@ class InquiryRepository {
     }
 
     return 'Validation failed. Check the form and try again.';
+  }
+
+  static String? _parseApiMessage(dynamic data) {
+    if (data is String && data.trim().isNotEmpty) return data.trim();
+    if (data is! Map) return null;
+    final map = Map<String, dynamic>.from(data);
+    final msg = _parseMessage(map);
+    if (msg != null) return msg;
+    final nested = map['data'];
+    if (nested is Map) {
+      return _parseMessage(Map<String, dynamic>.from(nested));
+    }
+    return null;
   }
 
   static String? _parseMessage(Map<String, dynamic> map) {

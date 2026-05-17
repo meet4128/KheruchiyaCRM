@@ -4,6 +4,16 @@ class InquiryUnauthorizedException implements Exception {
   String toString() => 'Session expired or invalid. Please log in again.';
 }
 
+/// Thrown when the server returns 403 (e.g. WhatsApp send without sales/admin role).
+class InquiryForbiddenException implements Exception {
+  InquiryForbiddenException([this.message = 'Sales or admin access required.']);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 /// Thrown when the server returns 422.
 class InquiryValidationException implements Exception {
   InquiryValidationException(this.message);

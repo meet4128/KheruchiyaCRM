@@ -104,13 +104,3 @@ final class QnaChatDocumentUploadRequested extends QnaChatEvent {
   @override
   List<Object?> get props => [fileName, filePath, bytes, caption];
 }
-
-/// Emitted internally after first send creates a session — UI listens and updates InquiryDetailBloc.
-final class QnaChatSessionCreated extends QnaChatEvent {
-  const QnaChatSessionCreated(this.sessionId);
-
-  final String sessionId;
-
-  @override
-  List<Object?> get props => [sessionId];
-}

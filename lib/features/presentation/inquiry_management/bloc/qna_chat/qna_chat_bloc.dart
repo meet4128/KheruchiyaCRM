@@ -154,7 +154,7 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
       emit(
         state.copyWith(
           sendStatus: QnaChatSendStatus.failure,
-          sendErrorMessage: e.toString(),
+          sendErrorMessage: _userFacingError(e),
         ),
       );
     }
@@ -236,10 +236,21 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
       emit(
         state.copyWith(
           sendStatus: QnaChatSendStatus.failure,
-          sendErrorMessage: e.toString(),
+          sendErrorMessage: _userFacingError(e),
         ),
       );
     }
+  }
+
+  String _userFacingError(Object error) {
+    if (error is Exception) {
+      return error.toString().replaceFirst(RegExp(r'^Exception:\s*'), '');
+    }
+    final text = error.toString();
+    if (text.contains('DioException')) {
+      return 'Could not send the message. Please try again.';
+    }
+    return text;
   }
 
   Future<String?> _ensureSessionId(Emitter<QnaChatState> emit) async {
@@ -247,7 +258,6 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
     if (sessionId == null || sessionId.isEmpty) {
       sessionId = _uuid.v4();
       emit(state.copyWith(sessionId: sessionId));
-      add(QnaChatSessionCreated(sessionId));
       _startPolling();
     }
     return sessionId;
@@ -363,7 +373,7 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
         text: text,
       );
     } catch (e) {
-      emit(state.copyWith(sendErrorMessage: e.toString()));
+      emit(state.copyWith(sendErrorMessage: _userFacingError(e)));
     }
   }
 

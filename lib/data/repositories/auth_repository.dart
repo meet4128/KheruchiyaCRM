@@ -68,7 +68,7 @@ class AuthRepository {
       'email': trimmed,
       'password': password,
       'userId': _userIdFromEmail(trimmed),
-      'role': isAdmin?'admin':'user',
+      'role': isAdmin?'admin':'sales',
     };
   }
 }

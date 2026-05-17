@@ -459,6 +459,8 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     // If there are validation errors, show them and prevent submission
     final hasValidationErrors = errors.values.any((error) => error != null);
     if (hasValidationErrors) {
+      developer.log('hasValidationErrors  payload:\n$hasValidationErrors', name: 'AirTicketBloc');
+      debugPrint('[AirTicket Submit] Request body params:\n${errors.toString()}');
       emit(state.copyWith(
         fromError: errors['from'],
         toError: errors['to'],
