@@ -304,14 +304,31 @@ class StringConstant {
   static const String qnaChatLoadFailed = 'Could not load messages';
   static const String qnaChatRetry = 'Retry';
   static const String qnaChatAttach = 'Attachments and options';
+  static const String qnaChatUploadingDocument = 'Uploading document…';
+  static const String qnaChatDocumentSent = 'Document sent';
+  static const String qnaChatSendMessageFirstForAttach =
+      'Send a message first to start the chat session.';
+  static const String qnaChatSendMessageFirstForNotes =
+      'Send a message first to add session notes.';
+  static const String qnaChatPhoneUnavailable =
+      'Customer phone is not available. Messaging is disabled.';
+  static const String amendmentCardNotesTitle = 'Session notes';
+  static const String downloadAmendmentInvoice = 'Download Amendment Invoice';
   static const String qnaChatClearAmendmentType = 'Clear amendment type';
   static const List<String> qnaChatAmendmentTypeOptions = [
-    'Date Change',
-    'Route Change',
-    'Name Change',
+    'Re Issue',
     'Cancellation',
-    'Other',
+    'Booking',
+    'Baggage',
   ];
+  static const String qnaGetPersonalDocumentDetails = 'Get Personal Document Details';
+  static const String qnaTalkToPurchaseTeam = 'Talk To Purchase Team';
+  static const String qnaPutFollowUp = 'Put Follow Up';
+  static const String qnaMarkAsPending = 'Mark as Pending';
+  static const String qnaMarkAsLoss = 'Mark as Loss';
+  static const String qnaMarkAsWon = 'Mark as Won';
+  static const String qnaAmountChargedTitle = 'Amount charged';
+  static const String qnaAmountChargedHint = 'Enter amount';
   static const String addNewNotes = 'Add New Notes';
   static const String questions = 'Questions.';
   static const String answers = 'Answers';

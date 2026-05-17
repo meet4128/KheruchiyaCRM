@@ -232,6 +232,35 @@ class VendorInquiryRow {
   }
 
   /// Live countdown text for the Priority column (see design: `00:15 min Left`, `1 day Left`).
+  VendorInquiryRow copyWith({
+    String? phoneDisplay,
+    List<InquiryChecklistItem>? checklist,
+    String? status,
+  }) {
+    return VendorInquiryRow(
+      inquiryNo: inquiryNo,
+      generatedAt: generatedAt,
+      name: name,
+      bookingType: bookingType,
+      title: title,
+      typeOfClient: typeOfClient,
+      bookingId: bookingId,
+      phoneDisplay: phoneDisplay ?? this.phoneDisplay,
+      emailDisplay: emailDisplay,
+      addressDisplay: addressDisplay,
+      orderTypeDisplay: orderTypeDisplay,
+      referenceNumberDisplay: referenceNumberDisplay,
+      referenceNameDisplay: referenceNameDisplay,
+      priorityTrend: priorityTrend,
+      priorityText: priorityText,
+      checklist: checklist ?? this.checklist,
+      slaDeadline: slaDeadline,
+      assignedToNames: assignedToNames,
+      assignedToText: assignedToText,
+      status: status ?? this.status,
+    );
+  }
+
   static String formatSlaCountdownLabel(DateTime deadline, DateTime now) {
     final remaining = deadline.difference(now);
     if (remaining.isNegative) return '0 min Left';

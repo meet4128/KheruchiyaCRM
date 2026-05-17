@@ -10,6 +10,10 @@ class Apis {
   /// - Physical device: use your Mac's LAN IP, e.g. 'http://192.168.1.x:5001'.
   static const String inquiryBaseUrl = 'http://localhost:5001';
 
+  /// Public URL for WhatsApp / Meta document fetch (ngrok in dev).
+  static const String whatsappPublicBaseUrl =
+      'https://determinatively-volumetric-sloane.ngrok-free.dev';
+
   /// Inquiry server auth (no Authorization header)
   static const String inquiryAuthLoginPath = '/api/v1/auth/login';
   static const String inquiryAuthRefreshTokenPath = '/api/v1/auth/refresh-token';

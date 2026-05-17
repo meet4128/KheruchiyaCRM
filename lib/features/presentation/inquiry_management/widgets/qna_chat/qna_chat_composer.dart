@@ -53,7 +53,10 @@ class _QnaChatComposerState extends State<QnaChatComposer> {
           previous.amendmentType != current.amendmentType,
       builder: (context, state) {
         final sending = state.sendStatus == QnaChatSendStatus.sending;
-        final canSend = state.messageDraft.trim().isNotEmpty && !sending;
+        final canSend = state.hasValidPeerPhone &&
+            state.messageDraft.trim().isNotEmpty &&
+            !sending;
+        final canCompose = state.hasValidPeerPhone && !sending;
 
         return Container(
           padding: const EdgeInsets.symmetric(
@@ -70,6 +73,17 @@ class _QnaChatComposerState extends State<QnaChatComposer> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (!state.hasValidPeerPhone)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: DimensionConstant.d8),
+                  child: Text(
+                    StringConstant.qnaChatPhoneUnavailable,
+                    style: FontConstant.interNormal(
+                      color: ColorConstant.redColor.withValues(alpha: 0.9),
+                      fontSize: DimensionConstant.d12,
+                    ),
+                  ),
+                ),
               if (state.amendmentType != null && state.amendmentType!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(bottom: DimensionConstant.d8),
@@ -85,14 +99,21 @@ class _QnaChatComposerState extends State<QnaChatComposer> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   IconButton(
-                    onPressed: widget.onAttachTap,
-                    icon: const Icon(Icons.add, color: ColorConstant.whiteColor),
-                    tooltip: StringConstant.qnaChatAttach,
+                    onPressed: canCompose ? widget.onAttachTap : null,
+                    icon: Icon(
+                      Icons.add,
+                      color: sending
+                          ? ColorConstant.whiteColor.withValues(alpha: 0.35)
+                          : ColorConstant.whiteColor,
+                    ),
+                    tooltip: sending
+                        ? StringConstant.qnaChatUploadingDocument
+                        : StringConstant.qnaChatAttach,
                   ),
                   Expanded(
                     child: TextField(
                       controller: _controller,
-                      enabled: !sending,
+                      enabled: canCompose,
                       minLines: 1,
                       maxLines: 4,
                       style: FontConstant.interNormal(

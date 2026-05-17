@@ -8,7 +8,9 @@ import 'package:travel_crm/core/constants/dimension_constant.dart';
 import 'package:travel_crm/core/constants/font_constant.dart';
 import 'package:travel_crm/core/widgets/inquiry_management_items.dart';
 import 'package:travel_crm/di/injector.dart';
-import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_management_bloc.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_detail/inquiry_detail_bloc.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_detail/inquiry_detail_event.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_detail/inquiry_detail_state.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widget/amendment_info_card.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widget/inquiry_information.dart';
@@ -17,7 +19,6 @@ import 'package:travel_crm/features/presentation/inquiry_management/widget/qna_n
 class InquiryManagementScreen extends StatefulWidget {
   const InquiryManagementScreen({super.key, this.vendorRow});
 
-  /// From vendor list row tap ([VendorListView]); null if opened without navigation extra.
   final VendorInquiryRow? vendorRow;
 
   @override
@@ -25,21 +26,30 @@ class InquiryManagementScreen extends StatefulWidget {
 }
 
 class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
-  final InquiryManagementBloc _inquiryManagementBloc = sl<InquiryManagementBloc>();
+  late final InquiryDetailBloc _detailBloc;
 
   @override
   void initState() {
     super.initState();
-    _inquiryManagementBloc.add(InquiryManagementInitialized(page: 1, limit: 20));
+    final inquiryId = widget.vendorRow?.bookingId ?? '';
+    _detailBloc = sl<InquiryDetailBloc>(param1: widget.vendorRow)
+      ..add(InquiryDetailStarted(inquiryId: inquiryId));
+  }
+
+  @override
+  void dispose() {
+    _detailBloc.close();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
-      value: _inquiryManagementBloc,
-      child: BlocConsumer<InquiryManagementBloc, InquiryManagementState>(
-        listener: (context, state) {},
-        builder: (context, state) {
+      value: _detailBloc,
+      child: BlocBuilder<InquiryDetailBloc, InquiryDetailState>(
+        builder: (context, detailState) {
+          final row = detailState.vendorRow ?? widget.vendorRow;
+
           return Scaffold(
             backgroundColor: ColorConstant.inquiryManagementBgColor,
             body: Padding(
@@ -47,7 +57,6 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    /// Card Header 1
                     Container(
                       color: ColorConstant.cardBgColor,
                       width: double.infinity,
@@ -60,17 +69,25 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
                                 title: 'Inquiry Management',
                                 icon: AssetConstants.icRightArrow,
                               ),
-                              _hierarchyHeader(title: 'Pending ', icon: AssetConstants.icRightArrow),
                               _hierarchyHeader(
-                                title: _breadcrumbDetailTitle(),
+                                title: 'Pending ',
+                                icon: AssetConstants.icRightArrow,
+                              ),
+                              _hierarchyHeader(
+                                title: _breadcrumbDetailTitle(row),
                                 color: ColorConstant.whiteColor,
                               ),
                               const Spacer(),
-                              Text(
-                                'Refresh',
-                                style: FontConstant.interMedium(
-                                  fontSize: DimensionConstant.d16,
-                                  color: ColorConstant.whiteColor,
+                              InkWell(
+                                onTap: () => _detailBloc.add(
+                                  const InquiryDetailRefreshRequested(),
+                                ),
+                                child: Text(
+                                  'Refresh',
+                                  style: FontConstant.interMedium(
+                                    fontSize: DimensionConstant.d16,
+                                    color: ColorConstant.whiteColor,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: DimensionConstant.d15),
@@ -84,7 +101,10 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
                                     gradient: LinearGradient(
                                       begin: Alignment.centerLeft,
                                       end: Alignment.centerRight,
-                                      colors: [ColorConstant.purple, ColorConstant.indigo],
+                                      colors: [
+                                        ColorConstant.purple,
+                                        ColorConstant.indigo,
+                                      ],
                                     ),
                                   ),
                                   child: Padding(
@@ -107,19 +127,44 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
                       ),
                     ),
                     const SizedBox(height: DimensionConstant.d25),
-
-                    /// Card Body 1
-                    InquiryInformation(row: widget.vendorRow),
-                    const SizedBox(height: DimensionConstant.d10),
-                    AmendmentInfoCard(),
-                    const SizedBox(height: DimensionConstant.d10),
-                    AmendmentInfoCard(),
-                    const SizedBox(height: DimensionConstant.d10),
-                    AmendmentInfoCard(),
-                    const SizedBox(height: DimensionConstant.d10),
-                    AmendmentInfoCard(),
-                    const SizedBox(height: DimensionConstant.d10),
-                    QnaNotes(inquiryId: widget.vendorRow?.inquiryNo ?? ''),
+                    if (detailState.status == InquiryDetailStatus.loading &&
+                        detailState.amendments.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(DimensionConstant.d40),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (detailState.status == InquiryDetailStatus.failure &&
+                        detailState.amendments.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(DimensionConstant.d24),
+                        child: Text(
+                          detailState.errorMessage ?? 'Failed to load inquiry',
+                          style: FontConstant.interNormal(
+                            color: ColorConstant.redColor,
+                            fontSize: DimensionConstant.d14,
+                          ),
+                        ),
+                      )
+                    else ...[
+                      InquiryInformation(row: row),
+                      const SizedBox(height: DimensionConstant.d10),
+                      ...detailState.amendments.map(
+                        (a) => Padding(
+                          padding: const EdgeInsets.only(bottom: DimensionConstant.d10),
+                          child: AmendmentInfoCard(
+                            amendment: a,
+                            inquiryId: detailState.inquiryId,
+                            inquiryChecklist: row?.checklist ?? const [],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: DimensionConstant.d10),
+                      QnaNotes(
+                        inquiryId: detailState.inquiryId,
+                        peerPhone: detailState.peerPhoneE164,
+                        sessionId: detailState.activeSessionId,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -130,8 +175,7 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
     );
   }
 
-  String _breadcrumbDetailTitle() {
-    final r = widget.vendorRow;
+  String _breadcrumbDetailTitle(VendorInquiryRow? r) {
     if (r == null) return '—';
     return '${r.inquiryNo} - ${r.name}';
   }

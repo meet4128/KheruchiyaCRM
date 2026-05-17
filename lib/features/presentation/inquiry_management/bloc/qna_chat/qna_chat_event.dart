@@ -8,16 +8,35 @@ sealed class QnaChatEvent extends Equatable {
 }
 
 final class QnaChatStarted extends QnaChatEvent {
-  const QnaChatStarted({required this.inquiryId});
+  const QnaChatStarted({
+    required this.inquiryId,
+    required this.peerPhone,
+    this.sessionId,
+  });
 
   final String inquiryId;
+  final String peerPhone;
+  final String? sessionId;
 
   @override
-  List<Object?> get props => [inquiryId];
+  List<Object?> get props => [inquiryId, peerPhone, sessionId];
+}
+
+final class QnaChatSessionIdUpdated extends QnaChatEvent {
+  const QnaChatSessionIdUpdated(this.sessionId);
+
+  final String? sessionId;
+
+  @override
+  List<Object?> get props => [sessionId];
 }
 
 final class QnaChatSectionExpansionToggled extends QnaChatEvent {
   const QnaChatSectionExpansionToggled();
+}
+
+final class QnaChatInnerExpansionToggled extends QnaChatEvent {
+  const QnaChatInnerExpansionToggled();
 }
 
 final class QnaChatMessageDraftChanged extends QnaChatEvent {
@@ -34,7 +53,16 @@ final class QnaChatSendPressed extends QnaChatEvent {
 }
 
 final class QnaChatRefreshRequested extends QnaChatEvent {
-  const QnaChatRefreshRequested();
+  const QnaChatRefreshRequested({this.silent = false});
+
+  final bool silent;
+
+  @override
+  List<Object?> get props => [silent];
+}
+
+final class QnaChatPollTick extends QnaChatEvent {
+  const QnaChatPollTick();
 }
 
 final class QnaChatAmendmentTypeChanged extends QnaChatEvent {
@@ -48,4 +76,41 @@ final class QnaChatAmendmentTypeChanged extends QnaChatEvent {
 
 final class QnaChatScrollToBottomHandled extends QnaChatEvent {
   const QnaChatScrollToBottomHandled();
+}
+
+final class QnaChatAddNoteRequested extends QnaChatEvent {
+  const QnaChatAddNoteRequested(this.text);
+
+  final String text;
+
+  @override
+  List<Object?> get props => [text];
+}
+
+/// Phase 5 — pick file in UI, upload + WhatsApp document send in bloc.
+final class QnaChatDocumentUploadRequested extends QnaChatEvent {
+  const QnaChatDocumentUploadRequested({
+    required this.fileName,
+    this.filePath,
+    this.bytes,
+    this.caption,
+  });
+
+  final String fileName;
+  final String? filePath;
+  final List<int>? bytes;
+  final String? caption;
+
+  @override
+  List<Object?> get props => [fileName, filePath, bytes, caption];
+}
+
+/// Emitted internally after first send creates a session — UI listens and updates InquiryDetailBloc.
+final class QnaChatSessionCreated extends QnaChatEvent {
+  const QnaChatSessionCreated(this.sessionId);
+
+  final String sessionId;
+
+  @override
+  List<Object?> get props => [sessionId];
 }
