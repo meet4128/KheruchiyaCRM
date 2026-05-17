@@ -7,6 +7,7 @@ import 'package:travel_crm/data/repositories/auth_repository.dart';
 import 'package:travel_crm/data/repositories/inquiry_repository.dart';
 import 'package:travel_crm/data/repositories/members_repository.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_management_bloc.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_chat/qna_chat_bloc.dart';
 
 GetIt sl = GetIt.instance;
 
@@ -33,4 +34,5 @@ Future setup() async {
 
   // register blocs
   sl.registerLazySingleton(() => InquiryManagementBloc(inquiryRepository: sl<InquiryRepository>()));
+  sl.registerFactory(QnaChatBloc.new);
 }

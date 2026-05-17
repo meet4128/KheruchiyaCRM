@@ -296,6 +296,22 @@ class StringConstant {
   static const String text = 'Text';
   static const String callAgent = 'Call Agent';
   static const String qnaNotes = 'Q&A Notes';
+  static const String questionAndAnswer = 'Question & answer';
+  static const String typeYourMessageHere = 'Type Your Message Here';
+  static const String qnaChatYesterday = 'Yesterday';
+  static const String qnaChatToday = 'TODAY';
+  static const String qnaChatEmpty = 'No messages yet';
+  static const String qnaChatLoadFailed = 'Could not load messages';
+  static const String qnaChatRetry = 'Retry';
+  static const String qnaChatAttach = 'Attachments and options';
+  static const String qnaChatClearAmendmentType = 'Clear amendment type';
+  static const List<String> qnaChatAmendmentTypeOptions = [
+    'Date Change',
+    'Route Change',
+    'Name Change',
+    'Cancellation',
+    'Other',
+  ];
   static const String addNewNotes = 'Add New Notes';
   static const String questions = 'Questions.';
   static const String answers = 'Answers';

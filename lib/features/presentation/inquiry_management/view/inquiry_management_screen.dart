@@ -119,7 +119,7 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
                     const SizedBox(height: DimensionConstant.d10),
                     AmendmentInfoCard(),
                     const SizedBox(height: DimensionConstant.d10),
-                    QnaNotes(),
+                    QnaNotes(inquiryId: widget.vendorRow?.inquiryNo ?? ''),
                   ],
                 ),
               ),
