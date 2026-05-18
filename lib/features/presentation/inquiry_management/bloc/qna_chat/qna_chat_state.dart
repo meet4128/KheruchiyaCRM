@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_message.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_pending_attachment.dart';
 
 enum QnaChatStatus { idle, loading, success, failure }
 
@@ -14,6 +15,7 @@ class QnaChatState extends Equatable {
     this.isInnerExpanded = true,
     this.messages = const [],
     this.messageDraft = '',
+    this.pendingAttachment,
     this.amendmentType,
     this.loadStatus = QnaChatStatus.idle,
     this.sendStatus = QnaChatSendStatus.idle,
@@ -30,7 +32,10 @@ class QnaChatState extends Equatable {
   final bool isInnerExpanded;
   final List<QnaChatMessage> messages;
   final String messageDraft;
+  final QnaChatPendingAttachment? pendingAttachment;
   final String? amendmentType;
+
+  bool get hasPendingAttachment => pendingAttachment != null;
   final QnaChatStatus loadStatus;
   final QnaChatSendStatus sendStatus;
   final String? errorMessage;
@@ -53,6 +58,8 @@ class QnaChatState extends Equatable {
     bool? isInnerExpanded,
     List<QnaChatMessage>? messages,
     String? messageDraft,
+    QnaChatPendingAttachment? pendingAttachment,
+    bool clearPendingAttachment = false,
     String? amendmentType,
     bool clearAmendmentType = false,
     QnaChatStatus? loadStatus,
@@ -72,6 +79,9 @@ class QnaChatState extends Equatable {
       isInnerExpanded: isInnerExpanded ?? this.isInnerExpanded,
       messages: messages ?? this.messages,
       messageDraft: messageDraft ?? this.messageDraft,
+      pendingAttachment: clearPendingAttachment
+          ? null
+          : (pendingAttachment ?? this.pendingAttachment),
       amendmentType: clearAmendmentType ? null : (amendmentType ?? this.amendmentType),
       loadStatus: loadStatus ?? this.loadStatus,
       sendStatus: sendStatus ?? this.sendStatus,
@@ -92,6 +102,7 @@ class QnaChatState extends Equatable {
         isInnerExpanded,
         messages,
         messageDraft,
+        pendingAttachment,
         amendmentType,
         loadStatus,
         sendStatus,

@@ -5,6 +5,8 @@ enum QnaChatMessageKind { question, answer }
 
 enum QnaChatMessageContentType { text, structured }
 
+enum QnaChatMessageType { text, document }
+
 class QnaChatMessage extends Equatable {
   const QnaChatMessage({
     required this.id,
@@ -12,6 +14,11 @@ class QnaChatMessage extends Equatable {
     required this.contentType,
     required this.body,
     required this.createdAt,
+    this.messageType = QnaChatMessageType.text,
+    this.fileName,
+    this.mimeType,
+    this.mediaUrl,
+    this.caption,
   });
 
   final String id;
@@ -19,11 +26,31 @@ class QnaChatMessage extends Equatable {
   final QnaChatMessageContentType contentType;
   final String body;
   final DateTime createdAt;
+  final QnaChatMessageType messageType;
+  final String? fileName;
+  final String? mimeType;
+
+  /// Relative or absolute path from API; use [mediaFullUrl] for display actions.
+  final String? mediaUrl;
+  final String? caption;
 
   bool get isQuestion => kind == QnaChatMessageKind.question;
+  bool get isDocument => messageType == QnaChatMessageType.document;
+  bool get hasMedia => mediaUrl != null && mediaUrl!.trim().isNotEmpty;
 
   @override
-  List<Object?> get props => [id, kind, contentType, body, createdAt];
+  List<Object?> get props => [
+        id,
+        kind,
+        contentType,
+        body,
+        createdAt,
+        messageType,
+        fileName,
+        mimeType,
+        mediaUrl,
+        caption,
+      ];
 }
 
 /// One date label + messages for that calendar day (chronological).

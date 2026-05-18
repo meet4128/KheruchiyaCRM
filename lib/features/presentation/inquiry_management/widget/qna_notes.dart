@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
@@ -15,6 +14,7 @@ import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_cha
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_chat/qna_chat_event.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_chat/qna_chat_state.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widgets/qna_chat/qna_chat_section_body.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/utils/qna_attachment_pick_util.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widgets/qna_chat/qna_chat_sub_header.dart';
 
 /// Live Q&A — Figma §2.2 (bottom of inquiry detail). Finalize buttons live here only.
@@ -185,41 +185,25 @@ class _QnaNotesState extends State<QnaNotes> {
   }
 
   Future<void> _onAttach(BuildContext context) async {
-    final chatState = _chatBloc.state;
-    if (!chatState.hasSession) {
-      _showSnack(context, StringConstant.qnaChatSendMessageFirstForAttach);
-      return;
-    }
-    if (chatState.sendStatus == QnaChatSendStatus.sending) return;
+    if (_chatBloc.state.sendStatus == QnaChatSendStatus.sending) return;
 
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const ['pdf', 'png', 'jpg', 'jpeg', 'doc', 'docx'],
-      allowMultiple: false,
-      withData: true,
-    );
-    if (!context.mounted) return;
-    if (result == null || result.files.isEmpty) return;
-
-    final file = result.files.single;
-    final fileName = file.name;
-    if (fileName.isEmpty) return;
-    if ((file.bytes == null || file.bytes!.isEmpty) &&
-        (file.path == null || file.path!.isEmpty)) {
-      _showSnack(context, 'Could not read the selected file.');
-      return;
-    }
-
-    final caption = chatState.messageDraft.trim().isEmpty ? null : chatState.messageDraft.trim();
+    final attachment = await pickQnaChatAttachment();
+    if (attachment == null) return;
 
     _chatBloc.add(
-      QnaChatDocumentUploadRequested(
-        fileName: fileName,
-        filePath: file.path,
-        bytes: file.bytes,
-        caption: caption,
+      QnaChatAttachmentPicked(
+        fileName: attachment.fileName,
+        filePath: attachment.filePath,
+        bytes: attachment.bytes,
       ),
     );
+
+    if (context.mounted) {
+      _showSnack(
+        context,
+        '${attachment.fileName} — tap send to upload',
+      );
+    }
   }
 
   Future<void> _onAddNewNotes(BuildContext context) async {

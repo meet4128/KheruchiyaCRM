@@ -7,6 +7,7 @@ import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_chat/qna_chat_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_chat/qna_chat_event.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_chat/qna_chat_state.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/widgets/qna_chat/qna_chat_attachment_preview.dart';
 
 class QnaChatComposer extends StatefulWidget {
   const QnaChatComposer({
@@ -50,12 +51,15 @@ class _QnaChatComposerState extends State<QnaChatComposer> {
       buildWhen: (previous, current) =>
           previous.messageDraft != current.messageDraft ||
           previous.sendStatus != current.sendStatus ||
-          previous.amendmentType != current.amendmentType,
+          previous.sendErrorMessage != current.sendErrorMessage ||
+          previous.amendmentType != current.amendmentType ||
+          previous.pendingAttachment != current.pendingAttachment,
       builder: (context, state) {
         final sending = state.sendStatus == QnaChatSendStatus.sending;
-        final canSend = state.hasValidPeerPhone &&
-            state.messageDraft.trim().isNotEmpty &&
-            !sending;
+        final hasDraft = state.messageDraft.trim().isNotEmpty;
+        final hasAttachment = state.hasPendingAttachment;
+        final canSend =
+            state.hasValidPeerPhone && !sending && (hasDraft || hasAttachment);
         final canCompose = state.hasValidPeerPhone && !sending;
 
         return Container(
@@ -91,6 +95,24 @@ class _QnaChatComposerState extends State<QnaChatComposer> {
                     '${StringConstant.amendmentType}: ${state.amendmentType}',
                     style: FontConstant.interNormal(
                       color: ColorConstant.whiteColor.withValues(alpha: 0.65),
+                      fontSize: DimensionConstant.d12,
+                    ),
+                  ),
+                ),
+              if (state.pendingAttachment != null)
+                QnaChatAttachmentPreview(
+                  fileName: state.pendingAttachment!.fileName,
+                  onClear: () => context
+                      .read<QnaChatBloc>()
+                      .add(const QnaChatAttachmentCleared()),
+                ),
+              if (state.sendErrorMessage != null && state.sendErrorMessage!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: DimensionConstant.d8),
+                  child: Text(
+                    state.sendErrorMessage!,
+                    style: FontConstant.interNormal(
+                      color: ColorConstant.redColor.withValues(alpha: 0.95),
                       fontSize: DimensionConstant.d12,
                     ),
                   ),

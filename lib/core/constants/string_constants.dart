@@ -304,6 +304,7 @@ class StringConstant {
   static const String qnaChatLoadFailed = 'Could not load messages';
   static const String qnaChatRetry = 'Retry';
   static const String qnaChatAttach = 'Attachments and options';
+  static const String qnaChatRemoveAttachment = 'Remove attachment';
   static const String qnaChatUploadingDocument = 'Uploading document…';
   static const String qnaChatDocumentSent = 'Document sent';
   static const String qnaChatSendMessageFirstForAttach =
@@ -312,6 +313,8 @@ class StringConstant {
       'Send a message first to add session notes.';
   static const String qnaChatPhoneUnavailable =
       'Customer phone is not available. Messaging is disabled.';
+  static const String qnaChatViewDocument = 'View';
+  static const String qnaChatDownloadDocument = 'Download';
   static const String amendmentCardNotesTitle = 'Session notes';
   static const String downloadAmendmentInvoice = 'Download Amendment Invoice';
   static const String qnaChatClearAmendmentType = 'Clear amendment type';

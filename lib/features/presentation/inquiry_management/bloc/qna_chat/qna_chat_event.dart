@@ -87,7 +87,27 @@ final class QnaChatAddNoteRequested extends QnaChatEvent {
   List<Object?> get props => [text];
 }
 
-/// Phase 5 — pick file in UI, upload + WhatsApp document send in bloc.
+/// User picked a file via + — stage above composer until send.
+final class QnaChatAttachmentPicked extends QnaChatEvent {
+  const QnaChatAttachmentPicked({
+    required this.fileName,
+    this.filePath,
+    this.bytes,
+  });
+
+  final String fileName;
+  final String? filePath;
+  final List<int>? bytes;
+
+  @override
+  List<Object?> get props => [fileName, filePath, bytes];
+}
+
+final class QnaChatAttachmentCleared extends QnaChatEvent {
+  const QnaChatAttachmentCleared();
+}
+
+/// Upload + WhatsApp document send (used from send or legacy direct dispatch).
 final class QnaChatDocumentUploadRequested extends QnaChatEvent {
   const QnaChatDocumentUploadRequested({
     required this.fileName,

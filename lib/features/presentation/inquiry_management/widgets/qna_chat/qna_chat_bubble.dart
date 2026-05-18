@@ -3,6 +3,7 @@ import 'package:travel_crm/core/constants/color_constants.dart';
 import 'package:travel_crm/core/constants/dimension_constant.dart';
 import 'package:travel_crm/core/constants/font_constant.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_message.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/widgets/qna_chat/qna_chat_document_bubble_content.dart';
 
 /// Incoming (question) = left gray; outgoing (answer) = right purple.
 class QnaChatBubble extends StatelessWidget {
@@ -70,17 +71,17 @@ class _MessageBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = FontConstant.interNormal(
-      color: ColorConstant.whiteColor,
-      fontSize: message.contentType == QnaChatMessageContentType.structured
-          ? DimensionConstant.d12
-          : DimensionConstant.d12,
-      height: message.contentType == QnaChatMessageContentType.structured ? 1.45 : 1.35,
-    );
+    if (message.isDocument) {
+      return QnaChatDocumentBubbleContent(message: message);
+    }
 
     return SelectableText(
       message.body,
-      style: style,
+      style: FontConstant.interNormal(
+        color: ColorConstant.whiteColor,
+        fontSize: DimensionConstant.d12,
+        height: message.contentType == QnaChatMessageContentType.structured ? 1.45 : 1.35,
+      ),
     );
   }
 }

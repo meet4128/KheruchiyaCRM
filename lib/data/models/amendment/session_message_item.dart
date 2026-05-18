@@ -22,7 +22,7 @@ class SessionMessageItem {
   });
 
   factory SessionMessageItem.fromJson(Map<String, dynamic> json) =>
-      _$SessionMessageItemFromJson(json);
+      _$SessionMessageItemFromJson(_normalizeSessionMessageJson(json));
 
   Map<String, dynamic> toJson() => _$SessionMessageItemToJson(this);
 
@@ -42,4 +42,43 @@ class SessionMessageItem {
   final String? mediaUrl;
   final String? waTimestamp;
   final String? createdAt;
+}
+
+Map<String, dynamic> _normalizeSessionMessageJson(Map<String, dynamic> json) {
+  final map = Map<String, dynamic>.from(json);
+
+  map['fileName'] ??= json['file_name'];
+  map['mediaUrl'] ??= json['media_url'];
+  map['mimeType'] ??= json['mime_type'];
+  map['senderType'] ??= json['sender_type'];
+  map['peerPhone'] ??= json['peer_phone'];
+  map['waTimestamp'] ??= json['wa_timestamp'];
+  map['createdAt'] ??= json['created_at'];
+  map['inquiryId'] ??= json['inquiry_id'];
+  map['sessionId'] ??= json['session_id'];
+  map['amendmentId'] ??= json['amendment_id'];
+
+  final media = json['media'];
+  if (media is Map<String, dynamic>) {
+    map['fileName'] ??= media['fileName'] ?? media['file_name'];
+    map['mediaUrl'] ??=
+        media['url'] ?? media['mediaUrl'] ?? media['media_url'];
+    map['mimeType'] ??= media['mimeType'] ?? media['mime_type'];
+    map['type'] ??= media['type'];
+  }
+
+  final document = json['document'];
+  if (document is Map<String, dynamic>) {
+    map['type'] ??= 'document';
+    map['fileName'] ??=
+        document['fileName'] ?? document['file_name'] ?? document['filename'];
+    map['mediaUrl'] ??= document['url'] ??
+        document['mediaUrl'] ??
+        document['media_url'] ??
+        document['link'];
+    map['mimeType'] ??= document['mimeType'] ?? document['mime_type'];
+    map['text'] ??= document['caption'] ?? document['text'];
+  }
+
+  return map;
 }
