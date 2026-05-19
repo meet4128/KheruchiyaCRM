@@ -12,7 +12,15 @@ import 'package:travel_crm/data/models/inquiry/inquiry_detail_response.dart';
 import 'package:travel_crm/data/models/inquiry/list_inquiries_response.dart';
 import 'package:travel_crm/data/models/members/create_member_request.dart';
 import 'package:travel_crm/data/models/members/list_members_response.dart';
+import 'package:travel_crm/data/models/members/member_directory_response.dart';
 import 'package:travel_crm/data/models/members/update_member_request.dart';
+import 'package:travel_crm/data/models/purchase_chat/open_purchase_chat_request.dart';
+import 'package:travel_crm/data/models/purchase_chat/open_purchase_chat_response.dart';
+import 'package:travel_crm/data/models/purchase_chat/purchase_chat_inbox_response.dart';
+import 'package:travel_crm/data/models/purchase_chat/purchase_chat_messages_response.dart';
+import 'package:travel_crm/data/models/purchase_chat/send_purchase_chat_message_request.dart';
+import 'package:travel_crm/data/models/purchase_chat/send_purchase_chat_message_response.dart';
+import 'package:travel_crm/data/models/purchase_chat/upload_purchase_chat_file_data.dart';
 
 import '../models/inquiry/create_inquiry_request.dart';
 import 'apis.dart';
@@ -47,6 +55,37 @@ class ListInquiriesQuery {
       'status': status,
       'search': search,
       'sort': sort,
+    };
+    queries.removeWhere((key, value) => value == null);
+    return queries;
+  }
+}
+
+class MemberDirectoryQuery {
+  const MemberDirectoryQuery({
+    required this.department,
+    this.role,
+    this.page = 1,
+    this.limit = 50,
+    this.employmentStatus = 'active',
+    this.search,
+  });
+
+  final String department;
+  final String? role;
+  final int page;
+  final int limit;
+  final String? employmentStatus;
+  final String? search;
+
+  Map<String, dynamic> toQuery() {
+    final queries = <String, dynamic>{
+      'department': department,
+      'role': role,
+      'page': page,
+      'limit': limit,
+      'employmentStatus': employmentStatus,
+      'search': search,
     };
     queries.removeWhere((key, value) => value == null);
     return queries;
@@ -154,6 +193,45 @@ abstract class InquiryApiClient {
   Future<UploadSessionFileResponse> uploadSessionFile(
     @Path('inquiryId') String inquiryId,
     @Path('sessionId') String sessionId,
+    @Part(name: 'file') MultipartFile file,
+  );
+
+  @GET('/api/v1/members/directory')
+  Future<MemberDirectoryResponse> getMemberDirectory(
+    @Queries() Map<String, dynamic> queries,
+  );
+
+  @POST('/api/v1/inquiries/{inquiryId}/purchase-chats')
+  Future<OpenPurchaseChatResponse> openPurchaseChat(
+    @Path('inquiryId') String inquiryId,
+    @Body() OpenPurchaseChatRequest body,
+  );
+
+  @GET('/api/v1/inquiries/{inquiryId}/purchase-chats')
+  Future<PurchaseChatInboxResponse> listPurchaseChats(
+    @Path('inquiryId') String inquiryId,
+    @Query('purchaseTeamMemberId') String? purchaseTeamMemberId,
+  );
+
+  @GET('/api/v1/inquiries/{inquiryId}/purchase-chats/{purchaseTeamMemberId}/messages')
+  Future<PurchaseChatMessagesResponse> listPurchaseChatMessages(
+    @Path('inquiryId') String inquiryId,
+    @Path('purchaseTeamMemberId') String purchaseTeamMemberId,
+    @Queries() Map<String, dynamic> queries,
+  );
+
+  @POST('/api/v1/inquiries/{inquiryId}/purchase-chats/{purchaseTeamMemberId}/messages')
+  Future<SendPurchaseChatMessageResponse> sendPurchaseChatMessage(
+    @Path('inquiryId') String inquiryId,
+    @Path('purchaseTeamMemberId') String purchaseTeamMemberId,
+    @Body() SendPurchaseChatMessageRequest body,
+  );
+
+  @POST('/api/v1/inquiries/{inquiryId}/purchase-chats/{purchaseTeamMemberId}/uploads')
+  @MultiPart()
+  Future<UploadPurchaseChatFileResponse> uploadPurchaseChatFile(
+    @Path('inquiryId') String inquiryId,
+    @Path('purchaseTeamMemberId') String purchaseTeamMemberId,
     @Part(name: 'file') MultipartFile file,
   );
 }

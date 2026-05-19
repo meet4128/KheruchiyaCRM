@@ -17,12 +17,14 @@ class QnaChatSectionBody extends StatelessWidget {
     super.key,
     required this.onAttachTap,
     required this.onFinalizeAction,
+    this.onTalkToPurchaseTeam,
     this.isFinalizeSubmitting = false,
     this.viewportHeight = 440,
   });
 
   final VoidCallback onAttachTap;
   final void Function(String action) onFinalizeAction;
+  final VoidCallback? onTalkToPurchaseTeam;
   final bool isFinalizeSubmitting;
   final double viewportHeight;
 
@@ -62,6 +64,7 @@ class QnaChatSectionBody extends StatelessWidget {
               const SizedBox(height: DimensionConstant.d20),
               QnaChatFinalizeBar(
                 onAction: onFinalizeAction,
+                onTalkToPurchaseTeam: onTalkToPurchaseTeam,
                 isSubmitting: isFinalizeSubmitting,
               ),
               const SizedBox(height: DimensionConstant.d20),

@@ -12,6 +12,8 @@ import 'package:travel_crm/features/presentation/air_ticket/air_ticket_view.dart
 import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/view/inquiry_management_screen.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/view/vendor_list_view.dart';
+import 'package:travel_crm/features/presentation/purchase_team/models/messages_route_args.dart';
+import 'package:travel_crm/features/presentation/purchase_team/view/messages_screen.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -71,6 +73,15 @@ class ClientLeadsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const InquiryView();
+}
+
+class MessagesPage extends StatelessWidget {
+  const MessagesPage({super.key, this.routeArgs});
+
+  final MessagesRouteArgs? routeArgs;
+
+  @override
+  Widget build(BuildContext context) => MessagesScreen(routeArgs: routeArgs);
 }
 
 class InquiryViewPage extends StatelessWidget {

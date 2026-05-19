@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../utils/shared_pref_utils.dart';
 import '../../features/pages/pages.dart';
+import '../../features/presentation/purchase_team/models/messages_route_args.dart';
 import '../../features/presentation/admin_panel/bloc/admin_navigation_bloc.dart';
 import '../../features/presentation/dashboard/bloc/navigation_bloc.dart';
 import '../../features/presentation/dashboard/bloc/navigation_event.dart';
@@ -57,6 +58,8 @@ String _pathFor(NavPage page) {
       return PathConstant.clientLeads;
     case NavPage.inquiry:
       return PathConstant.inquiryView;
+    case NavPage.messages:
+      return PathConstant.messages;
     case NavPage.projectJobs:
       return PathConstant.projectJobs;
     case NavPage.invoices:
@@ -85,6 +88,8 @@ NavPage _pageFromPath(String path) {
       return NavPage.inquiryManagement;
     case PathConstant.inquiryView:
       return NavPage.inquiry;
+    case PathConstant.messages:
+      return NavPage.messages;
     case PathConstant.projectJobs:
       return NavPage.projectJobs;
     case PathConstant.invoices:
@@ -144,6 +149,15 @@ GoRouter createRouter(NavigationBloc navBloc) {
             path: PathConstant.clientLeads,
             name: 'clientLeads',
             pageBuilder: (context, state) => NoTransitionPage(child: ClientLeadsPage()),
+          ),
+          GoRoute(
+            path: PathConstant.messages,
+            name: 'messages',
+            pageBuilder: (context, state) {
+              final extra = state.extra;
+              final args = extra is MessagesRouteArgs ? extra : null;
+              return NoTransitionPage(child: MessagesPage(routeArgs: args));
+            },
           ),
 
           GoRoute(
@@ -272,6 +286,7 @@ GoRouter createRouter(NavigationBloc navBloc) {
       PathConstant.inquiryManagement,
       PathConstant.clientLeads,
       PathConstant.inquiryView,
+      PathConstant.messages,
       PathConstant.projectJobs,
       PathConstant.invoices,
       PathConstant.payments,
@@ -313,6 +328,7 @@ GoRouter createRouter(NavigationBloc navBloc) {
       PathConstant.inquiryManagement,
       PathConstant.clientLeads,
       PathConstant.inquiryView,
+      PathConstant.messages,
       PathConstant.projectJobs,
       PathConstant.invoices,
       PathConstant.payments,
@@ -352,6 +368,7 @@ class PathConstant {
   static const String adminPanel = '/admin';
   static const String login = '/login';
   static const String clientLeads = '/client-leads';
+  static const String messages = '/messages';
   static const String inquiryManagement = '/inquiry-management';
   static const String inquiryManagementDetail = '/inquiry-management/detail';
   static const String inquiryView = '/inquiry-view';
@@ -366,6 +383,7 @@ class PathConstant {
 
   static const String dashboardConstant = "Dashboard";
   static const String clientLeadsConstant = "Follow Up";
+  static const String messagesConstant = "Messages";
   static const String inquiryManagementConstant = "New Inquiry";
   static const String invoicesConstant = "Invoices";
   static const String paymentsConstant = "Payments";

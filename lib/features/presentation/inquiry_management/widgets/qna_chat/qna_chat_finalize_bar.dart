@@ -11,10 +11,12 @@ class QnaChatFinalizeBar extends StatelessWidget {
   const QnaChatFinalizeBar({
     super.key,
     required this.onAction,
+    this.onTalkToPurchaseTeam,
     this.isSubmitting = false,
   });
 
   final FinalizeActionCallback onAction;
+  final VoidCallback? onTalkToPurchaseTeam;
   final bool isSubmitting;
 
   @override
@@ -35,7 +37,7 @@ class QnaChatFinalizeBar extends StatelessWidget {
           _cell(
             title: StringConstant.qnaTalkToPurchaseTeam,
             color: ColorConstant.navyBlue,
-            onTap: () {},
+            onTap: isSubmitting ? null : onTalkToPurchaseTeam,
           ),
           _cell(
             title: StringConstant.qnaPutFollowUp,

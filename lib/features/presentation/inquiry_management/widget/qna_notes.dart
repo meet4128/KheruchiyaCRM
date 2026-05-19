@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:travel_crm/core/constants/asset_constants.dart';
 import 'package:travel_crm/core/constants/color_constants.dart';
 import 'package:travel_crm/core/constants/dimension_constant.dart';
 import 'package:travel_crm/core/constants/font_constant.dart';
+import 'package:travel_crm/core/constants/path_constants.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/di/injector.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_detail/inquiry_detail_bloc.dart';
@@ -16,6 +18,7 @@ import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_cha
 import 'package:travel_crm/features/presentation/inquiry_management/widgets/qna_chat/qna_chat_section_body.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/utils/qna_attachment_pick_util.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widgets/qna_chat/qna_chat_sub_header.dart';
+import 'package:travel_crm/features/presentation/purchase_team/models/messages_route_args.dart';
 
 /// Live Q&A — Figma §2.2 (bottom of inquiry detail). Finalize buttons live here only.
 class QnaNotes extends StatefulWidget {
@@ -37,6 +40,7 @@ class QnaNotes extends StatefulWidget {
 class _QnaNotesState extends State<QnaNotes> {
   final ExpansibleController _outerController = ExpansibleController();
   late final QnaChatBloc _chatBloc;
+  bool _navigateToMessagesOnFinalize = false;
 
   @override
   void initState() {
@@ -118,7 +122,20 @@ class _QnaNotesState extends State<QnaNotes> {
                 p.finalizeErrorMessage != c.finalizeErrorMessage &&
                 c.finalizeErrorMessage != null,
             listener: (context, state) {
+              if (_navigateToMessagesOnFinalize) {
+                _navigateToMessagesOnFinalize = false;
+              }
               _showSnack(context, state.finalizeErrorMessage!);
+            },
+          ),
+          BlocListener<InquiryDetailBloc, InquiryDetailState>(
+            listenWhen: (p, c) =>
+                _navigateToMessagesOnFinalize &&
+                p.finalizeStatus != c.finalizeStatus &&
+                c.finalizeStatus == InquiryDetailFinalizeStatus.success,
+            listener: (context, state) {
+              _navigateToMessagesOnFinalize = false;
+              _goToMessages(context, state);
             },
           ),
         ],
@@ -165,6 +182,8 @@ class _QnaNotesState extends State<QnaNotes> {
                                       InquiryDetailFinalizeStatus.submitting,
                               onFinalizeAction: (action) =>
                                   _onFinalize(context, action),
+                              onTalkToPurchaseTeam: () =>
+                                  _onTalkToPurchaseTeam(context),
                             ),
                           ],
                         );
@@ -234,10 +253,37 @@ class _QnaNotesState extends State<QnaNotes> {
     }
   }
 
+  void _onTalkToPurchaseTeam(BuildContext context) {
+    _navigateToMessagesOnFinalize = true;
+    _onFinalize(context, 'mark_pending');
+  }
+
+  void _goToMessages(BuildContext context, InquiryDetailState detailState) {
+    final inquiryId = detailState.inquiryId.isNotEmpty
+        ? detailState.inquiryId
+        : widget.inquiryId;
+    final displayNo = detailState.vendorRow?.inquiryNo;
+    final vendorRow = detailState.vendorRow;
+
+    context.go(
+      PathConstant.messages,
+      extra: MessagesRouteArgs(
+        inquiryId: inquiryId,
+        inquiryDisplayNo: displayNo,
+        returnToPath: PathConstant.inquiryManagementDetail,
+        returnToLabel: displayNo ?? 'Inquiry detail',
+        returnVendorRow: vendorRow,
+      ),
+    );
+  }
+
   Future<void> _onFinalize(BuildContext context, String action) async {
     final chatBloc = context.read<QnaChatBloc>();
     final amendmentApi = chatBloc.amendmentTypeApi;
     if (amendmentApi == null) {
+      if (_navigateToMessagesOnFinalize) {
+        _navigateToMessagesOnFinalize = false;
+      }
       _showSnack(context, 'Please select amendment type.');
       return;
     }

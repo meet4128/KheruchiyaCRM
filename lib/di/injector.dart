@@ -6,9 +6,12 @@ import 'package:travel_crm/core/network/inquiry_api_client.dart';
 import 'package:travel_crm/data/repositories/auth_repository.dart';
 import 'package:travel_crm/data/repositories/inquiry_repository.dart';
 import 'package:travel_crm/data/repositories/members_repository.dart';
+import 'package:travel_crm/data/repositories/purchase_chat_repository.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_detail/inquiry_detail_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_management_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_chat/qna_chat_bloc.dart';
+import 'package:travel_crm/features/presentation/purchase_team/bloc/purchase_team_chat/purchase_team_chat_bloc.dart';
+import 'package:travel_crm/features/presentation/purchase_team/bloc/purchase_team_directory/purchase_team_directory_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
 
 GetIt sl = GetIt.instance;
@@ -31,6 +34,9 @@ Future setup() async {
   sl.registerLazySingleton<MembersRepository>(
     () => MembersRepository(sl<InquiryApiClient>()),
   );
+  sl.registerLazySingleton<PurchaseChatRepository>(
+    () => PurchaseChatRepository(sl<InquiryApiClient>()),
+  );
 
   sl.registerLazySingleton<AuthRepository>(AuthRepository.new);
 
@@ -44,5 +50,11 @@ Future setup() async {
   );
   sl.registerFactory(
     () => QnaChatBloc(inquiryRepository: sl<InquiryRepository>()),
+  );
+  sl.registerFactory(
+    () => PurchaseTeamDirectoryBloc(repository: sl<PurchaseChatRepository>()),
+  );
+  sl.registerFactory(
+    () => PurchaseTeamChatBloc(repository: sl<PurchaseChatRepository>()),
   );
 }

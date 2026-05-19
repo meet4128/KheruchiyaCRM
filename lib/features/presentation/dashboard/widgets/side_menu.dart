@@ -134,6 +134,13 @@ class _SideMenuState extends State<SideMenu> with SingleTickerProviderStateMixin
                       ),
                       _menuItem(
                         context,
+                        AssetConstants.icMessageText,
+                        PathConstant.messagesConstant,
+                        NavPage.messages,
+                        widget.state,
+                      ),
+                      _menuItem(
+                        context,
                         AssetConstants.icInvoices,
                         PathConstant.invoicesConstant,
                         NavPage.invoices,

@@ -326,6 +326,15 @@ class StringConstant {
   ];
   static const String qnaGetPersonalDocumentDetails = 'Get Personal Document Details';
   static const String qnaTalkToPurchaseTeam = 'Talk To Purchase Team';
+  static const String messagesTitle = 'Messages';
+  static const String messagesBack = 'Back';
+  static const String messagesBackToMembers = 'Back to members';
+  static const String messagesSearchMembers = 'Search purchase team';
+  static const String messagesNoMembers = 'No purchase team members found';
+  static const String messagesDirectoryLoadFailed = 'Could not load purchase team directory';
+  static const String messagesSelectMemberHint = 'Select a purchase team member to start chatting';
+  static const String messagesSelectInquiryHint =
+      'Open an inquiry and use Talk To Purchase Team to chat in context';
   static const String qnaPutFollowUp = 'Put Follow Up';
   static const String qnaMarkAsPending = 'Mark as Pending';
   static const String qnaMarkAsLoss = 'Mark as Loss';
