@@ -16,56 +16,33 @@ class StatusItem {
   });
 }
 
-/// STATUS BAR
+/// STATUS BAR — controlled by parent (counts + selection from loaded amendments).
 class StatusBar extends StatelessWidget {
-  StatusBar({super.key});
+  const StatusBar({
+    super.key,
+    required this.items,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
 
-  final ValueNotifier<int> selectedIndexNotifier = ValueNotifier<int>(2);
-
-  final List<StatusItem> items = [
-    StatusItem(
-      label: 'All',
-      count: 68,
-      circleColor: Colors.white,
-      contentColor: ColorConstant.blackColor,
-    ),
-    StatusItem(label: 'New In', count: 18, circleColor: Colors.blue),
-    StatusItem(label: 'Pending', count: 13, circleColor: Colors.orange),
-    StatusItem(
-      label: 'Set Follow Up',
-      count: 7,
-      circleColor: Colors.white,
-      contentColor: ColorConstant.blackColor,
-    ),
-    StatusItem(
-      label: 'New Follow Up',
-      count: 4,
-      circleColor: Colors.white,
-      contentColor: ColorConstant.blackColor,
-    ),
-    StatusItem(label: 'Loss', count: 35, circleColor: Colors.red),
-    StatusItem(label: 'Won', count: 2, circleColor: Colors.green),
-  ];
+  final List<StatusItem> items;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<int>(
-      valueListenable: selectedIndexNotifier,
-      builder: (context, selectedIndex, _) {
-        return Row(
-          children: List.generate(items.length, (index) {
-            final item = items[index];
-            return _statusNode(
-              label: item.label,
-              count: item.count,
-              circleColor: item.circleColor,
-              contentColor: item.contentColor,
-              isSelected: selectedIndex == index,
-              onTap: () => selectedIndexNotifier.value = index,
-            );
-          }),
+    return Row(
+      children: List.generate(items.length, (index) {
+        final item = items[index];
+        return _statusNode(
+          label: item.label,
+          count: item.count,
+          circleColor: item.circleColor,
+          contentColor: item.contentColor,
+          isSelected: selectedIndex == index,
+          onTap: () => onSelected(index),
         );
-      },
+      }),
     );
   }
 

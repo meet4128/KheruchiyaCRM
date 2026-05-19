@@ -12,6 +12,7 @@ import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_detail/inquiry_detail_event.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_detail/inquiry_detail_state.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/utils/amendment_status_filter.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widget/amendment_info_card.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widget/inquiry_information.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widget/qna_notes.dart';
@@ -27,6 +28,7 @@ class InquiryManagementScreen extends StatefulWidget {
 
 class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
   late final InquiryDetailBloc _detailBloc;
+  int _selectedStatusIndex = AmendmentStatusTabX.indexOf(AmendmentStatusTab.all);
 
   @override
   void initState() {
@@ -49,6 +51,12 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
       child: BlocBuilder<InquiryDetailBloc, InquiryDetailState>(
         builder: (context, detailState) {
           final row = detailState.vendorRow ?? widget.vendorRow;
+          final selectedTab = AmendmentStatusTabX.fromIndex(_selectedStatusIndex);
+          final statusBarItems = buildAmendmentStatusBarItems(detailState.amendments);
+          final filteredAmendments = filterAmendmentsByTab(
+            detailState.amendments,
+            selectedTab,
+          );
 
           return Scaffold(
             backgroundColor: ColorConstant.inquiryManagementBgColor,
@@ -70,7 +78,7 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
                                 icon: AssetConstants.icRightArrow,
                               ),
                               _hierarchyHeader(
-                                title: 'Pending ',
+                                title: '${selectedTab.label} ',
                                 icon: AssetConstants.icRightArrow,
                               ),
                               _hierarchyHeader(
@@ -122,7 +130,13 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
                             ],
                           ),
                           const SizedBox(height: DimensionConstant.d25),
-                          StatusBar(),
+                          StatusBar(
+                            items: statusBarItems,
+                            selectedIndex: _selectedStatusIndex,
+                            onSelected: (index) {
+                              setState(() => _selectedStatusIndex = index);
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -148,16 +162,37 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
                     else ...[
                       InquiryInformation(row: row),
                       const SizedBox(height: DimensionConstant.d10),
-                      ...detailState.amendments.map(
-                        (a) => Padding(
-                          padding: const EdgeInsets.only(bottom: DimensionConstant.d10),
-                          child: AmendmentInfoCard(
-                            amendment: a,
-                            inquiryId: detailState.inquiryId,
-                            inquiryChecklist: row?.checklist ?? const [],
+                      if (detailState.amendments.isNotEmpty &&
+                          filteredAmendments.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: DimensionConstant.d24,
+                          ),
+                          child: Center(
+                            child: Text(
+                              'No ${selectedTab.label} amendments',
+                              style: FontConstant.interNormal(
+                                color: ColorConstant.whiteColor.withValues(
+                                  alpha: DimensionConstant.d0_5,
+                                ),
+                                fontSize: DimensionConstant.d14,
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        ...filteredAmendments.map(
+                          (a) => Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: DimensionConstant.d10,
+                            ),
+                            child: AmendmentInfoCard(
+                              amendment: a,
+                              inquiryId: detailState.inquiryId,
+                              inquiryChecklist: row?.checklist ?? const [],
+                            ),
                           ),
                         ),
-                      ),
                       const SizedBox(height: DimensionConstant.d10),
                       QnaNotes(
                         inquiryId: detailState.inquiryId,
