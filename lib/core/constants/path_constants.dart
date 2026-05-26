@@ -48,7 +48,8 @@ bool _sessionIsAdmin() {
   return role.toString().trim().toLowerCase() == 'admin';
 }
 
-String _pathFor(NavPage page) {
+/// Top-level GoRouter path for a drawer / [NavPage] item.
+String pathForNavPage(NavPage page) {
   switch (page) {
     case NavPage.dashboard:
       return PathConstant.dashboard;
@@ -77,36 +78,44 @@ String _pathFor(NavPage page) {
   }
 }
 
-NavPage _pageFromPath(String path) {
+String normalizeRoutePath(String path) {
   final p = path.split('?').first;
-  switch (p) {
-    case PathConstant.dashboard:
-      return NavPage.dashboard;
-    case PathConstant.clientLeads:
-      return NavPage.clientLeads;
-    case PathConstant.inquiryManagement:
-      return NavPage.inquiryManagement;
-    case PathConstant.inquiryView:
-      return NavPage.inquiry;
-    case PathConstant.messages:
-      return NavPage.messages;
-    case PathConstant.projectJobs:
-      return NavPage.projectJobs;
-    case PathConstant.invoices:
-      return NavPage.invoices;
-    case PathConstant.payments:
-      return NavPage.payments;
-    case PathConstant.inventory:
-      return NavPage.inventory;
-    case PathConstant.team:
-      return NavPage.team;
-    case PathConstant.reminders:
-      return NavPage.reminders;
-    case PathConstant.analysis:
-      return NavPage.analysis;
-    default:
-      return NavPage.dashboard;
+  if (p.isEmpty || p == '/') return PathConstant.dashboard;
+  return p;
+}
+
+/// Maps current URL (including nested routes) to the active drawer page.
+NavPage navPageFromPath(String path) {
+  final p = normalizeRoutePath(path);
+  if (p == PathConstant.dashboard) return NavPage.dashboard;
+  if (p.startsWith(PathConstant.inquiryManagement)) return NavPage.inquiryManagement;
+  if (p.startsWith(PathConstant.clientLeads)) return NavPage.clientLeads;
+  if (p.startsWith(PathConstant.inquiryView)) return NavPage.inquiry;
+  if (p.startsWith(PathConstant.messages)) return NavPage.messages;
+  if (p.startsWith(PathConstant.projectJobs)) return NavPage.projectJobs;
+  if (p.startsWith(PathConstant.invoices)) return NavPage.invoices;
+  if (p.startsWith(PathConstant.payments)) return NavPage.payments;
+  if (p.startsWith(PathConstant.inventory)) return NavPage.inventory;
+  if (p.startsWith(PathConstant.team)) return NavPage.team;
+  if (p.startsWith(PathConstant.reminders)) return NavPage.reminders;
+  if (p.startsWith(PathConstant.analysis)) return NavPage.analysis;
+  return NavPage.dashboard;
+}
+
+/// True when [path] is the root URL for [page] (not a nested child like inquiry detail).
+bool isAtNavPageRootPath(String path, NavPage page) {
+  final normalized = normalizeRoutePath(path);
+  final root = pathForNavPage(page);
+  if (page == NavPage.dashboard) {
+    return normalized == '/' || normalized == PathConstant.dashboard;
   }
+  return normalized == root;
+}
+
+/// Full-screen flows that should not overwrite drawer selection when URL changes.
+bool shouldSyncBlocFromRoute(String path) {
+  final p = normalizeRoutePath(path);
+  return !p.startsWith(PathConstant.airTicket);
 }
 
 /// Provides a GoRouter that syncs with the NavigationBloc.
@@ -276,72 +285,30 @@ GoRouter createRouter(NavigationBloc navBloc) {
   bool isSyncingFromRouter = false;
 
   void syncBlocWithRouter() {
-    final currentPath = _currentRouterLocation(router);
-    final pathWithoutQuery = currentPath.split('?').first;
-    final page = _pageFromPath(currentPath);
+    final pathWithoutQuery = normalizeRoutePath(_currentRouterLocation(router));
+    if (!shouldSyncBlocFromRoute(pathWithoutQuery)) return;
 
-    // Only sync if the path maps to a known NavPage (not a sub-route like air-ticket)
-    final knownPaths = [
-      PathConstant.dashboard,
-      PathConstant.inquiryManagement,
-      PathConstant.clientLeads,
-      PathConstant.inquiryView,
-      PathConstant.messages,
-      PathConstant.projectJobs,
-      PathConstant.invoices,
-      PathConstant.payments,
-      PathConstant.inventory,
-      PathConstant.team,
-      PathConstant.reminders,
-      PathConstant.analysis,
-    ];
-
-    if (knownPaths.contains(pathWithoutQuery)) {
-      // Only sync if the page actually changed to prevent unnecessary updates
-      if (navBloc.state.currentPage != page) {
-        isSyncingFromRouter = true;
-        navBloc.add(SyncPageFromRouteEvent(page));
-        // Reset flag after bloc processes the event
-        Future.microtask(() {
-          isSyncingFromRouter = false;
-        });
-      }
+    final page = navPageFromPath(pathWithoutQuery);
+    if (navBloc.state.currentPage != page) {
+      isSyncingFromRouter = true;
+      navBloc.add(SyncPageFromRouteEvent(page));
+      Future.microtask(() {
+        isSyncingFromRouter = false;
+      });
     }
   }
 
   router.routeInformationProvider.addListener(syncBlocWithRouter);
   syncBlocWithRouter();
 
-  // Also listen to bloc changes and push router navigation (menu click).
+  // Bloc → router (e.g. programmatic page change). Side menu also calls context.go directly.
   navBloc.stream.listen((navState) {
-    // Don't navigate if we're currently syncing from router (browser back/forward)
     if (isSyncingFromRouter) return;
 
-    final desiredPath = _pathFor(navState.currentPage);
-    final currentPath = _currentRouterLocation(router).split('?').first;
+    final currentPath = normalizeRoutePath(_currentRouterLocation(router));
+    if (isAtNavPageRootPath(currentPath, navState.currentPage)) return;
 
-    // Don't navigate if:
-    // 1. Already on the desired path
-    // 2. Current path is a sub-route (like air-ticket) - let browser handle it
-    final isSubRoute = ![
-      PathConstant.dashboard,
-      PathConstant.inquiryManagement,
-      PathConstant.clientLeads,
-      PathConstant.inquiryView,
-      PathConstant.messages,
-      PathConstant.projectJobs,
-      PathConstant.invoices,
-      PathConstant.payments,
-      PathConstant.inventory,
-      PathConstant.team,
-      PathConstant.reminders,
-      PathConstant.analysis,
-    ].contains(currentPath);
-
-    if (currentPath != desiredPath && !isSubRoute) {
-      // Use go() to change URL (works on web)
-      router.go(desiredPath);
-    }
+    router.go(pathForNavPage(navState.currentPage));
   });
 
   return router;

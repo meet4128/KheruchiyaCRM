@@ -88,7 +88,7 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       final response = await _authRepository.login(
         email: state.email.trim(),
         password: state.password,
-        isAdmin: false
+        isAdmin: true
       );
       _persistLoginSession(
         response: response,

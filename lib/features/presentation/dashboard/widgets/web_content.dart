@@ -37,6 +37,8 @@ class WebContent extends StatelessWidget {
             return _analysis();
           case NavPage.inquiryManagement:
             return _inquiryManagement();
+          case NavPage.messages:
+            return _page('Messages');
         }
       },
     );

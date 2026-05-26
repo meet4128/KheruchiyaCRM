@@ -7,6 +7,7 @@ import '../../../../core/constants/asset_constants.dart';
 import '../bloc/navigation_bloc.dart';
 import '../bloc/navigation_event.dart';
 import '../bloc/navigation_state.dart';
+import '../navigation/nav_page_navigation.dart';
 
 class SideMenu extends StatefulWidget {
   final bool isCollapsed;
@@ -205,9 +206,7 @@ class _SideMenuState extends State<SideMenu> with SingleTickerProviderStateMixin
     return Material(
       color: selected ? AppColors.dark().primaryLight.withOpacity(0.5) : Colors.transparent,
       child: InkWell(
-        onTap: (){
-          context.read<NavigationBloc>().add(ChangePageEvent(page));
-        },
+        onTap: () => navigateToNavPage(context, page),
         child: SizedBox(
           height: 56,
           child: Row(
