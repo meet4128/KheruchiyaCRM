@@ -7,12 +7,15 @@ import 'package:travel_crm/data/repositories/auth_repository.dart';
 import 'package:travel_crm/data/repositories/inquiry_repository.dart';
 import 'package:travel_crm/data/repositories/members_repository.dart';
 import 'package:travel_crm/data/repositories/purchase_chat_repository.dart';
+import 'package:travel_crm/features/presentation/forgot_password/bloc/forgot_password_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_detail/inquiry_detail_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_management_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_chat/qna_chat_bloc.dart';
 import 'package:travel_crm/features/presentation/purchase_team/bloc/purchase_team_chat/purchase_team_chat_bloc.dart';
 import 'package:travel_crm/features/presentation/purchase_team/bloc/purchase_team_directory/purchase_team_directory_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
+import 'package:travel_crm/features/presentation/reset_password/bloc/reset_password_bloc.dart';
+import 'package:travel_crm/features/presentation/set_password/bloc/set_password_bloc.dart';
 
 GetIt sl = GetIt.instance;
 
@@ -56,5 +59,18 @@ Future setup() async {
   );
   sl.registerFactory(
     () => PurchaseTeamChatBloc(repository: sl<PurchaseChatRepository>()),
+  );
+
+  // Public-auth flows (invite / forgot / reset). All three are factories —
+  // each page mount must get a fresh bloc because they validate a single
+  // one-shot token.
+  sl.registerFactory<ForgotPasswordBloc>(
+    () => ForgotPasswordBloc(authRepository: sl<AuthRepository>()),
+  );
+  sl.registerFactory<SetPasswordBloc>(
+    () => SetPasswordBloc(authRepository: sl<AuthRepository>()),
+  );
+  sl.registerFactory<ResetPasswordBloc>(
+    () => ResetPasswordBloc(authRepository: sl<AuthRepository>()),
   );
 }

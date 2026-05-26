@@ -8,6 +8,7 @@ import 'package:travel_crm/features/presentation/admin_panel/team_members/add_me
 import 'package:travel_crm/features/presentation/admin_panel/team_members/add_member/bloc/add_member_event.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/add_member/bloc/add_member_state.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/add_member/widgets/add_member_attachment_slot.dart';
+import 'package:travel_crm/features/presentation/admin_panel/team_members/add_member/widgets/add_member_invite_email_selector.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/add_member/widgets/add_member_phone_field.dart';
 
 /// Step 2 — Operation Information ([add_member_submit.md] Phase 2).
@@ -189,6 +190,13 @@ class AddMemberOperationInfoForm extends StatelessWidget {
                     );
               },
             ),
+            // Invite section — CREATE flow only. On edit there's nothing to
+            // send (the member already has — or doesn't need — a password set
+            // via the original invite).
+            if (state.editingMemberId == null) ...[
+              const SizedBox(height: 18),
+              const AddMemberInviteEmailSelector(),
+            ],
             const SizedBox(height: 18),
             Center(
               child: Text(

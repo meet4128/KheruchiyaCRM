@@ -426,6 +426,24 @@ class AppTextFieldValidators {
     return null;
   }
 
+  /// Invite / reset-password policy validator.
+  ///
+  /// Looser than [passwordStrength] — matches the **backend contract** exactly
+  /// (8–128 chars, at least one letter + one digit, no upper/lower split).
+  /// Using the stricter validator here would silently reject passwords the
+  /// server would have accepted, which is a worse UX bug than being too lax.
+  static String? invitePasswordPolicy(String? value) {
+    if (value == null || value.isEmpty) return 'Password is required';
+    if (value.length < 8) return 'Password must be at least 8 characters.';
+    if (value.length > 128) return 'Password must be at most 128 characters.';
+    final hasLetter = value.contains(RegExp(r'[A-Za-z]'));
+    final hasDigit = value.contains(RegExp(r'[0-9]'));
+    if (!hasLetter || !hasDigit) {
+      return 'Password must contain at least one letter and one digit.';
+    }
+    return null;
+  }
+
   /// Combine multiple validators
   static String? Function(String?) combine(List<String? Function(String?)> validators) {
     return (String? value) {

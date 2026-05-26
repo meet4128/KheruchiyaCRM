@@ -277,6 +277,33 @@ class AddMemberAttachmentCleared extends AddMemberEvent {
   List<Object?> get props => [kind];
 }
 
+class AddMemberInviteEmailChoiceChanged extends AddMemberEvent {
+  const AddMemberInviteEmailChoiceChanged(this.value);
+
+  final AddMemberInviteEmailChoice value;
+
+  @override
+  List<Object?> get props => [value];
+}
+
+class AddMemberCustomInviteEmailChanged extends AddMemberEvent {
+  const AddMemberCustomInviteEmailChanged(this.value);
+
+  final String value;
+
+  @override
+  List<Object?> get props => [value];
+}
+
+class AddMemberSendInviteToggled extends AddMemberEvent {
+  const AddMemberSendInviteToggled(this.value);
+
+  final bool value;
+
+  @override
+  List<Object?> get props => [value];
+}
+
 class AddMemberSubmitPressed extends AddMemberEvent {
   const AddMemberSubmitPressed();
 }

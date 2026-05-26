@@ -2,11 +2,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:travel_crm/core/constants/path_constants.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/di/injector.dart';
+import 'package:travel_crm/features/presentation/forgot_password/bloc/forgot_password_bloc.dart';
+import 'package:travel_crm/features/presentation/forgot_password/view/forgot_password_screen.dart';
 import 'package:travel_crm/features/presentation/login/bloc/login_bloc.dart';
 import 'package:travel_crm/features/presentation/login/bloc/login_state.dart';
 import 'package:travel_crm/features/presentation/login/view/login_screen.dart';
+import 'package:travel_crm/features/presentation/reset_password/bloc/reset_password_bloc.dart';
+import 'package:travel_crm/features/presentation/reset_password/view/reset_password_screen.dart';
+import 'package:travel_crm/features/presentation/set_password/bloc/set_password_bloc.dart';
+import 'package:travel_crm/features/presentation/set_password/bloc/set_password_event.dart';
+import 'package:travel_crm/features/presentation/set_password/view/set_password_screen.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/inquiry_view.dart';
 import 'package:travel_crm/features/presentation/air_ticket/air_ticket_view.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
@@ -36,14 +44,59 @@ class LoginPage extends StatelessWidget {
             current.status == LoginStatus.success,
         listener: (context, state) {
           if (!context.mounted) return;
-          if (state.userRole == 'admin') {
-            context.go('/admin');
-            return;
-          }
-          context.go('/');
+          context.go(landingPathForRole(state.userRole));
         },
         child: const LoginScreen(),
       ),
+    );
+  }
+}
+
+/// Public route — `/forgot-password`. Provides the [ForgotPasswordBloc] for
+/// its subtree so the screen widget stays stateless.
+class ForgotPasswordPage extends StatelessWidget {
+  const ForgotPasswordPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider<ForgotPasswordBloc>(
+      create: (_) => sl<ForgotPasswordBloc>(),
+      child: const ForgotPasswordScreen(),
+    );
+  }
+}
+
+/// Public route — `/set-password?token=…`. The [token] is parsed from the
+/// query string in the [GoRoute] `pageBuilder` and forwarded to the bloc via
+/// [SetPasswordTokenReceived], which kicks off `validateToken(purpose: invite)`.
+class SetPasswordPage extends StatelessWidget {
+  const SetPasswordPage({super.key, required this.token});
+
+  final String token;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider<SetPasswordBloc>(
+      create: (_) => sl<SetPasswordBloc>()..add(SetPasswordTokenReceived(token)),
+      child: const SetPasswordScreen(),
+    );
+  }
+}
+
+/// Public route — `/reset-password?token=…`. Same wiring as
+/// [SetPasswordPage], but provides a [ResetPasswordBloc] (subclass of
+/// `SetPasswordBloc`) so the shared screen widget keeps reading
+/// `SetPasswordBloc` from context.
+class ResetPasswordPage extends StatelessWidget {
+  const ResetPasswordPage({super.key, required this.token});
+
+  final String token;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider<SetPasswordBloc>(
+      create: (_) => sl<ResetPasswordBloc>()..add(SetPasswordTokenReceived(token)),
+      child: const ResetPasswordScreen(),
     );
   }
 }

@@ -45,6 +45,10 @@ class SharedPrefUtilsKeys {
   static String userRole = 'userRole';
   /// Refresh token used to obtain a new access token on 401.
   static String refreshToken = 'refreshToken';
+  /// Server-issued counter that increments on every password reset / forced
+  /// logout. Compared against `response.data.user.tokenVersion` to detect
+  /// stale sessions when a user reset their password on another device.
+  static String tokenVersion = 'tokenVersion';
   static String userName = 'userName';
   static String isRememberMe = 'isRememberMe';
   static String setControlPermissions = 'setControlPermissions';

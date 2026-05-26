@@ -17,6 +17,8 @@ class ListMembersItem {
     this.dateOfJoining,
     this.createdAt,
     this.departmentRoles = const [],
+    this.invitationStatus,
+    this.lastInviteSentAt,
   });
 
   factory ListMembersItem.fromJson(Map<String, dynamic> json) => _$ListMembersItemFromJson(json);
@@ -36,4 +38,12 @@ class ListMembersItem {
 
   @JsonKey(defaultValue: [])
   final List<DepartmentRoleDto> departmentRoles;
+
+  /// `pending | active | disabled`. Nullable so older API rows / unmodified
+  /// records don't break decoding — treat `null` as "active" for legacy.
+  final String? invitationStatus;
+
+  /// ISO-8601 timestamp of the last invite email sent to this member.
+  /// Used by the team-members list to surface "Sent X ago" tooltips.
+  final String? lastInviteSentAt;
 }

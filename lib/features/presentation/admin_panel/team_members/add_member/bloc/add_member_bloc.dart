@@ -39,6 +39,9 @@ class AddMemberBloc extends Bloc<AddMemberEvent, AddMemberState> {
     on<AddMemberOfficePhoneChanged>(_onOfficePhoneChanged);
     on<AddMemberAttachmentPicked>(_onAttachmentPicked);
     on<AddMemberAttachmentCleared>(_onAttachmentCleared);
+    on<AddMemberInviteEmailChoiceChanged>(_onInviteEmailChoiceChanged);
+    on<AddMemberCustomInviteEmailChanged>(_onCustomInviteEmailChanged);
+    on<AddMemberSendInviteToggled>(_onSendInviteToggled);
     on<AddMemberSubmitPressed>(_onSubmitPressed);
   }
 
@@ -230,10 +233,61 @@ class AddMemberBloc extends Bloc<AddMemberEvent, AddMemberState> {
     }
   }
 
+  void _onInviteEmailChoiceChanged(
+    AddMemberInviteEmailChoiceChanged event,
+    Emitter<AddMemberState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        inviteEmailChoice: event.value,
+        clearCustomInviteEmailError: true,
+        status: AddMemberSubmitStatus.initial,
+      ),
+    );
+  }
+
+  void _onCustomInviteEmailChanged(
+    AddMemberCustomInviteEmailChanged event,
+    Emitter<AddMemberState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        customInviteEmail: event.value,
+        clearCustomInviteEmailError: true,
+        status: AddMemberSubmitStatus.initial,
+      ),
+    );
+  }
+
+  void _onSendInviteToggled(
+    AddMemberSendInviteToggled event,
+    Emitter<AddMemberState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        sendInvite: event.value,
+        // If admin opts out of sending, the custom-email field becomes
+        // irrelevant — clear any leftover validation error.
+        clearCustomInviteEmailError: !event.value,
+        status: AddMemberSubmitStatus.initial,
+      ),
+    );
+  }
+
   Future<void> _onSubmitPressed(AddMemberSubmitPressed event, Emitter<AddMemberState> emit) async {
     final officePhoneError = AppTextFieldValidators.phone(state.officePhoneNumber);
 
-    if (officePhoneError != null) {
+    // Custom invite email is only validated on the CREATE flow when the admin
+    // (a) chose to send an invite AND (b) picked "Other".
+    final isCreating = state.editingMemberId == null;
+    final mustValidateCustomEmail = isCreating &&
+        state.sendInvite &&
+        state.inviteEmailChoice == AddMemberInviteEmailChoice.custom;
+    final customInviteEmailError = mustValidateCustomEmail
+        ? AppTextFieldValidators.email(state.customInviteEmail.trim())
+        : null;
+
+    if (officePhoneError != null || customInviteEmailError != null) {
       emit(
         state.copyWith(
           firstNameError: null,
@@ -244,6 +298,7 @@ class AddMemberBloc extends Bloc<AddMemberEvent, AddMemberState> {
           dateOfJoiningError: null,
           roleRowsError: null,
           officePhoneNumberError: officePhoneError,
+          customInviteEmailError: customInviteEmailError,
           status: AddMemberSubmitStatus.invalid,
         ),
       );
@@ -254,6 +309,7 @@ class AddMemberBloc extends Bloc<AddMemberEvent, AddMemberState> {
       state.copyWith(
         status: AddMemberSubmitStatus.submitting,
         clearSubmitErrorMessage: true,
+        clearLastInviteResult: true,
         firstNameError: null,
         lastNameError: null,
         employeeIdError: null,
@@ -262,6 +318,7 @@ class AddMemberBloc extends Bloc<AddMemberEvent, AddMemberState> {
         dateOfJoiningError: null,
         roleRowsError: null,
         officePhoneNumberError: null,
+        clearCustomInviteEmailError: true,
       ),
     );
 
@@ -269,16 +326,27 @@ class AddMemberBloc extends Bloc<AddMemberEvent, AddMemberState> {
       final editingId = state.editingMemberId;
       if (editingId != null) {
         await _membersRepository.updateMember(editingId, mapStateToUpdateRequest(state));
+        if (isClosed) return;
+        emit(
+          state.copyWith(
+            status: AddMemberSubmitStatus.success,
+            clearSubmitErrorMessage: true,
+            clearLastInviteResult: true,
+          ),
+        );
       } else {
-        await _membersRepository.createMember(mapStateToCreateRequest(state));
+        final response =
+            await _membersRepository.createMember(mapStateToCreateRequest(state));
+        if (isClosed) return;
+        emit(
+          state.copyWith(
+            status: AddMemberSubmitStatus.success,
+            clearSubmitErrorMessage: true,
+            lastInviteResult: response.data.invite,
+          ),
+        );
       }
-      if (isClosed) return;
-      emit(
-        state.copyWith(
-          status: AddMemberSubmitStatus.success,
-          clearSubmitErrorMessage: true,
-        ),
-      );
+      return;
     } on MembersValidationException catch (e) {
       if (isClosed) return;
       emit(

@@ -120,6 +120,12 @@ class TeamSectionBlock extends StatelessWidget {
                         onDelete: (memberId) {
                           context.read<TeamMembersBloc>().add(TeamMemberDeleteTapped(memberId));
                         },
+                        onResendInvite: (memberId) {
+                          context
+                              .read<TeamMembersBloc>()
+                              .add(TeamMemberResendInviteRequested(memberId));
+                        },
+                        resendingMemberIds: state.resendingMemberIds,
                       ),
                     ],
                   ),

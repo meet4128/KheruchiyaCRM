@@ -33,6 +33,8 @@ class CreateMemberRequest {
     this.aadharDocumentUrl,
     this.panDocumentUrl,
     this.cancelChequeDocumentUrl,
+    this.sendInvite,
+    this.inviteEmail,
   });
 
   factory CreateMemberRequest.fromJson(Map<String, dynamic> json) =>
@@ -63,4 +65,14 @@ class CreateMemberRequest {
   final String? aadharDocumentUrl;
   final String? panDocumentUrl;
   final String? cancelChequeDocumentUrl;
+
+  /// Whether the backend should also send the invite email synchronously.
+  /// Omitting it (`null`) means "use server default" which is currently `true`.
+  /// Send `false` only when the admin explicitly opted out of the invite email.
+  final bool? sendInvite;
+
+  /// Override email for the invite link. When omitted the backend defaults to
+  /// [personalEmail]. We only send a non-null value when the admin chose
+  /// `Other` in the invite-email selector and typed a custom address.
+  final String? inviteEmail;
 }

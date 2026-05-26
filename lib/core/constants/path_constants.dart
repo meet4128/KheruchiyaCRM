@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../network/dio_client.dart';
 import '../utils/shared_pref_utils.dart';
 import '../../features/pages/pages.dart';
 import '../../features/presentation/purchase_team/models/messages_route_args.dart';
@@ -13,20 +14,38 @@ import '../../features/presentation/dashboard/bloc/navigation_event.dart';
 import '../../features/presentation/admin_panel/view/admin_panel_shell.dart';
 import '../../features/presentation/dashboard/view/dashboard_shell.dart';
 
+/// Paths anyone (logged-out OR logged-in) is allowed to visit. Critically,
+/// includes the invite / forgot-password / reset-password flows so users who
+/// click an emailed link reach the page even when they have no session.
+const Set<String> _kPublicAuthPaths = <String>{
+  PathConstant.login,
+  PathConstant.forgotPassword,
+  PathConstant.setPassword,
+  PathConstant.resetPassword,
+};
+
 FutureOr<String?> globalRedirect(BuildContext context, GoRouterState state) async {
   final path = state.uri.path.isEmpty ? PathConstant.dashboard : state.uri.path;
   final hasToken = _sessionHasAccessToken();
   final isAdmin = _sessionIsAdmin();
 
-  if (hasToken && path == PathConstant.login) {
-    return isAdmin ? PathConstant.adminPanel : PathConstant.dashboard;
+  // Public surface: never redirect away from these. (Logged-in users may still
+  // click an invite link in their own browser — let them through. The page
+  // itself handles "token invalid / wrong account" via the backend response.)
+  if (_kPublicAuthPaths.contains(path)) {
+    // One exception: a logged-in user hitting /login directly gets bounced to
+    // their landing path so they don't see the login form for no reason.
+    if (path == PathConstant.login && hasToken) {
+      return isAdmin ? PathConstant.adminPanel : PathConstant.dashboard;
+    }
+    return null;
   }
 
-  if (!hasToken && path != PathConstant.login) {
+  if (!hasToken) {
     return PathConstant.login;
   }
 
-  if (hasToken && isAdmin && path != PathConstant.adminPanel && path != PathConstant.login) {
+  if (hasToken && isAdmin && path != PathConstant.adminPanel) {
     return PathConstant.adminPanel;
   }
 
@@ -46,6 +65,28 @@ bool _sessionHasAccessToken() {
 bool _sessionIsAdmin() {
   final role = SharedPrefUtils.getValue(SharedPrefUtilsKeys.userRole, '');
   return role.toString().trim().toLowerCase() == 'admin';
+}
+
+/// Decides where a freshly-authenticated user should land based on the role
+/// returned by `POST /auth/login` → `response.data.user.role`.
+///
+/// Contract (confirmed with backend):
+///   - `admin`  → [PathConstant.adminPanel]
+///   - `sales` / `purchase` / `account` / `user` → [PathConstant.dashboard]
+///   - anything else → [PathConstant.dashboard] (defensive — never brick the
+///     app if the backend introduces a new role).
+String landingPathForRole(String? role) {
+  switch ((role ?? '').trim().toLowerCase()) {
+    case 'admin':
+      return PathConstant.adminPanel;
+    case 'sales':
+    case 'purchase':
+    case 'account':
+    case 'user':
+      return PathConstant.dashboard;
+    default:
+      return PathConstant.dashboard;
+  }
 }
 
 /// Top-level GoRouter path for a drawer / [NavPage] item.
@@ -128,6 +169,11 @@ GoRouter createRouter(NavigationBloc navBloc) {
   final router = GoRouter(
     initialLocation: '/',
     debugLogDiagnostics: false,
+    // Whenever DioClient detects a dead session it bumps this notifier; the
+    // router re-evaluates `redirect`, sees `userToken` is empty, and bounces
+    // the user to /login. This means we don't need to scatter
+    // "logout-on-401" logic across every bloc.
+    refreshListenable: sessionExpiredNotifier,
     routes: [
       ShellRoute(
         builder: (context, state, child) {
@@ -235,6 +281,29 @@ GoRouter createRouter(NavigationBloc navBloc) {
           child: const LoginPage(),
         ),
       ),
+      GoRoute(
+        path: PathConstant.forgotPassword,
+        name: 'forgotPassword',
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: ForgotPasswordPage(),
+        ),
+      ),
+      GoRoute(
+        path: PathConstant.setPassword,
+        name: 'setPassword',
+        pageBuilder: (context, state) {
+          final token = state.uri.queryParameters['token'] ?? '';
+          return NoTransitionPage(child: SetPasswordPage(token: token));
+        },
+      ),
+      GoRoute(
+        path: PathConstant.resetPassword,
+        name: 'resetPassword',
+        pageBuilder: (context, state) {
+          final token = state.uri.queryParameters['token'] ?? '';
+          return NoTransitionPage(child: ResetPasswordPage(token: token));
+        },
+      ),
     ],
 
     /// When the router location changes (back/forward in browser or direct URL),
@@ -334,6 +403,9 @@ class PathConstant {
   static const String dashboard = '/';
   static const String adminPanel = '/admin';
   static const String login = '/login';
+  static const String forgotPassword = '/forgot-password';
+  static const String setPassword = '/set-password';
+  static const String resetPassword = '/reset-password';
   static const String clientLeads = '/client-leads';
   static const String messages = '/messages';
   static const String inquiryManagement = '/inquiry-management';

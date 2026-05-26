@@ -401,4 +401,106 @@ class StringConstant {
   static const String addMemberRoleRowsIncomplete = 'Select department and role for each row.';
   static const String addMemberSubmitSuccessMessage = 'Member saved successfully.';
   static const String addMemberSubmitErrorGeneric = 'Something went wrong. Please try again.';
+
+  // ========== Forgot Password ==========
+  static const String forgotPasswordTitle = 'Reset Your Password';
+  static const String forgotPasswordSubtitle =
+      "Enter your email and we'll send you a link to reset your password.";
+  static const String forgotPasswordEmailLabel = 'Email';
+  static const String forgotPasswordSubmit = 'Send Reset Link';
+  static const String forgotPasswordSentTitle = 'Check your email';
+  static const String forgotPasswordSentSubtitle =
+      "If an account exists for that email, we've sent a reset link. It expires in 30 minutes.";
+  static const String forgotPasswordBackToLogin = 'Back to login';
+
+  // ========== Set Password (Invite link landing) ==========
+  static const String setPasswordVerifyingLink = 'Verifying your link…';
+  static const String setPasswordTitle = 'Set Your Password';
+  /// Replace `{email}` with the masked email returned by validate-token.
+  static const String setPasswordSubtitleTemplate = 'Setting password for {email}';
+  /// Replace `{dateTime}` with a formatted ISO date.
+  static const String setPasswordLinkExpiresTemplate = 'This link expires on {dateTime}.';
+  static const String setPasswordNewLabel = 'New password';
+  static const String setPasswordConfirmLabel = 'Confirm password';
+  static const String setPasswordSubmit = 'Set password';
+  static const String setPasswordSuccessTitle = 'Password set';
+  static const String setPasswordSuccessSubtitle =
+      'You can now log in with your new password.';
+  static const String setPasswordGoToLogin = 'Go to login';
+  static const String setPasswordTooShort = 'Password must be at least 8 characters.';
+  static const String setPasswordTooLong = 'Password must be at most 128 characters.';
+  static const String setPasswordWeak =
+      'Password must contain at least one letter and one digit.';
+  static const String setPasswordMismatch = 'Passwords do not match.';
+  static const String setPasswordRequired = 'Password is required';
+  static const String setPasswordInvalidLinkTitle = 'Link is invalid';
+  static const String setPasswordInvalidLinkBody =
+      'This link is invalid. Please ask your admin for a new invitation.';
+  static const String setPasswordExpiredLinkTitle = 'Link expired';
+  static const String setPasswordExpiredLinkBody =
+      'This invite link has expired. Ask your admin to resend it.';
+  static const String setPasswordUsedLinkTitle = 'Link already used';
+  static const String setPasswordUsedLinkBody =
+      'This link has already been used. Try logging in instead.';
+  static const String setPasswordRateLimited =
+      'Too many attempts. Please try again later.';
+  static const String setPasswordGenericError =
+      'Could not set password. Please try again.';
+  static const String setPasswordValidationFailedTitle = 'Verification failed';
+  static const String setPasswordValidationFailedBody =
+      "We couldn't verify this link. Check your connection and try again.";
+  static const String setPasswordRetry = 'Try again';
+
+  // ========== Reset Password ==========
+  static const String resetPasswordTitle = 'Reset Your Password';
+  static const String resetPasswordSubmit = 'Reset password';
+  static const String resetPasswordSamePassword =
+      'Please choose a different password than your current one.';
+  static const String resetPasswordSuccessTitle = 'Password updated';
+  static const String resetPasswordSuccessSubtitle =
+      'You can now log in with your new password.';
+
+  // ========== Add Member — Invite section ==========
+  static const String addMemberInviteSectionTitle = 'Send invite email to:';
+  static const String addMemberInviteSectionSubtitle =
+      'The new member receives a magic link to set their password.';
+  static const String addMemberInviteEmailPersonal = 'Personal email';
+  static const String addMemberInviteEmailWork = 'Work email';
+  static const String addMemberInviteEmailCustom = 'Other';
+  static const String addMemberInviteEmailHint = 'Enter email address';
+  static const String addMemberInviteEmailRequired = 'Please enter a valid email';
+  static const String addMemberInviteEmailNoPersonalOnFile =
+      'No personal email on file';
+  static const String addMemberInviteEmailPersonalEmpty =
+      'No personal email entered yet';
+  static const String addMemberInviteEmailWorkUnavailable =
+      'Not available (no work email on file)';
+  static const String addMemberSendInviteToggle =
+      "Don't send invite now (you can resend later)";
+  static const String addMemberSubmittedNoInviteMessage =
+      'Member created. Click "Resend invite" to send the invite later.';
+  /// Dev-only hint surfaced when backend has no Resend API key configured.
+  static const String addMemberInviteDevFallbackHint =
+      '(dev: no Resend key — link logged to server console)';
+
+  // ========== Team Members — Invite affordances ==========
+  static const String teamMembersResendInviteTooltip = 'Resend invite';
+  static const String teamMembersInviteResentMessage = 'Invite resent.';
+  static const String teamMembersInviteResendFailed = 'Could not resend invite.';
+  static const String teamMembersInviteAlreadyActive =
+      'This member already set their password.';
+  static const String teamMembersInviteResendRateLimit =
+      'Wait a moment before resending again.';
+  static const String teamMembersInviteStatusPending = 'Invite pending';
+  static const String teamMembersInviteStatusDisabled = 'Disabled';
+
+  // ========== Auth — Generic / shared ==========
+  static const String authInvalidCredentials = 'Invalid email or password.';
+  static const String authTooManyAttempts =
+      'Too many login attempts, please try again later.';
+
+  /// Templated success snackbar after AddMember create. Replace `{email}`.
+  /// Helper builders for templated strings.
+  static String addMemberInviteSentMessage(String email) =>
+      'Member created. Invite email sent to $email.';
 }

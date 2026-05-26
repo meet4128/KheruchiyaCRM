@@ -15,7 +15,15 @@ TeamMemberUiModel teamMemberUiModelFromApi(ListMembersItem item, {required Strin
     email: (item.personalEmail ?? '').trim(),
     status: _statusFromEmploymentStatus(item.employmentStatus),
     department: department,
+    invitationStatus:
+        TeamMemberInvitationStatusX.fromString(item.invitationStatus),
+    lastInviteSentAt: _tryParseDate(item.lastInviteSentAt),
   );
+}
+
+DateTime? _tryParseDate(String? value) {
+  if (value == null || value.trim().isEmpty) return null;
+  return DateTime.tryParse(value);
 }
 
 Set<TeamSection> teamSectionsFromDepartmentRoles(List<MapEntry<String, String>> departmentRoles) {

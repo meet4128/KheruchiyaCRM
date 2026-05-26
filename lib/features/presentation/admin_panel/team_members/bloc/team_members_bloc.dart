@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/data/models/members/list_members_item.dart';
 import 'package:travel_crm/data/repositories/members_repository.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/helpers/team_member_from_api.dart';
@@ -19,6 +20,8 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
     on<TeamMemberDeleteTapped>(_onDeleteTapped);
     on<TeamMemberAdded>(_onMemberAdded);
     on<TeamMemberUpdated>(_onMemberUpdated);
+    on<TeamMemberResendInviteRequested>(_onResendInviteRequested);
+    on<TeamMembersResendInviteConsumed>(_onResendInviteConsumed);
   }
 
   final MembersRepository _membersRepository;
@@ -309,6 +312,125 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
 
   void _onDeleteTapped(TeamMemberDeleteTapped event, Emitter<TeamMembersState> emit) {
     // Reserved for delete-member confirmation + API integration.
+  }
+
+  Future<void> _onResendInviteRequested(
+    TeamMemberResendInviteRequested event,
+    Emitter<TeamMembersState> emit,
+  ) async {
+    final memberId = event.memberId;
+    if (state.resendingMemberIds.contains(memberId)) {
+      // Already in flight — ignore double taps.
+      return;
+    }
+    emit(
+      state.copyWith(
+        resendingMemberIds: {...state.resendingMemberIds, memberId},
+        clearResendInviteResult: true,
+      ),
+    );
+
+    try {
+      final response = await _membersRepository.resendInvite(memberId);
+      if (isClosed) return;
+      // Stamp the row as pending again with the updated invite-sent timestamp
+      // so the UI shows the fresh "pending" pill + the next 72h window.
+      final refreshed = _withRefreshedInviteStamp(memberId, response.data.member);
+      emit(
+        state.copyWith(
+          membersBySection: refreshed,
+          visibleMembersBySection: _applyAllFilters(
+            membersBySection: refreshed,
+            query: state.searchQuery,
+            filter: state.selectedFilter,
+            selectedTabs: state.selectedCategoryTabBySection,
+          ),
+          resendingMemberIds: _withoutId(memberId),
+          resendInviteResult: TeamMembersResendInviteResult(
+            memberId: memberId,
+            success: true,
+            sentTo: response.data.invite.sentTo,
+            message: StringConstant.teamMembersInviteResentMessage,
+          ),
+        ),
+      );
+    } on MembersAlreadyActiveException catch (_) {
+      if (isClosed) return;
+      emit(_failureState(memberId, StringConstant.teamMembersInviteAlreadyActive));
+    } on MembersRateLimitedException catch (_) {
+      if (isClosed) return;
+      emit(_failureState(memberId, StringConstant.teamMembersInviteResendRateLimit));
+    } on MembersNotFoundException catch (_) {
+      if (isClosed) return;
+      emit(_failureState(
+        memberId,
+        StringConstant.teamMembersInviteResendFailed,
+      ));
+    } on MembersUnauthorizedException catch (e) {
+      if (isClosed) return;
+      emit(_failureState(memberId, e.toString()));
+    } on MembersApiException catch (e) {
+      if (isClosed) return;
+      emit(_failureState(memberId, e.message));
+    } catch (e) {
+      if (isClosed) return;
+      emit(_failureState(memberId, StringConstant.teamMembersInviteResendFailed));
+    }
+  }
+
+  void _onResendInviteConsumed(
+    TeamMembersResendInviteConsumed event,
+    Emitter<TeamMembersState> emit,
+  ) {
+    if (state.resendInviteResult == null) return;
+    emit(state.copyWith(clearResendInviteResult: true));
+  }
+
+  /// Apply a freshly-resent invite stamp to a member id across all sections,
+  /// returning the new map. The backend always responds with the updated
+  /// member doc — we use that as the source of truth for status / sent-at.
+  Map<TeamSection, List<TeamMemberUiModel>> _withRefreshedInviteStamp(
+    String memberId,
+    ListMembersItem updatedMember,
+  ) {
+    final refreshedInviteStatus = TeamMemberInvitationStatusX.fromString(
+      updatedMember.invitationStatus,
+    );
+    final refreshedSentAt = _tryParseDate(updatedMember.lastInviteSentAt);
+    final out = <TeamSection, List<TeamMemberUiModel>>{};
+    for (final entry in state.membersBySection.entries) {
+      out[entry.key] = entry.value
+          .map((m) => m.id == memberId
+              ? m.copyWith(
+                  invitationStatus: refreshedInviteStatus,
+                  lastInviteSentAt: refreshedSentAt,
+                )
+              : m)
+          .toList();
+    }
+    return out;
+  }
+
+  TeamMembersState _failureState(String memberId, String? message) {
+    return state.copyWith(
+      resendingMemberIds: _withoutId(memberId),
+      resendInviteResult: TeamMembersResendInviteResult(
+        memberId: memberId,
+        success: false,
+        message: (message?.trim().isNotEmpty ?? false)
+            ? message!.trim()
+            : StringConstant.teamMembersInviteResendFailed,
+      ),
+    );
+  }
+
+  Set<String> _withoutId(String memberId) {
+    return state.resendingMemberIds.where((id) => id != memberId).toSet();
+  }
+
+  DateTime? _tryParseDate(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    return DateTime.tryParse(value);
   }
 
   Map<TeamSection, List<TeamMemberUiModel>> _applyAllFilters({

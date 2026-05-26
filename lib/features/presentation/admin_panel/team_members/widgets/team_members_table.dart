@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/theme/app_colors.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/bloc/team_members_state.dart';
 import 'package:travel_crm/features/presentation/admin_panel/team_members/widgets/team_member_row_actions.dart';
@@ -11,6 +12,8 @@ class TeamMembersTable extends StatelessWidget {
     required this.showDepartment,
     required this.onEdit,
     required this.onDelete,
+    this.onResendInvite,
+    this.resendingMemberIds = const <String>{},
   });
 
   final List<TeamMemberUiModel> members;
@@ -18,6 +21,13 @@ class TeamMembersTable extends StatelessWidget {
   final bool showDepartment;
   final ValueChanged<String> onEdit;
   final ValueChanged<String> onDelete;
+
+  /// Tap handler for "Resend invite". When null, the resend icon never shows.
+  /// Only invoked for members with [TeamMemberInvitationStatus.pending].
+  final ValueChanged<String>? onResendInvite;
+
+  /// IDs of members currently mid-resend; drives per-row spinner.
+  final Set<String> resendingMemberIds;
 
   @override
   Widget build(BuildContext context) {
@@ -60,6 +70,8 @@ class TeamMembersTable extends StatelessWidget {
                   showDepartment: showDepartment,
                   onEdit: onEdit,
                   onDelete: onDelete,
+                  onResendInvite: onResendInvite,
+                  isResending: resendingMemberIds.contains(member.id),
                 );
               },
             ),
@@ -109,6 +121,8 @@ class _MemberRow extends StatelessWidget {
     required this.showDepartment,
     required this.onEdit,
     required this.onDelete,
+    required this.onResendInvite,
+    required this.isResending,
   });
 
   final TeamMemberUiModel member;
@@ -116,10 +130,37 @@ class _MemberRow extends StatelessWidget {
   final bool showDepartment;
   final ValueChanged<String> onEdit;
   final ValueChanged<String> onDelete;
+  final ValueChanged<String>? onResendInvite;
+  final bool isResending;
 
   @override
   Widget build(BuildContext context) {
     final textStyle = TextStyle(color: AppColors.dark().textPrimary, fontSize: 13);
+
+    // Per the plan we prefer the invite-state pill over the online dot when
+    // the row is in a non-active invite phase. Falls back to the existing
+    // status tag (or department label) otherwise.
+    Widget statusCell;
+    if (member.invitationStatus == TeamMemberInvitationStatus.pending) {
+      statusCell = const _InvitationStatusPill(
+        label: StringConstant.teamMembersInviteStatusPending,
+        color: Color(0xFFF9A826),
+      );
+    } else if (member.invitationStatus == TeamMemberInvitationStatus.disabled) {
+      statusCell = _InvitationStatusPill(
+        label: StringConstant.teamMembersInviteStatusDisabled,
+        color: AppColors.dark().textTertiary,
+      );
+    } else if (showStatus) {
+      statusCell = _StatusTag(status: member.status);
+    } else {
+      statusCell = Text(
+        showDepartment ? member.department : '',
+        style: textStyle.copyWith(color: AppColors.dark().textSecondary),
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
@@ -161,24 +202,52 @@ class _MemberRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          Expanded(
-            flex: 2,
-            child: showStatus
-                ? _StatusTag(status: member.status)
-                : Text(
-                    showDepartment ? member.department : '',
-                    style: textStyle.copyWith(color: AppColors.dark().textSecondary),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-          ),
+          Expanded(flex: 2, child: statusCell),
           Expanded(
             flex: 2,
             child: TeamMemberRowActions(
               onEdit: () => onEdit(member.id),
               onDelete: () => onDelete(member.id),
+              onResendInvite: (onResendInvite != null && member.isInvitePending)
+                  ? () => onResendInvite!(member.id)
+                  : null,
+              isResending: isResending,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _InvitationStatusPill extends StatelessWidget {
+  const _InvitationStatusPill({
+    required this.label,
+    required this.color,
+  });
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: color.withValues(alpha: 0.45)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }

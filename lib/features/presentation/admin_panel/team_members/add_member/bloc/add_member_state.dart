@@ -1,8 +1,19 @@
 import 'package:equatable/equatable.dart';
+import 'package:travel_crm/data/models/members/invite_result_dto.dart';
 
 enum AddMemberGender { male, female }
 
 enum AddMemberSubmitStatus { initial, invalid, valid, submitting, success, failure }
+
+/// Which email gets the invitation link when a new member is created.
+///
+/// - [personal] → backend uses `personalEmail` from the member record. We omit
+///   `inviteEmail` from the request body so the backend default kicks in.
+/// - [work]    → reserved for a future "work email" field on the member
+///   record. The selector option is rendered but disabled until that field
+///   exists; today this case maps to the same behaviour as [personal].
+/// - [custom]  → admin typed a different address; we send it as `inviteEmail`.
+enum AddMemberInviteEmailChoice { personal, work, custom }
 
 /// Wizard step for Add Member dialog ([add_member_submit.md] Phase 1+).
 enum AddMemberStep {
@@ -92,6 +103,11 @@ class AddMemberState extends Equatable {
     this.dateOfJoiningError,
     this.roleRowsError,
     this.officePhoneNumberError,
+    this.inviteEmailChoice = AddMemberInviteEmailChoice.personal,
+    this.customInviteEmail = '',
+    this.customInviteEmailError,
+    this.sendInvite = true,
+    this.lastInviteResult,
     this.status = AddMemberSubmitStatus.initial,
     this.editingMemberId,
     this.submitErrorMessage,
@@ -145,6 +161,23 @@ class AddMemberState extends Equatable {
   final String? dateOfJoiningError;
   final String? roleRowsError;
   final String? officePhoneNumberError;
+
+  /// Invite section (only shown on the create flow). Defaults: send the invite
+  /// to the personal email. See [AddMemberInviteEmailChoice] for the semantics
+  /// of each value.
+  final AddMemberInviteEmailChoice inviteEmailChoice;
+  final String customInviteEmail;
+  final String? customInviteEmailError;
+
+  /// When `false` the bloc sends `sendInvite: false` so the backend skips the
+  /// email; admin can resend it later from the team list.
+  final bool sendInvite;
+
+  /// Populated **only on a successful create** so the dialog footer can render
+  /// the invite-specific SnackBar (`Invite sent to alice@…` vs. `Member
+  /// created, click Resend …`). Null otherwise (e.g. PATCH on edit).
+  final InviteResultDto? lastInviteResult;
+
   final AddMemberSubmitStatus status;
 
   /// Server member id when opened from team table **Edit** (PATCH on submit).
@@ -207,6 +240,13 @@ class AddMemberState extends Equatable {
     String? roleRowsError,
     String? officePhoneNumberError,
     bool clearFieldErrors = false,
+    AddMemberInviteEmailChoice? inviteEmailChoice,
+    String? customInviteEmail,
+    String? customInviteEmailError,
+    bool clearCustomInviteEmailError = false,
+    bool? sendInvite,
+    InviteResultDto? lastInviteResult,
+    bool clearLastInviteResult = false,
     AddMemberSubmitStatus? status,
     String? editingMemberId,
     bool clearEditingMemberId = false,
@@ -261,6 +301,14 @@ class AddMemberState extends Equatable {
       dateOfJoiningError: clearFieldErrors ? null : dateOfJoiningError,
       roleRowsError: clearFieldErrors ? null : roleRowsError,
       officePhoneNumberError: clearFieldErrors ? null : officePhoneNumberError,
+      inviteEmailChoice: inviteEmailChoice ?? this.inviteEmailChoice,
+      customInviteEmail: customInviteEmail ?? this.customInviteEmail,
+      customInviteEmailError: clearCustomInviteEmailError
+          ? null
+          : (customInviteEmailError ?? this.customInviteEmailError),
+      sendInvite: sendInvite ?? this.sendInvite,
+      lastInviteResult:
+          clearLastInviteResult ? null : (lastInviteResult ?? this.lastInviteResult),
       status: status ?? this.status,
       editingMemberId: clearEditingMemberId ? null : (editingMemberId ?? this.editingMemberId),
       submitErrorMessage: clearSubmitErrorMessage ? null : (submitErrorMessage ?? this.submitErrorMessage),
@@ -314,6 +362,11 @@ class AddMemberState extends Equatable {
         dateOfJoiningError,
         roleRowsError,
         officePhoneNumberError,
+        inviteEmailChoice,
+        customInviteEmail,
+        customInviteEmailError,
+        sendInvite,
+        lastInviteResult,
         status,
         editingMemberId,
         submitErrorMessage,

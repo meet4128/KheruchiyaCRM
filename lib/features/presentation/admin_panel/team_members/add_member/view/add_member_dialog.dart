@@ -166,6 +166,27 @@ class _OperationInfoHeading extends StatelessWidget {
   }
 }
 
+/// Decides what to show in the success SnackBar based on whether the submit
+/// was a CREATE (invite result available) vs an EDIT (no invite involved) and,
+/// for creates, what the backend did about the invite email.
+String _successSnackbarText(AddMemberState state) {
+  // Edit flow: there is no invite involved.
+  if (state.editingMemberId != null) {
+    return StringConstant.addMemberSubmitSuccessMessage;
+  }
+  final invite = state.lastInviteResult;
+  if (invite == null) {
+    return StringConstant.addMemberSubmitSuccessMessage;
+  }
+  if (invite.sent) {
+    final to = (invite.sentTo ?? '').trim();
+    return to.isEmpty
+        ? StringConstant.addMemberSubmitSuccessMessage
+        : StringConstant.addMemberInviteSentMessage(to);
+  }
+  return StringConstant.addMemberSubmittedNoInviteMessage;
+}
+
 class _DialogFooter extends StatelessWidget {
   const _DialogFooter({required this.colors, this.onMemberSaved});
 
@@ -182,7 +203,7 @@ class _DialogFooter extends StatelessWidget {
           final messenger = ScaffoldMessenger.maybeOf(context);
           Navigator.of(context).pop();
           messenger?.showSnackBar(
-            SnackBar(content: Text(StringConstant.addMemberSubmitSuccessMessage)),
+            SnackBar(content: Text(_successSnackbarText(state))),
           );
         } else if (state.status == AddMemberSubmitStatus.failure) {
           final messenger = ScaffoldMessenger.maybeOf(context);

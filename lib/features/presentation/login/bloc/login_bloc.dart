@@ -88,7 +88,6 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
       final response = await _authRepository.login(
         email: state.email.trim(),
         password: state.password,
-        isAdmin: true
       );
       _persistLoginSession(
         response: response,
@@ -101,6 +100,16 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           emailError: null,
           passwordError: null,
           errorMessage: null,
+        ),
+      );
+    } on AuthValidationException catch (e) {
+      // 422 — route per-field server errors to the matching inputs.
+      emit(
+        state.copyWith(
+          status: LoginStatus.initial,
+          emailError: e.fieldErrors['email'],
+          passwordError: e.fieldErrors['password'],
+          errorMessage: e.fieldErrors.isEmpty ? e.message : null,
         ),
       );
     } on AuthException catch (e) {
@@ -136,4 +145,5 @@ void _persistLoginSession({
     SharedPrefUtilsKeys.userRole,
     data.user.role.trim().toLowerCase(),
   );
+  SharedPrefUtils.setValue(SharedPrefUtilsKeys.tokenVersion, data.user.tokenVersion);
 }

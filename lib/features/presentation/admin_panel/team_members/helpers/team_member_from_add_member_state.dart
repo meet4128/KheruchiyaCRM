@@ -65,8 +65,23 @@ String _dojString(AddMemberState state) {
 }
 
 /// Builds a list row model after a successful **create** (new id).
+///
+/// Default invite stamping mirrors the backend behaviour:
+///   - If the backend actually sent the invite ([InviteResultDto.sent] is
+///     true) we mark the row `pending` so the row pill / Resend affordance
+///     appears immediately.
+///   - If the admin opted out of sending right now (`sendInvite: false`) we
+///     still mark `pending` — the member doesn't have a password yet, the
+///     admin will resend later. Same UX.
 TeamMemberUiModel teamMemberUiModelForNewMember(AddMemberState state) {
   final id = 'm_${DateTime.now().microsecondsSinceEpoch}';
+  final invite = state.lastInviteResult;
+  final inviteSentAt = invite?.expiresAt != null
+      // Backend's `expiresAt` is +72h from issuance, so the issuance time is
+      // a close-enough stand-in for "last sent at" until we wire the real
+      // value from the response.
+      ? DateTime.tryParse(invite!.expiresAt!)?.subtract(const Duration(hours: 72))
+      : null;
   return TeamMemberUiModel(
     id: id,
     name: _displayName(state),
@@ -74,11 +89,21 @@ TeamMemberUiModel teamMemberUiModelForNewMember(AddMemberState state) {
     email: state.personalEmail.trim(),
     status: TeamMemberStatus.online,
     department: displayDepartmentFromRoleRows(state.roleRows),
+    invitationStatus: TeamMemberInvitationStatus.pending,
+    lastInviteSentAt: inviteSentAt,
   );
 }
 
 /// Builds a list row model after a successful **update** (keeps [memberId]).
-TeamMemberUiModel teamMemberUiModelForUpdatedMember(AddMemberState state, String memberId) {
+///
+/// Edit flow doesn't touch invite status — caller passes the previous value
+/// through so we don't stamp a stale `unknown` over a real `active` flag.
+TeamMemberUiModel teamMemberUiModelForUpdatedMember(
+  AddMemberState state,
+  String memberId, {
+  TeamMemberInvitationStatus invitationStatus = TeamMemberInvitationStatus.unknown,
+  DateTime? lastInviteSentAt,
+}) {
   return TeamMemberUiModel(
     id: memberId,
     name: _displayName(state),
@@ -86,5 +111,7 @@ TeamMemberUiModel teamMemberUiModelForUpdatedMember(AddMemberState state, String
     email: state.personalEmail.trim(),
     status: TeamMemberStatus.online,
     department: displayDepartmentFromRoleRows(state.roleRows),
+    invitationStatus: invitationStatus,
+    lastInviteSentAt: lastInviteSentAt,
   );
 }

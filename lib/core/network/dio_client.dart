@@ -7,6 +7,15 @@ import 'package:travel_crm/data/models/auth/auth_tokens_response.dart';
 import '../utils/shared_pref_utils.dart';
 import 'apis.dart';
 
+/// Bumps every time a refresh-token attempt fails (or the retry that
+/// followed a successful refresh still came back 401). The router watches
+/// this via [GoRouter.refreshListenable] so it can bounce to `/login`
+/// without each caller having to special-case session expiry.
+///
+/// Implementation detail: a [ValueNotifier<int>] keeps things trivially
+/// listenable from GoRouter while avoiding stream wiring.
+final ValueNotifier<int> sessionExpiredNotifier = ValueNotifier<int>(0);
+
 class DioClient {
   static final Dio _dio = Dio(BaseOptions(baseUrl: Apis.baseUrl));
   static const String contentType = 'application/json';
@@ -18,11 +27,24 @@ class DioClient {
     return _dio;
   }
 
-  /// True if this request should send Authorization Bearer (excludes login, forgotPassword, refresh).
+  /// True if this request should send Authorization Bearer.
+  ///
+  /// Public flows that must NEVER carry a stale Bearer (would let the server
+  /// short-circuit anti-enumeration / rate-limit logic incorrectly):
+  /// - login / refresh-token (existing)
+  /// - forgot-password / token validate / set-password / reset-password
+  ///
+  /// Note: [AuthRepository] uses a fresh `Dio` instance for the public auth
+  /// flows, so in practice these paths never hit this interceptor — the
+  /// whitelist below is defensive in case someone wires a public endpoint
+  /// through the global client by mistake.
   static bool _needsAuth(String uri) {
-    // Exclude inquiry-auth login too (no Bearer for this call).
     if (uri.contains(Apis.inquiryAuthLoginPath)) return false;
     if (uri.contains(Apis.inquiryAuthRefreshTokenPath)) return false;
+    if (uri.contains(Apis.inquiryAuthForgotPasswordPath)) return false;
+    if (uri.contains(Apis.inquiryAuthTokenValidatePath)) return false;
+    if (uri.contains(Apis.inquiryAuthSetPasswordPath)) return false;
+    if (uri.contains(Apis.inquiryAuthResetPasswordPath)) return false;
     return uri != Apis.login &&
         uri != Apis.forgotPassword &&
         uri != Apis.refreshTokenUrl;
@@ -66,16 +88,29 @@ class DioClient {
                 try {
                   final response = await _dio.fetch(opts);
                   return handler.resolve(response);
+                } on DioException catch (retryError) {
+                  // Refresh succeeded but the retried request is still 401
+                  // → backend has invalidated this session (most likely a
+                  // tokenVersion bump from a forced reset). Treat exactly
+                  // like a refresh failure: drop the session.
+                  if (retryError.response?.statusCode == 401) {
+                    await _clearSession();
+                    sessionExpiredNotifier.value++;
+                  }
+                  return handler.next(retryError);
                 } catch (retryError) {
-                  return handler.next(retryError is DioException
-                      ? retryError
-                      : DioException(
-                          requestOptions: e.requestOptions,
-                          error: retryError,
-                        ));
+                  return handler.next(DioException(
+                    requestOptions: e.requestOptions,
+                    error: retryError,
+                  ));
                 }
               }
             }
+            // Refresh-token call itself failed or returned no usable token
+            // → session is dead. Wipe local creds and signal the router so
+            // it can bounce to /login on the next redirect tick.
+            await _clearSession();
+            sessionExpiredNotifier.value++;
           }
           return handler.next(e);
         },
@@ -87,6 +122,17 @@ class DioClient {
       requestBody: true,
       logPrint: (object) => log(object.toString()),
     ));
+  }
+
+  /// Wipes locally cached auth state on a confirmed session-expiry signal.
+  /// Keeps non-auth prefs alive (theme, etc.) by removing keys individually
+  /// instead of `clearSharedPref()` so the app doesn't lose unrelated state.
+  static Future<void> _clearSession() async {
+    SharedPrefUtils.removeValue(SharedPrefUtilsKeys.userToken);
+    SharedPrefUtils.removeValue(SharedPrefUtilsKeys.refreshToken);
+    SharedPrefUtils.removeValue(SharedPrefUtilsKeys.userRole);
+    SharedPrefUtils.removeValue(SharedPrefUtilsKeys.tokenVersion);
+    SharedPrefUtils.removeValue(SharedPrefUtilsKeys.isLoggedIn);
   }
 
   /// Calls inquiry refresh-token API using stored refreshToken, saves new access token.

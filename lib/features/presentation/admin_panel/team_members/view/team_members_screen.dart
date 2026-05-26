@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/theme/app_colors.dart';
 import 'package:travel_crm/data/repositories/members_repository.dart';
 import 'package:travel_crm/di/injector.dart';
@@ -21,12 +22,30 @@ class TeamMembersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => TeamMembersBloc(sl<MembersRepository>())..add(const TeamMembersFetched()),
-      child: Builder(
-        builder: (context) {
-          return Container(
-            color: AppColors.dark().backgroundDark,
-            padding: const EdgeInsets.all(24),
-            child: ListView(
+      child: BlocListener<TeamMembersBloc, TeamMembersState>(
+        listenWhen: (previous, current) =>
+            previous.resendInviteResult != current.resendInviteResult &&
+            current.resendInviteResult != null,
+        listener: (context, state) {
+          final result = state.resendInviteResult;
+          if (result == null) return;
+          final text = result.success
+              ? (result.sentTo?.isNotEmpty == true
+                  ? '${StringConstant.teamMembersInviteResentMessage} (${result.sentTo})'
+                  : StringConstant.teamMembersInviteResentMessage)
+              : (result.message ?? StringConstant.teamMembersInviteResendFailed);
+          final messenger = ScaffoldMessenger.maybeOf(context);
+          messenger?.showSnackBar(SnackBar(content: Text(text)));
+          context
+              .read<TeamMembersBloc>()
+              .add(const TeamMembersResendInviteConsumed());
+        },
+        child: Builder(
+          builder: (context) {
+            return Container(
+              color: AppColors.dark().backgroundDark,
+              padding: const EdgeInsets.all(24),
+              child: ListView(
               children: [
                 TeamMembersHeader(onAddMembersTap: () => _openAddMemberDialog(context, null)),
                 SizedBox(height: 18),
@@ -143,7 +162,8 @@ class TeamMembersScreen extends StatelessWidget {
               ],
             ),
           );
-        },
+          },
+        ),
       ),
     );
   }
@@ -182,12 +202,27 @@ class TeamMembersScreen extends StatelessWidget {
             onMemberSaved: (addState) {
               final sections = teamSectionsFromRoleRows(addState.roleRows);
               if (addState.editingMemberId != null) {
+                // Preserve invite state across an edit (PATCH never touches it).
+                TeamMemberInvitationStatus priorInviteStatus =
+                    TeamMemberInvitationStatus.unknown;
+                DateTime? priorLastInviteSentAt;
+                for (final list in teamMembersBloc.state.membersBySection.values) {
+                  for (final m in list) {
+                    if (m.id == addState.editingMemberId) {
+                      priorInviteStatus = m.invitationStatus;
+                      priorLastInviteSentAt = m.lastInviteSentAt;
+                      break;
+                    }
+                  }
+                }
                 teamMembersBloc.add(
                   TeamMemberUpdated(
                     memberId: addState.editingMemberId!,
                     updated: teamMemberUiModelForUpdatedMember(
                       addState,
                       addState.editingMemberId!,
+                      invitationStatus: priorInviteStatus,
+                      lastInviteSentAt: priorLastInviteSentAt,
                     ),
                     sections: sections,
                   ),

@@ -7,6 +7,53 @@ enum EmploymentStatusFilter { active, inactive, all }
 
 enum TeamSection { admin, sales, purchase, accounts }
 
+/// Server-side invitation status returned in `GET /members`.
+///
+/// - [active]   → member has completed `set-password`. Normal row, no pill.
+/// - [pending]  → backend has issued an invite token but it hasn't been
+///   consumed. Show the "Invite pending" pill + "Resend invite" affordance.
+/// - [disabled] → admin has disabled the account. Show a "Disabled" pill;
+///   no resend affordance.
+/// - [unknown]  → backend didn't include the field (legacy row created before
+///   the migration). Treated visually like [active] so we don't accidentally
+///   flag every old row as "pending".
+enum TeamMemberInvitationStatus { active, pending, disabled, unknown }
+
+extension TeamMemberInvitationStatusX on TeamMemberInvitationStatus {
+  /// Parser tolerant of unknown / null values.
+  static TeamMemberInvitationStatus fromString(String? value) {
+    switch ((value ?? '').trim().toLowerCase()) {
+      case 'active':
+        return TeamMemberInvitationStatus.active;
+      case 'pending':
+        return TeamMemberInvitationStatus.pending;
+      case 'disabled':
+        return TeamMemberInvitationStatus.disabled;
+      default:
+        return TeamMemberInvitationStatus.unknown;
+    }
+  }
+}
+
+/// One-shot result of a resend-invite call; the screen consumes this via
+/// [BlocListener] to show a SnackBar then clears it from state.
+class TeamMembersResendInviteResult extends Equatable {
+  const TeamMembersResendInviteResult({
+    required this.memberId,
+    required this.success,
+    this.message,
+    this.sentTo,
+  });
+
+  final String memberId;
+  final bool success;
+  final String? message;
+  final String? sentTo;
+
+  @override
+  List<Object?> get props => [memberId, success, message, sentTo];
+}
+
 enum TeamCategoryTab {
   all,
   flight,
@@ -80,6 +127,8 @@ class TeamMemberUiModel extends Equatable {
     required this.email,
     required this.status,
     this.department = '',
+    this.invitationStatus = TeamMemberInvitationStatus.unknown,
+    this.lastInviteSentAt,
   });
 
   final String id;
@@ -88,9 +137,48 @@ class TeamMemberUiModel extends Equatable {
   final String email;
   final TeamMemberStatus status;
   final String department;
+  final TeamMemberInvitationStatus invitationStatus;
+  final DateTime? lastInviteSentAt;
+
+  bool get isInvitePending =>
+      invitationStatus == TeamMemberInvitationStatus.pending;
+
+  TeamMemberUiModel copyWith({
+    String? id,
+    String? name,
+    String? doj,
+    String? email,
+    TeamMemberStatus? status,
+    String? department,
+    TeamMemberInvitationStatus? invitationStatus,
+    DateTime? lastInviteSentAt,
+    bool clearLastInviteSentAt = false,
+  }) {
+    return TeamMemberUiModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      doj: doj ?? this.doj,
+      email: email ?? this.email,
+      status: status ?? this.status,
+      department: department ?? this.department,
+      invitationStatus: invitationStatus ?? this.invitationStatus,
+      lastInviteSentAt: clearLastInviteSentAt
+          ? null
+          : (lastInviteSentAt ?? this.lastInviteSentAt),
+    );
+  }
 
   @override
-  List<Object?> get props => [id, name, doj, email, status, department];
+  List<Object?> get props => [
+        id,
+        name,
+        doj,
+        email,
+        status,
+        department,
+        invitationStatus,
+        lastInviteSentAt,
+      ];
 }
 
 class TopPerformerUiModel extends Equatable {
@@ -120,6 +208,8 @@ class TeamMembersState extends Equatable {
     this.totalPages = 1,
     this.employmentStatusFilter = EmploymentStatusFilter.active,
     this.errorMessage,
+    this.resendingMemberIds = const <String>{},
+    this.resendInviteResult,
   });
 
   final Map<TeamSection, List<TeamMemberUiModel>> membersBySection;
@@ -134,6 +224,14 @@ class TeamMembersState extends Equatable {
   final int totalPages;
   final EmploymentStatusFilter employmentStatusFilter;
   final String? errorMessage;
+
+  /// IDs of members currently mid-resend. Drives per-row spinner.
+  final Set<String> resendingMemberIds;
+
+  /// One-shot result for a resend (success or specific failure). The screen
+  /// listens for non-null values, renders a SnackBar, then dispatches
+  /// `TeamMembersResendInviteConsumed` to clear it.
+  final TeamMembersResendInviteResult? resendInviteResult;
 
   bool get hasMorePages => currentPage < totalPages;
 
@@ -151,6 +249,9 @@ class TeamMembersState extends Equatable {
     EmploymentStatusFilter? employmentStatusFilter,
     String? errorMessage,
     bool clearError = false,
+    Set<String>? resendingMemberIds,
+    TeamMembersResendInviteResult? resendInviteResult,
+    bool clearResendInviteResult = false,
   }) {
     return TeamMembersState(
       membersBySection: membersBySection ?? this.membersBySection,
@@ -166,6 +267,10 @@ class TeamMembersState extends Equatable {
       totalPages: totalPages ?? this.totalPages,
       employmentStatusFilter: employmentStatusFilter ?? this.employmentStatusFilter,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      resendingMemberIds: resendingMemberIds ?? this.resendingMemberIds,
+      resendInviteResult: clearResendInviteResult
+          ? null
+          : (resendInviteResult ?? this.resendInviteResult),
     );
   }
 
@@ -183,5 +288,7 @@ class TeamMembersState extends Equatable {
         totalPages,
         employmentStatusFilter,
         errorMessage,
+        resendingMemberIds,
+        resendInviteResult,
       ];
 }

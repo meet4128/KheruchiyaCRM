@@ -90,6 +90,22 @@ class TeamMemberAdded extends TeamMembersEvent {
   List<Object?> get props => [member, sections];
 }
 
+/// Admin clicked "Resend invite" on a pending row.
+class TeamMemberResendInviteRequested extends TeamMembersEvent {
+  const TeamMemberResendInviteRequested(this.memberId);
+
+  final String memberId;
+
+  @override
+  List<Object?> get props => [memberId];
+}
+
+/// Screen consumed the transient `resendInviteResult` SnackBar — clear it so
+/// the same SnackBar doesn't reappear on the next rebuild.
+class TeamMembersResendInviteConsumed extends TeamMembersEvent {
+  const TeamMembersResendInviteConsumed();
+}
+
 /// Existing member updated from the wizard; [sections] is where they should appear after save.
 class TeamMemberUpdated extends TeamMembersEvent {
   const TeamMemberUpdated({

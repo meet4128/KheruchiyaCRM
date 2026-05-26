@@ -3,7 +3,9 @@ import 'dart:developer' as developer;
 import 'package:dio/dio.dart';
 import 'package:travel_crm/core/network/inquiry_api_client.dart';
 import 'package:travel_crm/data/models/members/create_member_request.dart';
+import 'package:travel_crm/data/models/members/create_member_response.dart';
 import 'package:travel_crm/data/models/members/list_members_response.dart';
+import 'package:travel_crm/data/models/members/resend_invite_response.dart';
 import 'package:travel_crm/data/models/members/update_member_request.dart';
 
 class MembersRepository {
@@ -11,11 +13,17 @@ class MembersRepository {
 
   final InquiryApiClient _apiClient;
 
-  Future<void> createMember(CreateMemberRequest request) async {
+  /// Creates a new member and (depending on [CreateMemberRequest.sendInvite])
+  /// triggers the invite email. The returned envelope carries both the new
+  /// member record and the [InviteResultDto] describing the email outcome —
+  /// the caller surfaces "Invite sent to …" / "Member created, click resend"
+  /// snackbars based on `response.data.invite.sent`.
+  Future<CreateMemberResponse> createMember(CreateMemberRequest request) async {
     try {
-      await _apiClient.createMember(request);
+      return await _apiClient.createMember(request);
     } on DioException catch (e) {
       _handleDio(e, 'MembersRepository.createMember');
+      rethrow;
     }
   }
 
@@ -24,6 +32,19 @@ class MembersRepository {
       await _apiClient.updateMember(id, request);
     } on DioException catch (e) {
       _handleDio(e, 'MembersRepository.updateMember');
+    }
+  }
+
+  /// Re-issues the invite token for [memberId] and emails the new link via
+  /// the backend's configured email provider. Throws the same typed
+  /// exceptions as create (`409 already-active`, `429 rate-limited`,
+  /// `404 not-found`) so the team-list UI can render specific copy.
+  Future<ResendInviteResponse> resendInvite(String memberId) async {
+    try {
+      return await _apiClient.resendMemberInvite(memberId);
+    } on DioException catch (e) {
+      _handleResendInviteDio(e);
+      rethrow;
     }
   }
 
@@ -61,6 +82,37 @@ class MembersRepository {
     throw MembersApiException(
       e.message?.isNotEmpty == true ? e.message! : 'Could not reach the server. Try again.',
     );
+  }
+
+  /// Resend-invite has a richer error contract than the rest (409 / 429 /
+  /// 404 each map to specific UX), so it gets its own translator.
+  void _handleResendInviteDio(DioException e) {
+    const logName = 'MembersRepository.resendInvite';
+    final status = e.response?.statusCode;
+    final body = e.response?.data;
+    switch (status) {
+      case 401:
+        developer.log('401 Unauthorized', name: logName);
+        throw MembersUnauthorizedException();
+      case 403:
+        throw MembersUnauthorizedException();
+      case 404:
+        throw MembersNotFoundException();
+      case 409:
+        throw MembersAlreadyActiveException(
+          _parseValidationError(body),
+        );
+      case 422:
+        throw MembersValidationException(_parseValidationError(body));
+      case 429:
+        throw MembersRateLimitedException();
+      default:
+        throw MembersApiException(
+          e.message?.isNotEmpty == true
+              ? e.message!
+              : 'Could not reach the server. Try again.',
+        );
+    }
   }
 
   static String _parseValidationError(dynamic data) {
@@ -107,6 +159,41 @@ class MembersValidationException implements Exception {
 
 class MembersApiException implements Exception {
   MembersApiException(this.message);
+  final String message;
+  @override
+  String toString() => message;
+}
+
+/// 409 from `POST /members/:id/invitations/resend` — the member already
+/// activated their account via a previous invite. Surface as
+/// "This member already set their password."
+class MembersAlreadyActiveException implements Exception {
+  MembersAlreadyActiveException([
+    this.message = 'This member already set their password.',
+  ]);
+  final String message;
+  @override
+  String toString() => message;
+}
+
+/// 429 from `POST /members/:id/invitations/resend` — admin tripped the
+/// per-member / per-IP resend rate limit. Disable the icon briefly and
+/// show a quiet "wait a moment" message.
+class MembersRateLimitedException implements Exception {
+  MembersRateLimitedException([
+    this.message = 'Wait a moment before resending again.',
+  ]);
+  final String message;
+  @override
+  String toString() => message;
+}
+
+/// 404 from a member-scoped endpoint — id no longer maps to a record.
+/// (Could happen if the list cache is stale.)
+class MembersNotFoundException implements Exception {
+  MembersNotFoundException([
+    this.message = 'Member not found. Refresh and try again.',
+  ]);
   final String message;
   @override
   String toString() => message;
