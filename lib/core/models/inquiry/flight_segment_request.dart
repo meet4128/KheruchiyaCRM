@@ -4,13 +4,16 @@ import 'airport_code_model.dart';
 
 part 'flight_segment_request.g.dart';
 
+/// One leg in `airTicket.flightSegments` on `POST /api/v1/inquiries`.
+///
+/// Round-trip is modeled as **two** segments (outbound + return), not a single
+/// segment with `returnDate`.
 @JsonSerializable(explicitToJson: true)
 class FlightSegmentRequest {
   const FlightSegmentRequest({
     required this.from,
     required this.to,
     required this.departureDate,
-    this.returnDate,
     required this.travellerCount,
     required this.travelClass,
   });
@@ -23,8 +26,6 @@ class FlightSegmentRequest {
   final AirportCodeModel from;
   final AirportCodeModel to;
   final String departureDate;
-  @JsonKey(includeIfNull: false)
-  final String? returnDate;
   final int travellerCount;
   final String travelClass;
 }

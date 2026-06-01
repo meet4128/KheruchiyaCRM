@@ -74,7 +74,10 @@ String _dojString(AddMemberState state) {
 ///     still mark `pending` — the member doesn't have a password yet, the
 ///     admin will resend later. Same UX.
 TeamMemberUiModel teamMemberUiModelForNewMember(AddMemberState state) {
-  final id = 'm_${DateTime.now().microsecondsSinceEpoch}';
+  final serverId = (state.lastCreatedMemberId ?? '').trim();
+  final id = serverId.isNotEmpty
+      ? serverId
+      : 'm_${DateTime.now().microsecondsSinceEpoch}';
   final invite = state.lastInviteResult;
   final inviteSentAt = invite?.expiresAt != null
       // Backend's `expiresAt` is +72h from issuance, so the issuance time is

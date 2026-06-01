@@ -528,6 +528,74 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     return date.toUtc().toIso8601String();
   }
 
+  /// Builds `airTicket.flightSegments` for the inquiries API.
+  ///
+  /// - **One way:** one segment (from → to).
+  /// - **Round trip:** two segments — outbound, then return (to → from) using
+  ///   [AirTicketState.returnDate] as the second leg's `departureDate`.
+  /// - **Multi city:** outbound segment plus each extra city row.
+  List<FlightSegmentRequest> _buildFlightSegmentsPayload(AirTicketState state) {
+    final travelClass = state.classType.isNotEmpty ? state.classType : 'Economy';
+    final count = state.travellerCount;
+
+    final outbound = _flightSegmentRequest(
+      fromRaw: state.from,
+      toRaw: state.to,
+      departure: state.departureDate,
+      travellerCount: count,
+      travelClass: travelClass,
+    );
+
+    switch (state.bookingType) {
+      case AirTicketBookingType.roundTrip:
+        return [
+          outbound,
+          _flightSegmentRequest(
+            fromRaw: state.to,
+            toRaw: state.from,
+            departure: state.returnDate,
+            travellerCount: count,
+            travelClass: travelClass,
+          ),
+        ];
+      case AirTicketBookingType.multiCity:
+        final segments = <FlightSegmentRequest>[outbound];
+        for (final seg in state.flightSegments) {
+          segments.add(
+            _flightSegmentRequest(
+              fromRaw: seg.from,
+              toRaw: seg.to,
+              departure: seg.departureDate,
+              travellerCount: count,
+              travelClass: travelClass,
+            ),
+          );
+        }
+        return segments;
+      case AirTicketBookingType.oneWay:
+      case null:
+        return [outbound];
+    }
+  }
+
+  FlightSegmentRequest _flightSegmentRequest({
+    required String fromRaw,
+    required String toRaw,
+    required DateTime? departure,
+    required int travellerCount,
+    required String travelClass,
+  }) {
+    final from = _parseAirport(fromRaw);
+    final to = _parseAirport(toRaw);
+    return FlightSegmentRequest(
+      from: AirportCodeModel(code: from.code, city: from.city),
+      to: AirportCodeModel(code: to.code, city: to.city),
+      departureDate: _toIso8601(departure),
+      travellerCount: travellerCount,
+      travelClass: travelClass,
+    );
+  }
+
   /// POST body `checklist`: each `{ user, dueDate, priority, category }` (no inLoop/repeat).
   List<dynamic> _buildChecklistPayload(AirTicketState state) {
     final out = <Map<String, dynamic>>[];
@@ -582,35 +650,9 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     AirTicketState state,
     dynamic inquiryState,
   ) {
-    final from = _parseAirport(state.from);
-    final to = _parseAirport(state.to);
-
-    final firstSegment = FlightSegmentRequest(
-      from: AirportCodeModel(code: from.code, city: from.city),
-      to: AirportCodeModel(code: to.code, city: to.city),
-      departureDate: _toIso8601(state.departureDate),
-      returnDate: state.returnDate != null ? _toIso8601(state.returnDate) : null,
-      travellerCount: state.travellerCount,
-      travelClass: state.classType.isNotEmpty ? state.classType : 'Economy',
-    );
-
-    final segments = <FlightSegmentRequest>[firstSegment];
-    for (final seg in state.flightSegments) {
-      final segFrom = _parseAirport(seg.from);
-      final segTo = _parseAirport(seg.to);
-      segments.add(FlightSegmentRequest(
-        from: AirportCodeModel(code: segFrom.code, city: segFrom.city),
-        to: AirportCodeModel(code: segTo.code, city: segTo.city),
-        departureDate: seg.departureDate != null ? _toIso8601(seg.departureDate) : '',
-        returnDate: seg.returnDate != null ? _toIso8601(seg.returnDate) : null,
-        travellerCount: state.travellerCount,
-        travelClass: state.classType.isNotEmpty ? state.classType : 'Economy',
-      ));
-    }
-
     final airTicket = AirTicketRequest(
       bookingType: _bookingTypeToApi(state.bookingType),
-      flightSegments: segments,
+      flightSegments: _buildFlightSegmentsPayload(state),
       typeOfVisa: state.requiresVisaSelection ? (state.visaType?.label ?? '') : '',
       remark: state.remark,
     );

@@ -276,6 +276,33 @@ class AddMemberBloc extends Bloc<AddMemberEvent, AddMemberState> {
 
   Future<void> _onSubmitPressed(AddMemberSubmitPressed event, Emitter<AddMemberState> emit) async {
     final officePhoneError = AppTextFieldValidators.phone(state.officePhoneNumber);
+    final firstNameError = AppTextFieldValidators.required(
+      state.firstName,
+      message: 'First name is required',
+    );
+    final lastNameError = AppTextFieldValidators.required(
+      state.lastName,
+      message: 'Last name is required',
+    );
+    final employeeIdError = AppTextFieldValidators.required(
+      state.employeeId,
+      message: 'Employee ID is required',
+    );
+    final designationError = AppTextFieldValidators.required(
+      state.designation,
+      message: 'Designation is required',
+    );
+    final employmentStatusError = AppTextFieldValidators.required(
+      state.employmentStatus,
+      message: 'Employment status is required',
+    );
+    final dateOfJoiningError =
+        state.dateOfJoining == null ? 'Date of joining is required' : null;
+    final hasCompleteRoleRow = state.roleRows.any(
+      (row) => row.department.trim().isNotEmpty && row.role.trim().isNotEmpty,
+    );
+    final roleRowsError =
+        hasCompleteRoleRow ? null : 'Select at least one department and role';
 
     // Custom invite email is only validated on the CREATE flow when the admin
     // (a) chose to send an invite AND (b) picked "Other".
@@ -287,16 +314,28 @@ class AddMemberBloc extends Bloc<AddMemberEvent, AddMemberState> {
         ? AppTextFieldValidators.email(state.customInviteEmail.trim())
         : null;
 
-    if (officePhoneError != null || customInviteEmailError != null) {
+    final hasError = [
+      officePhoneError,
+      firstNameError,
+      lastNameError,
+      employeeIdError,
+      designationError,
+      employmentStatusError,
+      dateOfJoiningError,
+      roleRowsError,
+      customInviteEmailError,
+    ].any((e) => e != null);
+
+    if (hasError) {
       emit(
         state.copyWith(
-          firstNameError: null,
-          lastNameError: null,
-          employeeIdError: null,
-          designationError: null,
-          employmentStatusError: null,
-          dateOfJoiningError: null,
-          roleRowsError: null,
+          firstNameError: firstNameError,
+          lastNameError: lastNameError,
+          employeeIdError: employeeIdError,
+          designationError: designationError,
+          employmentStatusError: employmentStatusError,
+          dateOfJoiningError: dateOfJoiningError,
+          roleRowsError: roleRowsError,
           officePhoneNumberError: officePhoneError,
           customInviteEmailError: customInviteEmailError,
           status: AddMemberSubmitStatus.invalid,
@@ -310,6 +349,7 @@ class AddMemberBloc extends Bloc<AddMemberEvent, AddMemberState> {
         status: AddMemberSubmitStatus.submitting,
         clearSubmitErrorMessage: true,
         clearLastInviteResult: true,
+        clearLastCreatedMemberId: true,
         firstNameError: null,
         lastNameError: null,
         employeeIdError: null,
@@ -338,15 +378,25 @@ class AddMemberBloc extends Bloc<AddMemberEvent, AddMemberState> {
         final response =
             await _membersRepository.createMember(mapStateToCreateRequest(state));
         if (isClosed) return;
+        final createdId = (response.data.member.id ?? '').trim();
         emit(
           state.copyWith(
             status: AddMemberSubmitStatus.success,
             clearSubmitErrorMessage: true,
             lastInviteResult: response.data.invite,
+            lastCreatedMemberId: createdId.isEmpty ? null : createdId,
           ),
         );
       }
       return;
+    } on MembersConflictException catch (e) {
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          status: AddMemberSubmitStatus.failure,
+          submitErrorMessage: e.message,
+        ),
+      );
     } on MembersValidationException catch (e) {
       if (isClosed) return;
       emit(

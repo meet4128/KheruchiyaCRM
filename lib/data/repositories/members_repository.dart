@@ -70,14 +70,23 @@ class MembersRepository {
   }
 
   void _handleDio(DioException e, String logName) {
-    if (e.response?.statusCode == 401) {
+    final status = e.response?.statusCode;
+    final body = e.response?.data;
+    if (status == 401) {
       developer.log('401 Unauthorized', name: logName);
       throw MembersUnauthorizedException();
     }
-    if (e.response?.statusCode == 422 && e.response?.data != null) {
-      final data = e.response!.data;
-      developer.log('422 response: $data', name: logName);
-      throw MembersValidationException(_parseValidationError(data));
+    if (status == 409) {
+      developer.log('409 Conflict: $body', name: logName);
+      throw MembersConflictException(_parseValidationError(body));
+    }
+    if (status == 422 && body != null) {
+      developer.log('422 response: $body', name: logName);
+      throw MembersValidationException(_parseValidationError(body));
+    }
+    if (status == 400 && body != null) {
+      developer.log('400 response: $body', name: logName);
+      throw MembersApiException(_parseValidationError(body));
     }
     throw MembersApiException(
       e.message?.isNotEmpty == true ? e.message! : 'Could not reach the server. Try again.',
@@ -98,6 +107,8 @@ class MembersRepository {
         throw MembersUnauthorizedException();
       case 404:
         throw MembersNotFoundException();
+      case 400:
+        throw MembersApiException(_parseValidationError(body));
       case 409:
         throw MembersAlreadyActiveException(
           _parseValidationError(body),
@@ -152,6 +163,14 @@ class MembersUnauthorizedException implements Exception {
 
 class MembersValidationException implements Exception {
   MembersValidationException(this.message);
+  final String message;
+  @override
+  String toString() => message;
+}
+
+/// 409 from `POST /members` — duplicate `employeeId` or `personalEmail`.
+class MembersConflictException implements Exception {
+  MembersConflictException(this.message);
   final String message;
   @override
   String toString() => message;

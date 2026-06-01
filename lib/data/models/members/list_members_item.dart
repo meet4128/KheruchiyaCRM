@@ -21,7 +21,14 @@ class ListMembersItem {
     this.lastInviteSentAt,
   });
 
-  factory ListMembersItem.fromJson(Map<String, dynamic> json) => _$ListMembersItemFromJson(json);
+  factory ListMembersItem.fromJson(Map<String, dynamic> json) {
+    // Some endpoints return Mongo `_id`, others expose a plain `id` alias.
+    final normalized = Map<String, dynamic>.from(json);
+    if (normalized['_id'] == null && normalized['id'] != null) {
+      normalized['_id'] = normalized['id'];
+    }
+    return _$ListMembersItemFromJson(normalized);
+  }
 
   Map<String, dynamic> toJson() => _$ListMembersItemToJson(this);
 

@@ -33,7 +33,7 @@ class CreateMemberRequest {
     this.aadharDocumentUrl,
     this.panDocumentUrl,
     this.cancelChequeDocumentUrl,
-    this.sendInvite,
+    this.sendInvite = true,
     this.inviteEmail,
   });
 
@@ -67,9 +67,8 @@ class CreateMemberRequest {
   final String? cancelChequeDocumentUrl;
 
   /// Whether the backend should also send the invite email synchronously.
-  /// Omitting it (`null`) means "use server default" which is currently `true`.
-  /// Send `false` only when the admin explicitly opted out of the invite email.
-  final bool? sendInvite;
+  /// Always sent explicitly so the server never mis-reads omitted fields.
+  final bool sendInvite;
 
   /// Override email for the invite link. When omitted the backend defaults to
   /// [personalEmail]. We only send a non-null value when the admin chose

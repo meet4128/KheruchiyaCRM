@@ -108,6 +108,7 @@ class AddMemberState extends Equatable {
     this.customInviteEmailError,
     this.sendInvite = true,
     this.lastInviteResult,
+    this.lastCreatedMemberId,
     this.status = AddMemberSubmitStatus.initial,
     this.editingMemberId,
     this.submitErrorMessage,
@@ -178,6 +179,9 @@ class AddMemberState extends Equatable {
   /// created, click Resend …`). Null otherwise (e.g. PATCH on edit).
   final InviteResultDto? lastInviteResult;
 
+  /// Real server id from `POST /members` — used when stamping the team row.
+  final String? lastCreatedMemberId;
+
   final AddMemberSubmitStatus status;
 
   /// Server member id when opened from team table **Edit** (PATCH on submit).
@@ -247,6 +251,8 @@ class AddMemberState extends Equatable {
     bool? sendInvite,
     InviteResultDto? lastInviteResult,
     bool clearLastInviteResult = false,
+    String? lastCreatedMemberId,
+    bool clearLastCreatedMemberId = false,
     AddMemberSubmitStatus? status,
     String? editingMemberId,
     bool clearEditingMemberId = false,
@@ -309,6 +315,9 @@ class AddMemberState extends Equatable {
       sendInvite: sendInvite ?? this.sendInvite,
       lastInviteResult:
           clearLastInviteResult ? null : (lastInviteResult ?? this.lastInviteResult),
+      lastCreatedMemberId: clearLastCreatedMemberId
+          ? null
+          : (lastCreatedMemberId ?? this.lastCreatedMemberId),
       status: status ?? this.status,
       editingMemberId: clearEditingMemberId ? null : (editingMemberId ?? this.editingMemberId),
       submitErrorMessage: clearSubmitErrorMessage ? null : (submitErrorMessage ?? this.submitErrorMessage),
@@ -367,6 +376,7 @@ class AddMemberState extends Equatable {
         customInviteEmailError,
         sendInvite,
         lastInviteResult,
+        lastCreatedMemberId,
         status,
         editingMemberId,
         submitErrorMessage,

@@ -48,18 +48,25 @@ List<DepartmentRoleDto> _departmentRoles(AddMemberState state) {
       .toList();
 }
 
-CreateMemberRequest mapStateToCreateRequest(AddMemberState state) {
-  // Invite flags — backend defaults are `sendInvite: true` and
-  // `inviteEmail: <personalEmail>`. We only send these fields when the admin
-  // overrode the defaults, so the wire payload stays minimal in the common
-  // case and the backend's `includeIfNull: false` semantics work cleanly.
-  final bool? sendInviteOverride = state.sendInvite ? null : false;
-  String? inviteEmailOverride;
-  if (state.sendInvite &&
-      state.inviteEmailChoice == AddMemberInviteEmailChoice.custom) {
-    final trimmed = state.customInviteEmail.trim();
-    if (trimmed.isNotEmpty) inviteEmailOverride = trimmed;
+/// Resolves the inbox that should receive the invite link when [sendInvite]
+/// is true. Mirrors the backend curl example (`inviteEmail` set to the same
+/// address as `personalEmail` when using the default choice).
+String? _inviteEmailForRequest(AddMemberState state) {
+  if (!state.sendInvite) return null;
+  switch (state.inviteEmailChoice) {
+    case AddMemberInviteEmailChoice.custom:
+      final custom = state.customInviteEmail.trim();
+      return custom.isEmpty ? null : custom;
+    case AddMemberInviteEmailChoice.personal:
+    case AddMemberInviteEmailChoice.work:
+      final personal = state.personalEmail.trim();
+      return personal.isEmpty ? null : personal;
   }
+}
+
+CreateMemberRequest mapStateToCreateRequest(AddMemberState state) {
+  final sendInvite = state.sendInvite;
+  final inviteEmail = _inviteEmailForRequest(state);
 
   return CreateMemberRequest(
     fullName: state.fullName.trim(),
@@ -91,8 +98,8 @@ CreateMemberRequest mapStateToCreateRequest(AddMemberState state) {
     aadharDocumentUrl: null,
     panDocumentUrl: null,
     cancelChequeDocumentUrl: null,
-    sendInvite: sendInviteOverride,
-    inviteEmail: inviteEmailOverride,
+    sendInvite: sendInvite,
+    inviteEmail: inviteEmail,
   );
 }
 

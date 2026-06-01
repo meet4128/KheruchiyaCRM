@@ -318,7 +318,19 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
     TeamMemberResendInviteRequested event,
     Emitter<TeamMembersState> emit,
   ) async {
-    final memberId = event.memberId;
+    final memberId = event.memberId.trim();
+    if (memberId.isEmpty || memberId.startsWith('m_')) {
+      emit(
+        state.copyWith(
+          resendInviteResult: TeamMembersResendInviteResult(
+            memberId: memberId,
+            success: false,
+            message: StringConstant.teamMembersInviteResendFailed,
+          ),
+        ),
+      );
+      return;
+    }
     if (state.resendingMemberIds.contains(memberId)) {
       // Already in flight — ignore double taps.
       return;
