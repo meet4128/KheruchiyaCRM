@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/widgets/app_text_field.dart';
 import 'package:travel_crm/data/repositories/members_repository.dart';
 
+import '../../data/add_member_prefill_mapper.dart';
 import '../data/add_member_request_mapper.dart';
 import 'add_member_event.dart';
 import 'add_member_state.dart';
@@ -11,6 +13,7 @@ import 'add_member_state.dart';
 class AddMemberBloc extends Bloc<AddMemberEvent, AddMemberState> {
   AddMemberBloc(this._membersRepository) : super(const AddMemberState()) {
     on<AddMemberDialogOpened>(_onDialogOpened);
+    on<AddMemberMemberDetailRetryRequested>(_onMemberDetailRetry);
     on<AddMemberDialogClosed>(_onDialogClosed);
     on<AddMemberFullNameChanged>(_onFullNameChanged);
     on<AddMemberPersonalEmailChanged>(_onPersonalEmailChanged);
@@ -47,24 +50,115 @@ class AddMemberBloc extends Bloc<AddMemberEvent, AddMemberState> {
 
   final MembersRepository _membersRepository;
 
-  void _onDialogOpened(AddMemberDialogOpened event, Emitter<AddMemberState> emit) {
-    if (event.editingMemberId != null) {
+  Future<void> _onDialogOpened(
+    AddMemberDialogOpened event,
+    Emitter<AddMemberState> emit,
+  ) async {
+    final editingId = event.editingMemberId?.trim();
+    if (editingId == null || editingId.isEmpty) {
+      emit(const AddMemberState());
+      return;
+    }
+
+    if (editingId.startsWith('m_')) {
+      emit(
+        AddMemberState(
+          editingMemberId: editingId,
+          detailLoadStatus: AddMemberDetailLoadStatus.failure,
+          detailLoadErrorMessage: StringConstant.addMemberLoadMemberFailed,
+        ),
+      );
+      return;
+    }
+
+    final cached = event.listMemberPrefill;
+    if (cached != null) {
+      emit(
+        addMemberStateFromListMember(cached, editingMemberId: editingId).copyWith(
+          detailLoadStatus: AddMemberDetailLoadStatus.loading,
+          clearDetailLoadErrorMessage: true,
+        ),
+      );
+    } else {
       final name = (event.prefillFullName ?? '').trim();
       final parts = name.isEmpty ? <String>[] : name.split(RegExp(r'\s+'));
       final first = parts.isNotEmpty ? parts.first : '';
       final last = parts.length > 1 ? parts.sublist(1).join(' ') : '';
       emit(
         AddMemberState(
-          editingMemberId: event.editingMemberId,
+          editingMemberId: editingId,
           currentStep: AddMemberStep.operation,
           fullName: name,
           personalEmail: (event.prefillPersonalEmail ?? '').trim(),
           firstName: first,
           lastName: last,
+          detailLoadStatus: AddMemberDetailLoadStatus.loading,
         ),
       );
-    } else {
-      emit(const AddMemberState());
+    }
+
+    await _loadMemberDetail(editingId, emit);
+  }
+
+  Future<void> _onMemberDetailRetry(
+    AddMemberMemberDetailRetryRequested event,
+    Emitter<AddMemberState> emit,
+  ) async {
+    final editingId = state.editingMemberId?.trim();
+    if (editingId == null || editingId.isEmpty || editingId.startsWith('m_')) {
+      return;
+    }
+    emit(
+      state.copyWith(
+        detailLoadStatus: AddMemberDetailLoadStatus.loading,
+        clearDetailLoadErrorMessage: true,
+      ),
+    );
+    await _loadMemberDetail(editingId, emit);
+  }
+
+  Future<void> _loadMemberDetail(String editingId, Emitter<AddMemberState> emit) async {
+    try {
+      final response = await _membersRepository.getMember(editingId);
+      if (isClosed) return;
+      emit(
+        addMemberStateFromListMember(
+          response.data.member,
+          editingMemberId: editingId,
+        ),
+      );
+    } on MembersNotFoundException catch (e) {
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          detailLoadStatus: AddMemberDetailLoadStatus.failure,
+          detailLoadErrorMessage: e.message,
+        ),
+      );
+    } on MembersUnauthorizedException catch (e) {
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          detailLoadStatus: AddMemberDetailLoadStatus.failure,
+          detailLoadErrorMessage: e.toString(),
+        ),
+      );
+    } on MembersApiException catch (e) {
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          detailLoadStatus: AddMemberDetailLoadStatus.failure,
+          detailLoadErrorMessage: e.message,
+        ),
+      );
+    } catch (_) {
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          detailLoadStatus: AddMemberDetailLoadStatus.failure,
+          detailLoadErrorMessage: StringConstant.addMemberLoadMemberFailed,
+        ),
+      );
     }
   }
 
@@ -365,13 +459,17 @@ class AddMemberBloc extends Bloc<AddMemberEvent, AddMemberState> {
     try {
       final editingId = state.editingMemberId;
       if (editingId != null) {
-        await _membersRepository.updateMember(editingId, mapStateToUpdateRequest(state));
+        final response = await _membersRepository.updateMember(
+          editingId,
+          mapStateToUpdateRequest(state),
+        );
         if (isClosed) return;
         emit(
           state.copyWith(
             status: AddMemberSubmitStatus.success,
             clearSubmitErrorMessage: true,
             clearLastInviteResult: true,
+            lastUpdatedMember: response.data.member,
           ),
         );
       } else {

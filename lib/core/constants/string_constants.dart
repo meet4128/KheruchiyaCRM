@@ -494,6 +494,23 @@ class StringConstant {
   static const String teamMembersInviteStatusPending = 'Invite pending';
   static const String teamMembersInviteStatusDisabled = 'Disabled';
 
+  // ========== Team members — delete member ==========
+  static const String teamMembersDeleteConfirmTitle = 'Delete team member?';
+  static String teamMembersDeleteConfirmMessage(String name, String email) =>
+      'This will permanently remove $name${email.isNotEmpty ? ' ($email)' : ''}. '
+      'This action cannot be undone.';
+  static const String teamMembersDeleteConfirmButton = 'Delete member';
+  static const String teamMembersDeleteCancelButton = 'Cancel';
+  static const String teamMembersDeleteSuccessMessage = 'Member deleted.';
+  static const String teamMembersDeleteFailedMessage = 'Could not delete member.';
+  static const String addMemberDialogTitleEdit = 'Edit Member';
+  static const String addMemberLoadMemberFailed =
+      'Could not load member details. Try again.';
+  static const String addMemberLoadingMember = 'Loading member…';
+  static const String addMemberRetryLoadMember = 'Retry';
+  static const String addMemberSubmitSaveChanges = 'Save changes';
+  static const String addMemberUpdateSuccessMessage = 'Member updated successfully.';
+
   // ========== Auth — Generic / shared ==========
   static const String authInvalidCredentials = 'Invalid email or password.';
   static const String authTooManyAttempts =

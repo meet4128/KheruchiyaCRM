@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:travel_crm/data/models/members/list_members_item.dart';
 
 import 'add_member_state.dart';
 
@@ -12,17 +13,33 @@ abstract class AddMemberEvent extends Equatable {
 class AddMemberDialogOpened extends AddMemberEvent {
   const AddMemberDialogOpened({
     this.editingMemberId,
+    this.listMemberPrefill,
     this.prefillFullName,
     this.prefillPersonalEmail,
   });
 
   /// When set, submit uses PATCH `/api/v1/members/{id}` instead of POST create.
   final String? editingMemberId;
+
+  /// Optional list-row cache shown while `GET /members/:id` loads.
+  final ListMembersItem? listMemberPrefill;
+
+  /// Legacy fallbacks when [listMemberPrefill] is unavailable.
   final String? prefillFullName;
   final String? prefillPersonalEmail;
 
   @override
-  List<Object?> get props => [editingMemberId, prefillFullName, prefillPersonalEmail];
+  List<Object?> get props => [
+        editingMemberId,
+        listMemberPrefill,
+        prefillFullName,
+        prefillPersonalEmail,
+      ];
+}
+
+/// Re-fetches `GET /members/:id` after a failed edit prefill load.
+class AddMemberMemberDetailRetryRequested extends AddMemberEvent {
+  const AddMemberMemberDetailRetryRequested();
 }
 
 class AddMemberDialogClosed extends AddMemberEvent {

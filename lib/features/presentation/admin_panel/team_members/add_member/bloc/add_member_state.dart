@@ -1,9 +1,13 @@
 import 'package:equatable/equatable.dart';
 import 'package:travel_crm/data/models/members/invite_result_dto.dart';
+import 'package:travel_crm/data/models/members/list_members_item.dart';
 
 enum AddMemberGender { male, female }
 
 enum AddMemberSubmitStatus { initial, invalid, valid, submitting, success, failure }
+
+/// Loading state for `GET /members/:id` when opening edit.
+enum AddMemberDetailLoadStatus { idle, loading, success, failure }
 
 /// Which email gets the invitation link when a new member is created.
 ///
@@ -109,6 +113,9 @@ class AddMemberState extends Equatable {
     this.sendInvite = true,
     this.lastInviteResult,
     this.lastCreatedMemberId,
+    this.lastUpdatedMember,
+    this.detailLoadStatus = AddMemberDetailLoadStatus.idle,
+    this.detailLoadErrorMessage,
     this.status = AddMemberSubmitStatus.initial,
     this.editingMemberId,
     this.submitErrorMessage,
@@ -182,6 +189,12 @@ class AddMemberState extends Equatable {
   /// Real server id from `POST /members` — used when stamping the team row.
   final String? lastCreatedMemberId;
 
+  /// Populated after a successful PATCH — drives list refresh from server.
+  final ListMembersItem? lastUpdatedMember;
+
+  final AddMemberDetailLoadStatus detailLoadStatus;
+  final String? detailLoadErrorMessage;
+
   final AddMemberSubmitStatus status;
 
   /// Server member id when opened from team table **Edit** (PATCH on submit).
@@ -253,6 +266,11 @@ class AddMemberState extends Equatable {
     bool clearLastInviteResult = false,
     String? lastCreatedMemberId,
     bool clearLastCreatedMemberId = false,
+    ListMembersItem? lastUpdatedMember,
+    bool clearLastUpdatedMember = false,
+    AddMemberDetailLoadStatus? detailLoadStatus,
+    String? detailLoadErrorMessage,
+    bool clearDetailLoadErrorMessage = false,
     AddMemberSubmitStatus? status,
     String? editingMemberId,
     bool clearEditingMemberId = false,
@@ -318,6 +336,13 @@ class AddMemberState extends Equatable {
       lastCreatedMemberId: clearLastCreatedMemberId
           ? null
           : (lastCreatedMemberId ?? this.lastCreatedMemberId),
+      lastUpdatedMember: clearLastUpdatedMember
+          ? null
+          : (lastUpdatedMember ?? this.lastUpdatedMember),
+      detailLoadStatus: detailLoadStatus ?? this.detailLoadStatus,
+      detailLoadErrorMessage: clearDetailLoadErrorMessage
+          ? null
+          : (detailLoadErrorMessage ?? this.detailLoadErrorMessage),
       status: status ?? this.status,
       editingMemberId: clearEditingMemberId ? null : (editingMemberId ?? this.editingMemberId),
       submitErrorMessage: clearSubmitErrorMessage ? null : (submitErrorMessage ?? this.submitErrorMessage),
@@ -377,6 +402,9 @@ class AddMemberState extends Equatable {
         sendInvite,
         lastInviteResult,
         lastCreatedMemberId,
+        lastUpdatedMember,
+        detailLoadStatus,
+        detailLoadErrorMessage,
         status,
         editingMemberId,
         submitErrorMessage,

@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:travel_crm/data/models/members/list_members_item.dart';
 
 import 'team_members_state.dart';
 
@@ -61,8 +62,9 @@ class TeamCategoryTabChanged extends TeamMembersEvent {
   List<Object?> get props => [section, tab];
 }
 
-class TeamMemberEditTapped extends TeamMembersEvent {
-  const TeamMemberEditTapped(this.memberId);
+/// Admin confirmed delete in [ConfirmDeleteMemberDialog].
+class TeamMemberDeleteConfirmed extends TeamMembersEvent {
+  const TeamMemberDeleteConfirmed(this.memberId);
 
   final String memberId;
 
@@ -70,13 +72,9 @@ class TeamMemberEditTapped extends TeamMembersEvent {
   List<Object?> get props => [memberId];
 }
 
-class TeamMemberDeleteTapped extends TeamMembersEvent {
-  const TeamMemberDeleteTapped(this.memberId);
-
-  final String memberId;
-
-  @override
-  List<Object?> get props => [memberId];
+/// Screen consumed the transient `deleteResult` SnackBar.
+class TeamMembersDeleteResultConsumed extends TeamMembersEvent {
+  const TeamMembersDeleteResultConsumed();
 }
 
 /// New member saved from the add-member wizard (session-only until API list exists).
@@ -112,12 +110,16 @@ class TeamMemberUpdated extends TeamMembersEvent {
     required this.memberId,
     required this.updated,
     required this.sections,
+    this.apiMember,
   });
 
   final String memberId;
   final TeamMemberUiModel updated;
   final Set<TeamSection> sections;
 
+  /// Fresh row from `PATCH` — refreshes [TeamMembersState.membersById].
+  final ListMembersItem? apiMember;
+
   @override
-  List<Object?> get props => [memberId, updated, sections];
+  List<Object?> get props => [memberId, updated, sections, apiMember];
 }

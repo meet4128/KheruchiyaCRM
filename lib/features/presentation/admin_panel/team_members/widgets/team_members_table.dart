@@ -14,13 +14,14 @@ class TeamMembersTable extends StatelessWidget {
     required this.onDelete,
     this.onResendInvite,
     this.resendingMemberIds = const <String>{},
+    this.deletingMemberIds = const <String>{},
   });
 
   final List<TeamMemberUiModel> members;
   final bool showStatus;
   final bool showDepartment;
-  final ValueChanged<String> onEdit;
-  final ValueChanged<String> onDelete;
+  final ValueChanged<TeamMemberUiModel> onEdit;
+  final ValueChanged<TeamMemberUiModel> onDelete;
 
   /// Tap handler for "Resend invite". When null, the resend icon never shows.
   /// Only invoked for members with [TeamMemberInvitationStatus.pending].
@@ -28,6 +29,9 @@ class TeamMembersTable extends StatelessWidget {
 
   /// IDs of members currently mid-resend; drives per-row spinner.
   final Set<String> resendingMemberIds;
+
+  /// IDs of members currently mid-delete.
+  final Set<String> deletingMemberIds;
 
   @override
   Widget build(BuildContext context) {
@@ -72,6 +76,7 @@ class TeamMembersTable extends StatelessWidget {
                   onDelete: onDelete,
                   onResendInvite: onResendInvite,
                   isResending: resendingMemberIds.contains(member.id),
+                  isDeleting: deletingMemberIds.contains(member.id),
                 );
               },
             ),
@@ -123,15 +128,17 @@ class _MemberRow extends StatelessWidget {
     required this.onDelete,
     required this.onResendInvite,
     required this.isResending,
+    required this.isDeleting,
   });
 
   final TeamMemberUiModel member;
   final bool showStatus;
   final bool showDepartment;
-  final ValueChanged<String> onEdit;
-  final ValueChanged<String> onDelete;
+  final ValueChanged<TeamMemberUiModel> onEdit;
+  final ValueChanged<TeamMemberUiModel> onDelete;
   final ValueChanged<String>? onResendInvite;
   final bool isResending;
+  final bool isDeleting;
 
   @override
   Widget build(BuildContext context) {
@@ -206,12 +213,13 @@ class _MemberRow extends StatelessWidget {
           Expanded(
             flex: 2,
             child: TeamMemberRowActions(
-              onEdit: () => onEdit(member.id),
-              onDelete: () => onDelete(member.id),
+              onEdit: () => onEdit(member),
+              onDelete: () => onDelete(member),
               onResendInvite: (onResendInvite != null && member.isInvitePending)
                   ? () => onResendInvite!(member.id)
                   : null,
               isResending: isResending,
+              isDeleting: isDeleting,
             ),
           ),
         ],

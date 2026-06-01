@@ -14,8 +14,11 @@ import 'package:travel_crm/data/models/members/create_member_request.dart';
 import 'package:travel_crm/data/models/members/create_member_response.dart';
 import 'package:travel_crm/data/models/members/list_members_response.dart';
 import 'package:travel_crm/data/models/members/member_directory_response.dart';
+import 'package:travel_crm/data/models/members/delete_member_response.dart';
+import 'package:travel_crm/data/models/members/get_member_response.dart';
 import 'package:travel_crm/data/models/members/resend_invite_response.dart';
 import 'package:travel_crm/data/models/members/update_member_request.dart';
+import 'package:travel_crm/data/models/members/update_member_response.dart';
 import 'package:travel_crm/data/models/purchase_chat/open_purchase_chat_request.dart';
 import 'package:travel_crm/data/models/purchase_chat/open_purchase_chat_response.dart';
 import 'package:travel_crm/data/models/purchase_chat/purchase_chat_inbox_response.dart';
@@ -135,10 +138,16 @@ abstract class InquiryApiClient {
   Future<CreateMemberResponse> createMember(@Body() CreateMemberRequest body);
 
   @PATCH('/api/v1/members/{id}')
-  Future<void> updateMember(
+  Future<UpdateMemberResponse> updateMember(
     @Path('id') String id,
     @Body() UpdateMemberRequest body,
   );
+
+  @DELETE('/api/v1/members/{id}')
+  Future<DeleteMemberResponse> deleteMember(@Path('id') String id);
+
+  @GET('/api/v1/members/{id}')
+  Future<GetMemberResponse> getMember(@Path('id') String id);
 
   @POST('/api/v1/members/{id}/invitations/resend')
   Future<ResendInviteResponse> resendMemberInvite(@Path('id') String id);

@@ -16,12 +16,12 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
     on<TeamMembersEmploymentStatusChanged>(_onEmploymentStatusChanged);
     on<TeamMembersLoadMoreRequested>(_onLoadMoreRequested);
     on<TeamCategoryTabChanged>(_onCategoryTabChanged);
-    on<TeamMemberEditTapped>(_onEditTapped);
-    on<TeamMemberDeleteTapped>(_onDeleteTapped);
     on<TeamMemberAdded>(_onMemberAdded);
     on<TeamMemberUpdated>(_onMemberUpdated);
     on<TeamMemberResendInviteRequested>(_onResendInviteRequested);
     on<TeamMembersResendInviteConsumed>(_onResendInviteConsumed);
+    on<TeamMemberDeleteConfirmed>(_onDeleteConfirmed);
+    on<TeamMembersDeleteResultConsumed>(_onDeleteResultConsumed);
   }
 
   final MembersRepository _membersRepository;
@@ -77,6 +77,11 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
         _fetchedMembersBySection = _mergeSections(_fetchedMembersBySection, fetchedPageMembers);
       }
       final membersBySection = _mergeFromFetchedAndAdds();
+      final membersById = _buildMembersById(
+        state.membersById,
+        response.data.items,
+        replace: replace,
+      );
       emit(
         state.copyWith(
           membersBySection: membersBySection,
@@ -93,6 +98,7 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
           isLoading: false,
           isLoadingMore: false,
           clearError: true,
+          membersById: membersById,
         ),
       );
     } catch (e) {
@@ -128,6 +134,15 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
     final model = event.updated;
     final targets = event.sections;
 
+    var membersById = Map<String, ListMembersItem>.from(state.membersById);
+    final apiMember = event.apiMember;
+    if (apiMember != null) {
+      final apiId = (apiMember.id ?? '').trim();
+      if (apiId.isNotEmpty) {
+        membersById[apiId] = apiMember;
+      }
+    }
+
     final sessionIdx = _sessionAdds.indexWhere((a) => a.member.id == id);
     if (sessionIdx >= 0) {
       _sessionAdds[sessionIdx] = TeamMemberSessionAdd(sections: targets, member: model);
@@ -142,6 +157,7 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
             filter: state.selectedFilter,
             selectedTabs: state.selectedCategoryTabBySection,
           ),
+          membersById: membersById,
         ),
       );
       return;
@@ -175,8 +191,131 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
           filter: state.selectedFilter,
           selectedTabs: state.selectedCategoryTabBySection,
         ),
+        membersById: membersById,
       ),
     );
+  }
+
+  Future<void> _onDeleteConfirmed(
+    TeamMemberDeleteConfirmed event,
+    Emitter<TeamMembersState> emit,
+  ) async {
+    final memberId = event.memberId.trim();
+    if (memberId.isEmpty || memberId.startsWith('m_')) {
+      emit(
+        state.copyWith(
+          deleteResult: TeamMembersDeleteResult(
+            memberId: memberId,
+            success: false,
+            message: StringConstant.teamMembersDeleteFailedMessage,
+          ),
+        ),
+      );
+      return;
+    }
+    if (state.deletingMemberIds.contains(memberId)) return;
+
+    emit(
+      state.copyWith(
+        deletingMemberIds: {...state.deletingMemberIds, memberId},
+        clearDeleteResult: true,
+      ),
+    );
+
+    try {
+      await _membersRepository.deleteMember(memberId);
+      if (isClosed) return;
+
+      _sessionAdds.removeWhere((a) => a.member.id == memberId);
+      _fetchedMembersBySection = _removeMemberFromSections(
+        _fetchedMembersBySection,
+        memberId,
+      );
+
+      final membersById = Map<String, ListMembersItem>.from(state.membersById)
+        ..remove(memberId);
+
+      final membersBySection = _mergeFromFetchedAndAdds();
+      emit(
+        state.copyWith(
+          membersBySection: membersBySection,
+          topPerformersBySection: _topPerformersFromMembers(membersBySection),
+          visibleMembersBySection: _applyAllFilters(
+            membersBySection: membersBySection,
+            query: state.searchQuery,
+            filter: state.selectedFilter,
+            selectedTabs: state.selectedCategoryTabBySection,
+          ),
+          membersById: membersById,
+          deletingMemberIds: _withoutId(state.deletingMemberIds, memberId),
+          deleteResult: TeamMembersDeleteResult(
+            memberId: memberId,
+            success: true,
+            message: StringConstant.teamMembersDeleteSuccessMessage,
+          ),
+        ),
+      );
+    } on MembersNotFoundException catch (_) {
+      if (isClosed) return;
+      emit(_deleteFailureState(memberId, StringConstant.teamMembersDeleteFailedMessage));
+    } on MembersUnauthorizedException catch (e) {
+      if (isClosed) return;
+      emit(_deleteFailureState(memberId, e.toString()));
+    } on MembersApiException catch (e) {
+      if (isClosed) return;
+      emit(_deleteFailureState(memberId, e.message));
+    } catch (_) {
+      if (isClosed) return;
+      emit(_deleteFailureState(memberId, StringConstant.teamMembersDeleteFailedMessage));
+    }
+  }
+
+  void _onDeleteResultConsumed(
+    TeamMembersDeleteResultConsumed event,
+    Emitter<TeamMembersState> emit,
+  ) {
+    if (state.deleteResult == null) return;
+    emit(state.copyWith(clearDeleteResult: true));
+  }
+
+  TeamMembersState _deleteFailureState(String memberId, String? message) {
+    return state.copyWith(
+      deletingMemberIds: _withoutId(state.deletingMemberIds, memberId),
+      deleteResult: TeamMembersDeleteResult(
+        memberId: memberId,
+        success: false,
+        message: (message?.trim().isNotEmpty ?? false)
+            ? message!.trim()
+            : StringConstant.teamMembersDeleteFailedMessage,
+      ),
+    );
+  }
+
+  Map<TeamSection, List<TeamMemberUiModel>> _removeMemberFromSections(
+    Map<TeamSection, List<TeamMemberUiModel>> source,
+    String memberId,
+  ) {
+    final out = <TeamSection, List<TeamMemberUiModel>>{};
+    for (final entry in source.entries) {
+      out[entry.key] =
+          entry.value.where((m) => m.id != memberId).toList(growable: false);
+    }
+    return out;
+  }
+
+  Map<String, ListMembersItem> _buildMembersById(
+    Map<String, ListMembersItem> existing,
+    List<ListMembersItem> items, {
+    required bool replace,
+  }) {
+    final out = replace ? <String, ListMembersItem>{} : Map<String, ListMembersItem>.from(existing);
+    for (final item in items) {
+      final id = (item.id ?? '').trim();
+      if (id.isNotEmpty) {
+        out[id] = item;
+      }
+    }
+    return out;
   }
 
   Map<TeamSection, List<TeamMemberUiModel>> _mergeFromFetchedAndAdds() {
@@ -306,14 +445,6 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
     );
   }
 
-  void _onEditTapped(TeamMemberEditTapped event, Emitter<TeamMembersState> emit) {
-    // Reserved for edit-member flow integration.
-  }
-
-  void _onDeleteTapped(TeamMemberDeleteTapped event, Emitter<TeamMembersState> emit) {
-    // Reserved for delete-member confirmation + API integration.
-  }
-
   Future<void> _onResendInviteRequested(
     TeamMemberResendInviteRequested event,
     Emitter<TeamMembersState> emit,
@@ -357,7 +488,7 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
             filter: state.selectedFilter,
             selectedTabs: state.selectedCategoryTabBySection,
           ),
-          resendingMemberIds: _withoutId(memberId),
+          resendingMemberIds: _withoutId(state.resendingMemberIds, memberId),
           resendInviteResult: TeamMembersResendInviteResult(
             memberId: memberId,
             success: true,
@@ -425,7 +556,7 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
 
   TeamMembersState _failureState(String memberId, String? message) {
     return state.copyWith(
-      resendingMemberIds: _withoutId(memberId),
+      resendingMemberIds: _withoutId(state.resendingMemberIds, memberId),
       resendInviteResult: TeamMembersResendInviteResult(
         memberId: memberId,
         success: false,
@@ -436,8 +567,8 @@ class TeamMembersBloc extends Bloc<TeamMembersEvent, TeamMembersState> {
     );
   }
 
-  Set<String> _withoutId(String memberId) {
-    return state.resendingMemberIds.where((id) => id != memberId).toSet();
+  Set<String> _withoutId(Set<String> source, String memberId) {
+    return source.where((id) => id != memberId).toSet();
   }
 
   DateTime? _tryParseDate(String? value) {

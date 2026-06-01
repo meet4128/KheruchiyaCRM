@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:travel_crm/data/models/inquiry/phone_number_dto.dart';
 
 import 'department_role_dto.dart';
 
@@ -19,6 +20,21 @@ class ListMembersItem {
     this.departmentRoles = const [],
     this.invitationStatus,
     this.lastInviteSentAt,
+    this.phoneNumber,
+    this.homePhoneNumber,
+    this.officePhoneNumber,
+    this.dateOfBirth,
+    this.gender,
+    this.maritalStatus,
+    this.dateOfAnniversary,
+    this.addressLine1,
+    this.addressLine2,
+    this.zipCode,
+    this.city,
+    this.designation,
+    this.aadharDocumentUrl,
+    this.panDocumentUrl,
+    this.cancelChequeDocumentUrl,
   });
 
   factory ListMembersItem.fromJson(Map<String, dynamic> json) {
@@ -53,4 +69,21 @@ class ListMembersItem {
   /// ISO-8601 timestamp of the last invite email sent to this member.
   /// Used by the team-members list to surface "Sent X ago" tooltips.
   final String? lastInviteSentAt;
+
+  /// Populated on `GET /members/:id` (and may appear on PATCH `data.member`).
+  final PhoneNumberDto? phoneNumber;
+  final PhoneNumberDto? homePhoneNumber;
+  final PhoneNumberDto? officePhoneNumber;
+  final String? dateOfBirth;
+  final String? gender;
+  final String? maritalStatus;
+  final String? dateOfAnniversary;
+  final String? addressLine1;
+  final String? addressLine2;
+  final String? zipCode;
+  final String? city;
+  final String? designation;
+  final String? aadharDocumentUrl;
+  final String? panDocumentUrl;
+  final String? cancelChequeDocumentUrl;
 }

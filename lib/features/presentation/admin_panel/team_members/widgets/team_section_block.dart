@@ -18,6 +18,7 @@ class TeamSectionBlock extends StatelessWidget {
     required this.showTopPerformers,
     required this.showTabs,
     this.onMemberEdit,
+    this.onMemberDelete,
   });
 
   final TeamSection section;
@@ -28,6 +29,9 @@ class TeamSectionBlock extends StatelessWidget {
 
   /// Opens add/edit member UI for an existing member id (PATCH flow).
   final void Function(String memberId)? onMemberEdit;
+
+  /// Shows delete confirmation then dispatches delete to the bloc.
+  final void Function(TeamMemberUiModel member)? onMemberDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -113,19 +117,15 @@ class TeamSectionBlock extends StatelessWidget {
                         members: members,
                         showStatus: showStatusColumn,
                         showDepartment: !showStatusColumn,
-                        onEdit: (memberId) {
-                          context.read<TeamMembersBloc>().add(TeamMemberEditTapped(memberId));
-                          onMemberEdit?.call(memberId);
-                        },
-                        onDelete: (memberId) {
-                          context.read<TeamMembersBloc>().add(TeamMemberDeleteTapped(memberId));
-                        },
+                        onEdit: (member) => onMemberEdit?.call(member.id),
+                        onDelete: (member) => onMemberDelete?.call(member),
                         onResendInvite: (memberId) {
                           context
                               .read<TeamMembersBloc>()
                               .add(TeamMemberResendInviteRequested(memberId));
                         },
                         resendingMemberIds: state.resendingMemberIds,
+                        deletingMemberIds: state.deletingMemberIds,
                       ),
                     ],
                   ),

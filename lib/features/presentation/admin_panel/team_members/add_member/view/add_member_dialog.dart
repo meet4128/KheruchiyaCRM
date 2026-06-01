@@ -30,17 +30,70 @@ class AddMemberDialog extends StatelessWidget {
         ),
         child: Column(
           children: [
-            _DialogHeader(
-              onClose: () {
-                context.read<AddMemberBloc>().add(const AddMemberDialogClosed());
-                Navigator.of(context).pop();
+            BlocBuilder<AddMemberBloc, AddMemberState>(
+              buildWhen: (p, c) => p.editingMemberId != c.editingMemberId,
+              builder: (context, state) {
+                return _DialogHeader(
+                  isEditMode: state.editingMemberId != null,
+                  onClose: () {
+                    context.read<AddMemberBloc>().add(const AddMemberDialogClosed());
+                    Navigator.of(context).pop();
+                  },
+                );
               },
             ),
             Divider(color: colors.borderPrimary.withValues(alpha: 0.35), height: 1),
             Expanded(
               child: BlocBuilder<AddMemberBloc, AddMemberState>(
-                buildWhen: (previous, current) => previous != current,
+                buildWhen: (previous, current) =>
+                    previous != current ||
+                    previous.detailLoadStatus != current.detailLoadStatus,
                 builder: (context, state) {
+                  if (state.editingMemberId != null &&
+                      state.detailLoadStatus == AddMemberDetailLoadStatus.loading) {
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(color: colors.accent),
+                          const SizedBox(height: 16),
+                          Text(
+                            StringConstant.addMemberLoadingMember,
+                            style: TextStyle(color: colors.textSecondary, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  if (state.detailLoadStatus == AddMemberDetailLoadStatus.failure) {
+                    final message = (state.detailLoadErrorMessage?.trim().isNotEmpty ?? false)
+                        ? state.detailLoadErrorMessage!.trim()
+                        : StringConstant.addMemberLoadMemberFailed;
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              message,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: colors.error, fontSize: 14),
+                            ),
+                            const SizedBox(height: 16),
+                            OutlinedButton(
+                              onPressed: () {
+                                context
+                                    .read<AddMemberBloc>()
+                                    .add(const AddMemberMemberDetailRetryRequested());
+                              },
+                              child: Text(StringConstant.addMemberRetryLoadMember),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -77,9 +130,10 @@ class AddMemberDialog extends StatelessWidget {
 }
 
 class _DialogHeader extends StatelessWidget {
-  const _DialogHeader({required this.onClose});
+  const _DialogHeader({required this.onClose, required this.isEditMode});
 
   final VoidCallback onClose;
+  final bool isEditMode;
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +144,9 @@ class _DialogHeader extends StatelessWidget {
         children: [
           const Spacer(),
           Text(
-            StringConstant.addMemberDialogTitle,
+            isEditMode
+                ? StringConstant.addMemberDialogTitleEdit
+                : StringConstant.addMemberDialogTitle,
             style: TextStyle(
               color: colors.textPrimary,
               fontSize: 42 * 0.8,
@@ -172,7 +228,7 @@ class _OperationInfoHeading extends StatelessWidget {
 String _successSnackbarText(AddMemberState state) {
   // Edit flow: there is no invite involved.
   if (state.editingMemberId != null) {
-    return StringConstant.addMemberSubmitSuccessMessage;
+    return StringConstant.addMemberUpdateSuccessMessage;
   }
   final invite = state.lastInviteResult;
   if (invite == null) {
@@ -217,7 +273,9 @@ class _DialogFooter extends StatelessWidget {
           previous.currentStep != current.currentStep || previous.status != current.status,
       builder: (context, state) {
         final submitting = state.status == AddMemberSubmitStatus.submitting;
-        final busy = submitting;
+        final detailBlocked = state.editingMemberId != null &&
+            state.detailLoadStatus != AddMemberDetailLoadStatus.success;
+        final busy = submitting || detailBlocked;
 
         if (state.currentStep == AddMemberStep.operation) {
           return Column(
@@ -275,7 +333,9 @@ class _DialogFooter extends StatelessWidget {
                                       ),
                                     )
                                   : Text(
-                                      StringConstant.addMemberSubmit,
+                                      state.editingMemberId != null
+                                          ? StringConstant.addMemberSubmitSaveChanges
+                                          : StringConstant.addMemberSubmit,
                                       style: TextStyle(
                                         color: colors.textOnPrimary,
                                         fontSize: 15,

@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:travel_crm/data/models/members/list_members_item.dart';
 
 enum MemberStatusFilter { all, online, idle, offline }
 
@@ -52,6 +53,22 @@ class TeamMembersResendInviteResult extends Equatable {
 
   @override
   List<Object?> get props => [memberId, success, message, sentTo];
+}
+
+/// One-shot result of a delete call; consumed by [BlocListener] for SnackBar.
+class TeamMembersDeleteResult extends Equatable {
+  const TeamMembersDeleteResult({
+    required this.memberId,
+    required this.success,
+    this.message,
+  });
+
+  final String memberId;
+  final bool success;
+  final String? message;
+
+  @override
+  List<Object?> get props => [memberId, success, message];
 }
 
 enum TeamCategoryTab {
@@ -210,6 +227,9 @@ class TeamMembersState extends Equatable {
     this.errorMessage,
     this.resendingMemberIds = const <String>{},
     this.resendInviteResult,
+    this.deletingMemberIds = const <String>{},
+    this.deleteResult,
+    this.membersById = const {},
   });
 
   final Map<TeamSection, List<TeamMemberUiModel>> membersBySection;
@@ -233,6 +253,15 @@ class TeamMembersState extends Equatable {
   /// `TeamMembersResendInviteConsumed` to clear it.
   final TeamMembersResendInviteResult? resendInviteResult;
 
+  /// IDs currently mid-delete (optional per-row spinner on delete icon).
+  final Set<String> deletingMemberIds;
+
+  /// One-shot delete outcome for SnackBar.
+  final TeamMembersDeleteResult? deleteResult;
+
+  /// Raw list rows keyed by member id — used to prefill the edit wizard.
+  final Map<String, ListMembersItem> membersById;
+
   bool get hasMorePages => currentPage < totalPages;
 
   TeamMembersState copyWith({
@@ -252,6 +281,10 @@ class TeamMembersState extends Equatable {
     Set<String>? resendingMemberIds,
     TeamMembersResendInviteResult? resendInviteResult,
     bool clearResendInviteResult = false,
+    Set<String>? deletingMemberIds,
+    TeamMembersDeleteResult? deleteResult,
+    bool clearDeleteResult = false,
+    Map<String, ListMembersItem>? membersById,
   }) {
     return TeamMembersState(
       membersBySection: membersBySection ?? this.membersBySection,
@@ -271,6 +304,9 @@ class TeamMembersState extends Equatable {
       resendInviteResult: clearResendInviteResult
           ? null
           : (resendInviteResult ?? this.resendInviteResult),
+      deletingMemberIds: deletingMemberIds ?? this.deletingMemberIds,
+      deleteResult: clearDeleteResult ? null : (deleteResult ?? this.deleteResult),
+      membersById: membersById ?? this.membersById,
     );
   }
 
@@ -290,5 +326,8 @@ class TeamMembersState extends Equatable {
         errorMessage,
         resendingMemberIds,
         resendInviteResult,
+        deletingMemberIds,
+        deleteResult,
+        membersById,
       ];
 }

@@ -5,8 +5,11 @@ import 'package:travel_crm/core/network/inquiry_api_client.dart';
 import 'package:travel_crm/data/models/members/create_member_request.dart';
 import 'package:travel_crm/data/models/members/create_member_response.dart';
 import 'package:travel_crm/data/models/members/list_members_response.dart';
+import 'package:travel_crm/data/models/members/delete_member_response.dart';
+import 'package:travel_crm/data/models/members/get_member_response.dart';
 import 'package:travel_crm/data/models/members/resend_invite_response.dart';
 import 'package:travel_crm/data/models/members/update_member_request.dart';
+import 'package:travel_crm/data/models/members/update_member_response.dart';
 
 class MembersRepository {
   MembersRepository(this._apiClient);
@@ -27,11 +30,31 @@ class MembersRepository {
     }
   }
 
-  Future<void> updateMember(String id, UpdateMemberRequest request) async {
+  Future<UpdateMemberResponse> updateMember(String id, UpdateMemberRequest request) async {
     try {
-      await _apiClient.updateMember(id, request);
+      return await _apiClient.updateMember(id, request);
     } on DioException catch (e) {
       _handleDio(e, 'MembersRepository.updateMember');
+      rethrow;
+    }
+  }
+
+  Future<DeleteMemberResponse> deleteMember(String id) async {
+    try {
+      return await _apiClient.deleteMember(id);
+    } on DioException catch (e) {
+      _handleDio(e, 'MembersRepository.deleteMember');
+      rethrow;
+    }
+  }
+
+  /// Full member record for edit prefill (`GET /api/v1/members/:id`).
+  Future<GetMemberResponse> getMember(String id) async {
+    try {
+      return await _apiClient.getMember(id);
+    } on DioException catch (e) {
+      _handleDio(e, 'MembersRepository.getMember');
+      rethrow;
     }
   }
 
@@ -87,6 +110,9 @@ class MembersRepository {
     if (status == 400 && body != null) {
       developer.log('400 response: $body', name: logName);
       throw MembersApiException(_parseValidationError(body));
+    }
+    if (status == 404) {
+      throw MembersNotFoundException();
     }
     throw MembersApiException(
       e.message?.isNotEmpty == true ? e.message! : 'Could not reach the server. Try again.',

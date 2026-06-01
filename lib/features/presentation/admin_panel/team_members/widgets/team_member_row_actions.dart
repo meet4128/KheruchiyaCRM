@@ -12,6 +12,7 @@ class TeamMemberRowActions extends StatelessWidget {
     required this.onDelete,
     this.onResendInvite,
     this.isResending = false,
+    this.isDeleting = false,
   });
 
   final VoidCallback onEdit;
@@ -25,14 +26,16 @@ class TeamMemberRowActions extends StatelessWidget {
   /// admin gets per-row feedback during the API round-trip.
   final bool isResending;
 
+  /// When true, the delete icon is disabled and shows a spinner.
+  final bool isDeleting;
+
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _ActionIconButton(
-          icon: Icons.delete_outline_rounded,
-          tooltip: 'Delete',
+        _DeleteAction(
+          isDeleting: isDeleting,
           onTap: onDelete,
         ),
         const SizedBox(width: 6),
@@ -78,6 +81,45 @@ class _ActionIconButton extends StatelessWidget {
             size: 18,
             color: AppColors.dark().textSecondary,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DeleteAction extends StatelessWidget {
+  const _DeleteAction({
+    required this.isDeleting,
+    required this.onTap,
+  });
+
+  final bool isDeleting;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.dark();
+    return Tooltip(
+      message: 'Delete',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: isDeleting ? null : onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: isDeleting
+              ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1.6,
+                    color: colors.textSecondary,
+                  ),
+                )
+              : Icon(
+                  Icons.delete_outline_rounded,
+                  size: 18,
+                  color: colors.textSecondary,
+                ),
         ),
       ),
     );
