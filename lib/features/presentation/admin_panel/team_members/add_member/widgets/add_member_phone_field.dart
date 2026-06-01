@@ -8,6 +8,7 @@ class AddMemberPhoneField extends StatelessWidget {
     super.key,
     required this.label,
     required this.selectedCode,
+    this.number = '',
     required this.numberError,
     required this.onCodeChanged,
     required this.onNumberChanged,
@@ -18,6 +19,7 @@ class AddMemberPhoneField extends StatelessWidget {
 
   final String label;
   final String selectedCode;
+  final String number;
   final String? numberError;
   final ValueChanged<String> onCodeChanged;
   final ValueChanged<String> onNumberChanged;
@@ -110,6 +112,7 @@ class AddMemberPhoneField extends StatelessWidget {
             Expanded(
               child: AppTextField(
                 hint: numberHint,
+                value: number,
                 keyboardType: TextInputType.phone,
                 errorText: numberError,
                 onChanged: onNumberChanged,

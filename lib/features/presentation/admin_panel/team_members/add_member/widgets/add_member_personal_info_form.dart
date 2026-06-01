@@ -22,6 +22,7 @@ class AddMemberPersonalInfoForm extends StatelessWidget {
               left: AppTextField(
                 label: 'Full name',
                 hint: 'Enter your Full Name',
+                value: state.fullName,
                 errorText: state.fullNameError,
                 onChanged: (value) {
                   context.read<AddMemberBloc>().add(AddMemberFullNameChanged(value));
@@ -30,6 +31,7 @@ class AddMemberPersonalInfoForm extends StatelessWidget {
               right: AppTextField(
                 label: 'Personal E-mail Id',
                 hint: 'Enter your e-mail',
+                value: state.personalEmail,
                 errorText: state.personalEmailError,
                 keyboardType: TextInputType.emailAddress,
                 onChanged: (value) {
@@ -42,6 +44,7 @@ class AddMemberPersonalInfoForm extends StatelessWidget {
               left: AddMemberPhoneField(
                 label: 'Phone Number*',
                 selectedCode: state.phoneDialCode,
+                number: state.phoneNumber,
                 numberError: state.phoneNumberError,
                 onCodeChanged: (dialCode) {
                   context.read<AddMemberBloc>().add(
@@ -57,6 +60,7 @@ class AddMemberPersonalInfoForm extends StatelessWidget {
               right: AddMemberPhoneField(
                 label: 'Home Phone Number*',
                 selectedCode: state.homePhoneDialCode,
+                number: state.homePhoneNumber,
                 numberError: state.homePhoneNumberError,
                 onCodeChanged: (dialCode) {
                   context.read<AddMemberBloc>().add(
@@ -124,6 +128,7 @@ class AddMemberPersonalInfoForm extends StatelessWidget {
               left: AppTextField(
                 label: 'Address',
                 hint: 'Building/Flat No., Floor, etc.',
+                value: state.address,
                 errorText: state.addressError,
                 onChanged: (value) {
                   context.read<AddMemberBloc>().add(AddMemberAddressChanged(value));
@@ -132,6 +137,7 @@ class AddMemberPersonalInfoForm extends StatelessWidget {
               right: AppTextField(
                 label: 'Address Line 2',
                 hint: 'Landmark',
+                value: state.addressLine2,
                 onChanged: (value) {
                   context.read<AddMemberBloc>().add(AddMemberAddressLine2Changed(value));
                 },
@@ -142,6 +148,7 @@ class AddMemberPersonalInfoForm extends StatelessWidget {
               left: AppTextField(
                 label: 'Zip code',
                 hint: 'Enter your pin code',
+                value: state.zipCode,
                 errorText: state.zipCodeError,
                 keyboardType: TextInputType.number,
                 onChanged: (value) {
@@ -151,6 +158,7 @@ class AddMemberPersonalInfoForm extends StatelessWidget {
               right: AppTextField(
                 label: 'City',
                 hint: 'Select City',
+                value: state.city,
                 errorText: state.cityError,
                 onChanged: (value) {
                   context.read<AddMemberBloc>().add(AddMemberCityChanged(value));

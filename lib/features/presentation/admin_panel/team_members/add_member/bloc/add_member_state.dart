@@ -116,6 +116,7 @@ class AddMemberState extends Equatable {
     this.lastUpdatedMember,
     this.detailLoadStatus = AddMemberDetailLoadStatus.idle,
     this.detailLoadErrorMessage,
+    this.formRevision = 0,
     this.status = AddMemberSubmitStatus.initial,
     this.editingMemberId,
     this.submitErrorMessage,
@@ -195,6 +196,9 @@ class AddMemberState extends Equatable {
   final AddMemberDetailLoadStatus detailLoadStatus;
   final String? detailLoadErrorMessage;
 
+  /// Bumped when edit prefill loads so text fields remount with [AppTextField.value].
+  final int formRevision;
+
   final AddMemberSubmitStatus status;
 
   /// Server member id when opened from team table **Edit** (PATCH on submit).
@@ -271,6 +275,7 @@ class AddMemberState extends Equatable {
     AddMemberDetailLoadStatus? detailLoadStatus,
     String? detailLoadErrorMessage,
     bool clearDetailLoadErrorMessage = false,
+    int? formRevision,
     AddMemberSubmitStatus? status,
     String? editingMemberId,
     bool clearEditingMemberId = false,
@@ -343,6 +348,7 @@ class AddMemberState extends Equatable {
       detailLoadErrorMessage: clearDetailLoadErrorMessage
           ? null
           : (detailLoadErrorMessage ?? this.detailLoadErrorMessage),
+      formRevision: formRevision ?? this.formRevision,
       status: status ?? this.status,
       editingMemberId: clearEditingMemberId ? null : (editingMemberId ?? this.editingMemberId),
       submitErrorMessage: clearSubmitErrorMessage ? null : (submitErrorMessage ?? this.submitErrorMessage),
@@ -405,6 +411,7 @@ class AddMemberState extends Equatable {
         lastUpdatedMember,
         detailLoadStatus,
         detailLoadErrorMessage,
+        formRevision,
         status,
         editingMemberId,
         submitErrorMessage,

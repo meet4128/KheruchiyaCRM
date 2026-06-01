@@ -27,7 +27,7 @@ AddMemberState addMemberStateFromListMember(
 
   return AddMemberState(
     editingMemberId: editingMemberId,
-    currentStep: AddMemberStep.operation,
+    currentStep: AddMemberStep.personal,
     fullName: fullName,
     personalEmail: (item.personalEmail ?? '').trim(),
     phoneDialCode: mobile.dialCode,
@@ -55,6 +55,7 @@ AddMemberState addMemberStateFromListMember(
     panAttachment: _attachmentFromUrl(item.panDocumentUrl),
     cancelChequeAttachment: _attachmentFromUrl(item.cancelChequeDocumentUrl),
     detailLoadStatus: AddMemberDetailLoadStatus.success,
+    formRevision: DateTime.now().millisecondsSinceEpoch,
   );
 }
 
@@ -131,5 +132,9 @@ String _employmentToUi(String? api) {
 
 DateTime? _parseDate(String? value) {
   if (value == null || value.trim().isEmpty) return null;
-  return DateTime.tryParse(value);
+  final trimmed = value.trim();
+  final parsed = DateTime.tryParse(trimmed);
+  if (parsed != null) return parsed;
+  final dateOnly = trimmed.split(RegExp(r'[T\s]')).first;
+  return DateTime.tryParse(dateOnly);
 }

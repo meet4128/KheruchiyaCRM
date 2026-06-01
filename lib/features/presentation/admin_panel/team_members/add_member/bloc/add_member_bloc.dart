@@ -75,6 +75,7 @@ class AddMemberBloc extends Bloc<AddMemberEvent, AddMemberState> {
     if (cached != null) {
       emit(
         addMemberStateFromListMember(cached, editingMemberId: editingId).copyWith(
+          currentStep: AddMemberStep.personal,
           detailLoadStatus: AddMemberDetailLoadStatus.loading,
           clearDetailLoadErrorMessage: true,
         ),
@@ -87,7 +88,6 @@ class AddMemberBloc extends Bloc<AddMemberEvent, AddMemberState> {
       emit(
         AddMemberState(
           editingMemberId: editingId,
-          currentStep: AddMemberStep.operation,
           fullName: name,
           personalEmail: (event.prefillPersonalEmail ?? '').trim(),
           firstName: first,
@@ -110,6 +110,7 @@ class AddMemberBloc extends Bloc<AddMemberEvent, AddMemberState> {
     }
     emit(
       state.copyWith(
+        currentStep: AddMemberStep.personal,
         detailLoadStatus: AddMemberDetailLoadStatus.loading,
         clearDetailLoadErrorMessage: true,
       ),

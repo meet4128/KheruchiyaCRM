@@ -28,6 +28,7 @@ class AddMemberOperationInfoForm extends StatelessWidget {
               left: AppTextField(
                 label: StringConstant.firstName,
                 hint: StringConstant.addMemberFirstNameHint,
+                value: state.firstName,
                 errorText: state.firstNameError,
                 onChanged: (value) {
                   context.read<AddMemberBloc>().add(AddMemberFirstNameChanged(value));
@@ -36,6 +37,7 @@ class AddMemberOperationInfoForm extends StatelessWidget {
               right: AppTextField(
                 label: StringConstant.lastName,
                 hint: StringConstant.addMemberLastNameHint,
+                value: state.lastName,
                 errorText: state.lastNameError,
                 onChanged: (value) {
                   context.read<AddMemberBloc>().add(AddMemberLastNameChanged(value));
@@ -47,6 +49,7 @@ class AddMemberOperationInfoForm extends StatelessWidget {
               left: AppTextField(
                 label: StringConstant.addMemberEmployeeIdLabel,
                 hint: StringConstant.addMemberEmployeeIdHint,
+                value: state.employeeId,
                 errorText: state.employeeIdError,
                 onChanged: (value) {
                   context.read<AddMemberBloc>().add(AddMemberEmployeeIdChanged(value));
@@ -55,6 +58,7 @@ class AddMemberOperationInfoForm extends StatelessWidget {
               right: AppTextField(
                 label: StringConstant.addMemberDesignationLabel,
                 hint: StringConstant.addMemberDesignationHint,
+                value: state.designation,
                 errorText: state.designationError,
                 onChanged: (value) {
                   context.read<AddMemberBloc>().add(AddMemberDesignationChanged(value));
@@ -172,6 +176,7 @@ class AddMemberOperationInfoForm extends StatelessWidget {
               allottedNote: StringConstant.addMemberAllottedLabel,
               numberHint: StringConstant.addMemberOfficePhoneNumberHint,
               selectedCode: state.officePhoneDialCode,
+              number: state.officePhoneNumber,
               numberError: state.officePhoneNumberError,
               onCodeChanged: (dialCode) {
                 context.read<AddMemberBloc>().add(

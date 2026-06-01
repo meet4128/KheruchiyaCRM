@@ -108,8 +108,12 @@ class AddMemberDialog extends StatelessWidget {
                         child: SingleChildScrollView(
                           padding: const EdgeInsets.all(20),
                           child: state.currentStep == AddMemberStep.personal
-                              ? const AddMemberPersonalInfoForm()
-                              : const AddMemberOperationInfoForm(),
+                              ? AddMemberPersonalInfoForm(
+                                  key: ValueKey('personal-${state.formRevision}'),
+                                )
+                              : AddMemberOperationInfoForm(
+                                  key: ValueKey('operation-${state.formRevision}'),
+                                ),
                         ),
                       ),
                     ],
@@ -270,12 +274,18 @@ class _DialogFooter extends StatelessWidget {
         }
       },
       buildWhen: (previous, current) =>
-          previous.currentStep != current.currentStep || previous.status != current.status,
+          previous.currentStep != current.currentStep ||
+          previous.status != current.status ||
+          previous.detailLoadStatus != current.detailLoadStatus,
       builder: (context, state) {
         final submitting = state.status == AddMemberSubmitStatus.submitting;
         final detailBlocked = state.editingMemberId != null &&
             state.detailLoadStatus != AddMemberDetailLoadStatus.success;
         final busy = submitting || detailBlocked;
+
+        if (detailBlocked) {
+          return const SizedBox.shrink();
+        }
 
         if (state.currentStep == AddMemberStep.operation) {
           return Column(
