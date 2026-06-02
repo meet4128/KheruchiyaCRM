@@ -126,83 +126,83 @@ class ListMembersQuery {
 abstract class InquiryApiClient {
   factory InquiryApiClient(Dio dio, {String baseUrl}) = _InquiryApiClient;
 
-  @POST('/api/v1/inquiries')
+  @POST('/inquiries')
   Future<void> createInquiry(@Body() CreateInquiryRequest body);
 
-  @GET('/api/v1/inquiries')
+  @GET('/inquiries')
   Future<ListInquiriesResponse> listInquiries(
     @Queries() Map<String, dynamic> queries,
   );
 
-  @POST('/api/v1/members')
+  @POST('/members')
   Future<CreateMemberResponse> createMember(@Body() CreateMemberRequest body);
 
-  @PATCH('/api/v1/members/{id}')
+  @PATCH('/members/{id}')
   Future<UpdateMemberResponse> updateMember(
     @Path('id') String id,
     @Body() UpdateMemberRequest body,
   );
 
-  @DELETE('/api/v1/members/{id}')
+  @DELETE('/members/{id}')
   Future<DeleteMemberResponse> deleteMember(@Path('id') String id);
 
-  @GET('/api/v1/members/{id}')
+  @GET('/members/{id}')
   Future<GetMemberResponse> getMember(@Path('id') String id);
 
-  @POST('/api/v1/members/{id}/invitations/resend')
+  @POST('/members/{id}/invitations/resend')
   Future<ResendInviteResponse> resendMemberInvite(@Path('id') String id);
 
-  @GET('/api/v1/members')
+  @GET('/members')
   Future<ListMembersResponse> listMembers(
     @Queries() Map<String, dynamic> queries,
   );
 
-  @GET('/api/v1/inquiries/{id}')
+  @GET('/inquiries/{id}')
   Future<InquiryDetailResponse> getInquiryDetail(@Path('id') String id);
 
-  @GET('/api/v1/inquiries/{inquiryId}/amendments/session/{sessionId}/messages')
+  @GET('/inquiries/{inquiryId}/amendments/session/{sessionId}/messages')
   Future<SessionMessagesResponse> listSessionMessages(
     @Path('inquiryId') String inquiryId,
     @Path('sessionId') String sessionId,
     @Queries() Map<String, dynamic> queries,
   );
 
-  @GET('/api/v1/inquiries/{inquiryId}/amendments/{amendmentId}')
+  @GET('/inquiries/{inquiryId}/amendments/{amendmentId}')
   Future<AmendmentDetailResponse> getAmendmentDetail(
     @Path('inquiryId') String inquiryId,
     @Path('amendmentId') String amendmentId,
   );
 
-  @GET('/api/v1/inquiries/{inquiryId}/amendments/{amendmentId}/messages')
+  @GET('/inquiries/{inquiryId}/amendments/{amendmentId}/messages')
   Future<SessionMessagesResponse> listAmendmentMessages(
     @Path('inquiryId') String inquiryId,
     @Path('amendmentId') String amendmentId,
     @Queries() Map<String, dynamic> queries,
   );
 
-  @GET('/api/v1/inquiries/{inquiryId}/amendments/{amendmentId}/notes')
+  @GET('/inquiries/{inquiryId}/amendments/{amendmentId}/notes')
   Future<AmendmentNotesResponse> listAmendmentNotes(
     @Path('inquiryId') String inquiryId,
     @Path('amendmentId') String amendmentId,
   );
 
-  @POST('/api/v1/whatsapp/send')
+  @POST('/whatsapp/send')
   Future<void> sendWhatsappMessage(@Body() SendWhatsappMessageRequest body);
 
-  @POST('/api/v1/inquiries/{inquiryId}/amendments/finalize')
+  @POST('/inquiries/{inquiryId}/amendments/finalize')
   Future<FinalizeAmendmentResponse> finalizeAmendment(
     @Path('inquiryId') String inquiryId,
     @Body() FinalizeAmendmentRequest body,
   );
 
-  @POST('/api/v1/inquiries/{inquiryId}/amendments/session/{sessionId}/notes')
+  @POST('/inquiries/{inquiryId}/amendments/session/{sessionId}/notes')
   Future<void> addSessionNote(
     @Path('inquiryId') String inquiryId,
     @Path('sessionId') String sessionId,
     @Body() SessionNoteRequest body,
   );
 
-  @POST('/api/v1/inquiries/{inquiryId}/amendments/session/{sessionId}/uploads')
+  @POST('/inquiries/{inquiryId}/amendments/session/{sessionId}/uploads')
   @MultiPart()
   Future<UploadSessionFileResponse> uploadSessionFile(
     @Path('inquiryId') String inquiryId,
@@ -210,38 +210,38 @@ abstract class InquiryApiClient {
     @Part(name: 'file') MultipartFile file,
   );
 
-  @GET('/api/v1/members/directory')
+  @GET('/members/directory')
   Future<MemberDirectoryResponse> getMemberDirectory(
     @Queries() Map<String, dynamic> queries,
   );
 
-  @POST('/api/v1/inquiries/{inquiryId}/purchase-chats')
+  @POST('/inquiries/{inquiryId}/purchase-chats')
   Future<OpenPurchaseChatResponse> openPurchaseChat(
     @Path('inquiryId') String inquiryId,
     @Body() OpenPurchaseChatRequest body,
   );
 
-  @GET('/api/v1/inquiries/{inquiryId}/purchase-chats')
+  @GET('/inquiries/{inquiryId}/purchase-chats')
   Future<PurchaseChatInboxResponse> listPurchaseChats(
     @Path('inquiryId') String inquiryId,
     @Query('purchaseTeamMemberId') String? purchaseTeamMemberId,
   );
 
-  @GET('/api/v1/inquiries/{inquiryId}/purchase-chats/{purchaseTeamMemberId}/messages')
+  @GET('/inquiries/{inquiryId}/purchase-chats/{purchaseTeamMemberId}/messages')
   Future<PurchaseChatMessagesResponse> listPurchaseChatMessages(
     @Path('inquiryId') String inquiryId,
     @Path('purchaseTeamMemberId') String purchaseTeamMemberId,
     @Queries() Map<String, dynamic> queries,
   );
 
-  @POST('/api/v1/inquiries/{inquiryId}/purchase-chats/{purchaseTeamMemberId}/messages')
+  @POST('/inquiries/{inquiryId}/purchase-chats/{purchaseTeamMemberId}/messages')
   Future<SendPurchaseChatMessageResponse> sendPurchaseChatMessage(
     @Path('inquiryId') String inquiryId,
     @Path('purchaseTeamMemberId') String purchaseTeamMemberId,
     @Body() SendPurchaseChatMessageRequest body,
   );
 
-  @POST('/api/v1/inquiries/{inquiryId}/purchase-chats/{purchaseTeamMemberId}/uploads')
+  @POST('/inquiries/{inquiryId}/purchase-chats/{purchaseTeamMemberId}/uploads')
   @MultiPart()
   Future<UploadPurchaseChatFileResponse> uploadPurchaseChatFile(
     @Path('inquiryId') String inquiryId,

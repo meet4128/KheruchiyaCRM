@@ -9,7 +9,7 @@ String buildInquiryMediaUrl(String mediaPath) {
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     return trimmed;
   }
-  final base = Apis.inquiryBaseUrl.replaceAll(RegExp(r'/$'), '');
+  final base = Apis.inquiryHost.replaceAll(RegExp(r'/$'), '');
   final path = trimmed.startsWith('/') ? trimmed : '/$trimmed';
   return '$base$path';
 }

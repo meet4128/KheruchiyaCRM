@@ -17,7 +17,7 @@ import 'apis.dart';
 final ValueNotifier<int> sessionExpiredNotifier = ValueNotifier<int>(0);
 
 class DioClient {
-  static final Dio _dio = Dio(BaseOptions(baseUrl: Apis.baseUrl));
+  static final Dio _dio = Dio(BaseOptions(baseUrl: Apis.inquiryBaseUrl));
   static const String contentType = 'application/json';
 
   static Completer<void>? _refreshTokenLock;
@@ -45,9 +45,7 @@ class DioClient {
     if (uri.contains(Apis.inquiryAuthTokenValidatePath)) return false;
     if (uri.contains(Apis.inquiryAuthSetPasswordPath)) return false;
     if (uri.contains(Apis.inquiryAuthResetPasswordPath)) return false;
-    return uri != Apis.login &&
-        uri != Apis.forgotPassword &&
-        uri != Apis.refreshTokenUrl;
+    return true;
   }
 
   static _initializeInterceptors() {
