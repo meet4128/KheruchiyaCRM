@@ -189,7 +189,7 @@ class ChecklistSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          // Top row: User, Due Date, Set Priority, Category, In Loop (icon + field, glowing border); max height 55px
+          // Top row: User, Set Priority, Due Date (Low only), Category, In Loop; max height 55px
           SizedBox(
             height: 55,
             child: Row(
@@ -230,18 +230,6 @@ class ChecklistSection extends StatelessWidget {
                 Expanded(
                   child: _ChecklistFieldWrap(
                     decoration: fieldDecoration,
-                    icon: Icons.calendar_today_outlined,
-                    child: AppDatePicker(
-                      hint: StringConstant.dueDate,
-                      value: dueDate,
-                      onChanged: (date) => onDueDateChanged(date),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _ChecklistFieldWrap(
-                    decoration: fieldDecoration,
                     icon: Icons.bar_chart,
                     child: AppDropdown<ChecklistPriority>(
                       hintText: StringConstant.setPriorityHint,
@@ -254,6 +242,20 @@ class ChecklistSection extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (priority?.allowsDueDate == true) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _ChecklistFieldWrap(
+                      decoration: fieldDecoration,
+                      icon: Icons.calendar_today_outlined,
+                      child: AppDatePicker(
+                        hint: StringConstant.dueDate,
+                        value: dueDate,
+                        onChanged: (date) => onDueDateChanged(date),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(width: 12),
                 Expanded(
                   child: _ChecklistFieldWrap(

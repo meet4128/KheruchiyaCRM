@@ -13,4 +13,7 @@ enum ChecklistPriority {
 
   /// Value sent in the `checklist[].priority` field.
   final String apiValue;
+
+  /// Due date is only selectable when priority is Low.
+  bool get allowsDueDate => this == ChecklistPriority.low;
 }

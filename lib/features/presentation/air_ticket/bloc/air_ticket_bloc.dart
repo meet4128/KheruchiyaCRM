@@ -261,7 +261,12 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     ChecklistPriorityChanged event,
     Emitter<AirTicketState> emit,
   ) {
-    emit(state.copyWith(checklistPriority: event.priority));
+    emit(state.copyWith(
+      checklistPriority: event.priority,
+      checklistDueDate: event.priority.allowsDueDate
+          ? state.checklistDueDate
+          : null,
+    ));
   }
 
   /// Handle checklist category changed event
