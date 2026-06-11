@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import '../../inquiry_form/bloc/inquiry_state.dart';
 import '../models/booking_type.dart';
+import '../models/traveller_breakdown.dart';
 import '../models/checklist_priority.dart';
 import '../models/priority.dart';
 import '../models/visa_type.dart';
@@ -73,14 +74,14 @@ class ReturnDateChanged extends AirTicketEvent {
   List<Object?> get props => [returnDate];
 }
 
-/// Event fired when traveller count changes
-class TravellerCountChanged extends AirTicketEvent {
-  const TravellerCountChanged(this.count);
+/// Event fired when traveller breakdown (adult / child / infant) changes
+class TravellerBreakdownChanged extends AirTicketEvent {
+  const TravellerBreakdownChanged(this.breakdown);
 
-  final int count;
+  final TravellerBreakdown breakdown;
 
   @override
-  List<Object> get props => [count];
+  List<Object> get props => [breakdown];
 }
 
 /// Event fired when class type changes

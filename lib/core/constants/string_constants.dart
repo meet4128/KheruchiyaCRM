@@ -168,6 +168,11 @@ class StringConstant {
   static const String returnDateAfterDeparture = 'Return date must be after departure date';
   static const String travellerCountRequired = 'At least 1 traveller is required';
   static const String travellerCountMax = 'Maximum 9 travellers allowed';
+  static const String infantCountExceedsAdults =
+      'Number of infants cannot exceed number of adults';
+  static const String adultTravellerLabel = 'Adult (12+)';
+  static const String childTravellerLabel = 'Child (2 to 12)';
+  static const String infantTravellerLabel = 'Infant (0-2)';
   static const String visaTypeRequired = 'Visa type is required';
   static const String remarkRequired = 'Remark is required';
   static const String remarkMinLength = 'Remark must be at least 3 characters';

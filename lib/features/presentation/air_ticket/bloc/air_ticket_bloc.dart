@@ -17,6 +17,7 @@ import '../models/booking_type.dart';
 import '../models/checklist_category_api.dart';
 import '../models/checklist_item.dart';
 import '../models/flight_segment.dart';
+import '../models/traveller_breakdown.dart';
 
 /// BLoC for managing Air Ticket form state
 /// Handles all form field changes, validation, and submission
@@ -31,7 +32,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     on<ToLocationChanged>(_onToLocationChanged);
     on<DepartureDateChanged>(_onDepartureDateChanged);
     on<ReturnDateChanged>(_onReturnDateChanged);
-    on<TravellerCountChanged>(_onTravellerCountChanged);
+    on<TravellerBreakdownChanged>(_onTravellerBreakdownChanged);
     on<ClassTypeChanged>(_onClassTypeChanged);
     on<VisaTypeChanged>(_onVisaTypeChanged);
     on<RemarkChanged>(_onRemarkChanged);
@@ -172,14 +173,17 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     ));
   }
 
-  /// Handle traveller count changed event
-  void _onTravellerCountChanged(
-    TravellerCountChanged event,
+  /// Handle traveller breakdown changed event
+  void _onTravellerBreakdownChanged(
+    TravellerBreakdownChanged event,
     Emitter<AirTicketState> emit,
   ) {
-    final error = _validateTravellerCount(event.count);
+    final breakdown = event.breakdown;
+    final error = _validateTravellerBreakdown(breakdown);
     emit(state.copyWith(
-      travellerCount: event.count,
+      adultCount: breakdown.adultCount,
+      childCount: breakdown.childCount,
+      infantCount: breakdown.infantCount,
       travellerCountError: error,
       clearTravellerCountError: error == null,
     ));
@@ -732,7 +736,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
         state.departureDate,
         state.bookingType,
       ),
-      'travellerCount': _validateTravellerCount(state.travellerCount),
+      'travellerCount': _validateTravellerBreakdown(state.travellerBreakdown),
       'visaType': state.requiresVisaSelection && state.visaType == null
           ? StringConstant.visaTypeRequired
           : null,
@@ -803,13 +807,19 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     return null;
   }
 
-  /// Validate traveller count
-  String? _validateTravellerCount(int count) {
-    if (count < 1) {
+  /// Validate adult / child / infant breakdown
+  String? _validateTravellerBreakdown(TravellerBreakdown breakdown) {
+    if (breakdown.adultCount < 1) {
       return StringConstant.travellerCountRequired;
     }
-    if (count > 9) {
+    if (breakdown.totalCount < 1) {
+      return StringConstant.travellerCountRequired;
+    }
+    if (breakdown.totalCount > TravellerBreakdown.maxTravellers) {
       return StringConstant.travellerCountMax;
+    }
+    if (breakdown.infantCount > breakdown.adultCount) {
+      return StringConstant.infantCountExceedsAdults;
     }
     return null;
   }

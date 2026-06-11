@@ -4,7 +4,8 @@ import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/theme/app_theme.dart';
 import 'package:travel_crm/core/widgets/airport_picker/airport_picker.dart';
 import '../models/booking_type.dart';
-import 'traveller_class_picker_cubit.dart';
+import '../models/traveller_breakdown.dart';
+import '../bloc/traveller_class_picker_cubit.dart';
 
 /// Flight details section widget
 /// Contains From, To, Departure Date, Return Date, Traveller & Class in a single row
@@ -16,7 +17,9 @@ class FlightDetailsSection extends StatelessWidget {
     required this.departureDate,
     this.returnDate,
     required this.bookingType,
-    required this.travellerCount,
+    required this.adultCount,
+    required this.childCount,
+    required this.infantCount,
     required this.classType,
     this.fromError,
     this.toError,
@@ -28,7 +31,7 @@ class FlightDetailsSection extends StatelessWidget {
     required this.onDepartureDateChanged,
     this.onReturnDateChanged,
     required this.onSwapLocations,
-    this.onTravellerCountChanged,
+    this.onTravellerBreakdownChanged,
     this.onClassTypeChanged,
     this.onAddAnotherField,
     this.showTravellerClass = true,
@@ -42,7 +45,9 @@ class FlightDetailsSection extends StatelessWidget {
   final DateTime? departureDate;
   final DateTime? returnDate;
   final AirTicketBookingType? bookingType;
-  final int travellerCount;
+  final int adultCount;
+  final int childCount;
+  final int infantCount;
   final String classType;
   final String? fromError;
   final String? toError;
@@ -54,7 +59,7 @@ class FlightDetailsSection extends StatelessWidget {
   final ValueChanged<DateTime> onDepartureDateChanged;
   final ValueChanged<DateTime?>? onReturnDateChanged;
   final VoidCallback onSwapLocations;
-  final ValueChanged<int>? onTravellerCountChanged;
+  final ValueChanged<TravellerBreakdown>? onTravellerBreakdownChanged;
   final ValueChanged<String>? onClassTypeChanged;
   final VoidCallback? onAddAnotherField;
   /// When true, show Traveller & Class in this section (typically first segment only).
@@ -65,13 +70,6 @@ class FlightDetailsSection extends StatelessWidget {
   final String? addAnotherButtonLabel;
   /// When non-null, show a delete button to remove this segment (extra segments only).
   final VoidCallback? onRemove;
-
-  static const List<int> travellerCounts = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-  static const List<String> classTypes = [
-    StringConstant.economy,
-    StringConstant.business,
-    StringConstant.first,
-  ];
 
   /// Parses stored airport string "CODE - City|Airport Name|Country" (country optional).
   static ({String value, String sublabel}) _airportDisplay(String raw, String defaultValue, String defaultSublabel) {
@@ -123,12 +121,11 @@ class FlightDetailsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppTheme.colors(context);
 
-    // Format traveller and class display
-    final travellerClassDisplay = classType.isNotEmpty
-        ? '$travellerCount Traveller${travellerCount > 1 ? 's' : ''}, $classType'
-        : travellerCount > 0
-            ? '$travellerCount Traveller${travellerCount > 1 ? 's' : ''}'
-            : StringConstant.defaultTraveller;
+    final travellerClassDisplay = TravellerBreakdown(
+      adultCount: adultCount,
+      childCount: childCount,
+      infantCount: infantCount,
+    ).displayLabelWithClass(classType.isNotEmpty ? classType : null);
 
     return Container(
       decoration: BoxDecoration(
@@ -205,9 +202,11 @@ class FlightDetailsSection extends StatelessWidget {
                   isRequired: true,
                   value: travellerClassDisplay,
                   errorText: travellerCountError,
-                  travellerCount: travellerCount,
+                  adultCount: adultCount,
+                  childCount: childCount,
+                  infantCount: infantCount,
                   classType: classType,
-                  onTravellerChanged: onTravellerCountChanged,
+                  onTravellerBreakdownChanged: onTravellerBreakdownChanged,
                   onClassChanged: onClassTypeChanged,
                   showBorder: true,
                 ),
@@ -647,37 +646,35 @@ class _TravellerClassField extends StatelessWidget {
   const _TravellerClassField({
     required this.label,
     required this.value,
-    required this.travellerCount,
+    required this.adultCount,
+    required this.childCount,
+    required this.infantCount,
     required this.classType,
     this.isRequired = false,
     this.errorText,
     this.showBorder = false,
-    this.onTravellerChanged,
+    this.onTravellerBreakdownChanged,
     this.onClassChanged,
   });
 
   final String label;
   final String value;
-  final int travellerCount;
+  final int adultCount;
+  final int childCount;
+  final int infantCount;
   final String classType;
   final bool isRequired;
   final String? errorText;
   final bool showBorder;
-  final ValueChanged<int>? onTravellerChanged;
+  final ValueChanged<TravellerBreakdown>? onTravellerBreakdownChanged;
   final ValueChanged<String>? onClassChanged;
-
-  static const List<int> travellerCounts = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-  static const List<String> classTypes = [
-    StringConstant.economy,
-    StringConstant.business,
-    StringConstant.first,
-  ];
 
   void _showSelectionBottomSheet(BuildContext context) {
     final colors = AppTheme.colors(context);
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: colors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -685,13 +682,17 @@ class _TravellerClassField extends StatelessWidget {
       builder: (BuildContext sheetContext) {
         return BlocProvider(
           create: (_) => TravellerClassPickerCubit(
-            initialTravellerCount: travellerCount,
+            initialBreakdown: TravellerBreakdown(
+              adultCount: adultCount,
+              childCount: childCount,
+              infantCount: infantCount,
+            ),
             initialClassType: classType,
           ),
           child: _TravellerClassSheetContent(
-            onApply: (t, c) {
-              onTravellerChanged?.call(t);
-              onClassChanged?.call(c);
+            onApply: (breakdown, classType) {
+              onTravellerBreakdownChanged?.call(breakdown);
+              onClassChanged?.call(classType);
               Navigator.pop(sheetContext);
             },
           ),
@@ -787,9 +788,8 @@ class _TravellerClassField extends StatelessWidget {
 class _TravellerClassSheetContent extends StatelessWidget {
   const _TravellerClassSheetContent({required this.onApply});
 
-  final void Function(int travellerCount, String classType) onApply;
+  final void Function(TravellerBreakdown breakdown, String classType) onApply;
 
-  static const List<int> _travellerCounts = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   static const List<String> _classTypes = [
     StringConstant.economy,
     StringConstant.business,
@@ -804,14 +804,17 @@ class _TravellerClassSheetContent extends StatelessWidget {
     return BlocBuilder<TravellerClassPickerCubit, TravellerClassPickerState>(
       builder: (context, state) {
         final cubit = context.read<TravellerClassPickerCubit>();
-        return Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Select Traveller & Class',
+        final canApply = state.canApply;
+
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Select Traveller & Class',
                 style: textStyles.heading3.copyWith(
                   color: colors.textPrimary,
                 ),
@@ -824,32 +827,35 @@ class _TravellerClassSheetContent extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _travellerCounts.map((count) {
-                  final isSelected = count == state.travellerCount;
-                  return InkWell(
-                    onTap: () => cubit.selectTravellerCount(count),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: isSelected ? colors.secondary : colors.inputBackground,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isSelected ? colors.secondary : colors.inputBorder,
-                        ),
-                      ),
-                      child: Text(
-                        '$count',
-                        style: TextStyle(
-                          color: isSelected ? colors.textOnPrimary : colors.textPrimary,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
+              _TravellerCounterRow(
+                label: StringConstant.adultTravellerLabel,
+                count: state.adultCount,
+                canDecrement: state.adultCount > 1,
+                canIncrement:
+                    state.totalCount < TravellerBreakdown.maxTravellers,
+                onDecrement: cubit.decrementAdult,
+                onIncrement: cubit.incrementAdult,
+              ),
+              const SizedBox(height: 12),
+              _TravellerCounterRow(
+                label: StringConstant.childTravellerLabel,
+                count: state.childCount,
+                canDecrement: state.childCount > 0,
+                canIncrement:
+                    state.totalCount < TravellerBreakdown.maxTravellers,
+                onDecrement: cubit.decrementChild,
+                onIncrement: cubit.incrementChild,
+              ),
+              const SizedBox(height: 12),
+              _TravellerCounterRow(
+                label: StringConstant.infantTravellerLabel,
+                count: state.infantCount,
+                canDecrement: state.infantCount > 0,
+                canIncrement: state.totalCount <
+                        TravellerBreakdown.maxTravellers &&
+                    state.infantCount < state.adultCount,
+                onDecrement: cubit.decrementInfant,
+                onIncrement: cubit.incrementInfant,
               ),
               const SizedBox(height: 24),
               Text(
@@ -867,19 +873,29 @@ class _TravellerClassSheetContent extends StatelessWidget {
                   return InkWell(
                     onTap: () => cubit.selectClassType(type),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
-                        color: isSelected ? colors.secondary : colors.inputBackground,
+                        color: isSelected
+                            ? colors.secondary
+                            : colors.inputBackground,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: isSelected ? colors.secondary : colors.inputBorder,
+                          color: isSelected
+                              ? colors.secondary
+                              : colors.inputBorder,
                         ),
                       ),
                       child: Text(
                         type,
                         style: TextStyle(
-                          color: isSelected ? colors.textOnPrimary : colors.textPrimary,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          color: isSelected
+                              ? colors.textOnPrimary
+                              : colors.textPrimary,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.normal,
                         ),
                       ),
                     ),
@@ -890,9 +906,13 @@ class _TravellerClassSheetContent extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => onApply(state.travellerCount, state.classType),
+                  onPressed: canApply
+                      ? () => onApply(state.breakdown, state.classType)
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colors.secondary,
+                    disabledBackgroundColor:
+                        colors.secondary.withOpacity(0.4),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -908,10 +928,116 @@ class _TravellerClassSheetContent extends StatelessWidget {
                   ),
                 ),
               ),
-            ],
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+}
+
+/// Single traveller category row with minus / count / plus controls.
+class _TravellerCounterRow extends StatelessWidget {
+  const _TravellerCounterRow({
+    required this.label,
+    required this.count,
+    required this.canDecrement,
+    required this.canIncrement,
+    required this.onDecrement,
+    required this.onIncrement,
+  });
+
+  final String label;
+  final int count;
+  final bool canDecrement;
+  final bool canIncrement;
+  final VoidCallback onDecrement;
+  final VoidCallback onIncrement;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
+    final textStyles = AppTheme.textStyles(context);
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: textStyles.bodyMedium.copyWith(
+              color: colors.textPrimary,
+            ),
+          ),
+        ),
+        _CounterButton(
+          icon: Icons.remove,
+          enabled: canDecrement,
+          onTap: onDecrement,
+        ),
+        SizedBox(
+          width: 36,
+          child: Text(
+            '$count',
+            textAlign: TextAlign.center,
+            style: textStyles.formInput.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colors.textPrimary,
+            ),
+          ),
+        ),
+        _CounterButton(
+          icon: Icons.add,
+          enabled: canIncrement,
+          onTap: onIncrement,
+        ),
+      ],
+    );
+  }
+}
+
+class _CounterButton extends StatelessWidget {
+  const _CounterButton({
+    required this.icon,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: enabled
+                ? colors.inputBackground
+                : colors.inputBackground.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: enabled
+                  ? colors.inputBorder
+                  : colors.inputBorder.withOpacity(0.4),
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Icon(
+            icon,
+            size: 18,
+            color: enabled ? colors.textPrimary : colors.textSecondary,
+          ),
+        ),
+      ),
     );
   }
 }

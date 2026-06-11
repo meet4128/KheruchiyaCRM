@@ -2,25 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/widgets/app_dropdown.dart';
 import 'package:travel_crm/core/widgets/form_field_wrapper.dart';
+import '../models/traveller_breakdown.dart';
 
-/// Traveller and class selector widget
+/// Traveller and class selector widget (legacy row layout).
 class TravellerClassSelector extends StatelessWidget {
   const TravellerClassSelector({
     super.key,
-    required this.travellerCount,
+    required this.breakdown,
     required this.classType,
     this.travellerCountError,
-    required this.onTravellerCountChanged,
     required this.onClassTypeChanged,
   });
 
-  final int travellerCount;
+  final TravellerBreakdown breakdown;
   final String classType;
   final String? travellerCountError;
-  final ValueChanged<int> onTravellerCountChanged;
   final ValueChanged<String> onClassTypeChanged;
 
-  static const List<int> travellerCounts = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   static const List<String> classTypes = [
     StringConstant.economy,
     StringConstant.business,
@@ -35,17 +33,9 @@ class TravellerClassSelector extends StatelessWidget {
           child: FormFieldWrapper(
             label: StringConstant.travellerAndClass,
             isRequired: true,
-            child: AppDropdown<int>(
-              hintText: StringConstant.selectTravellerCount,
-              items: travellerCounts,
-              itemLabel: (count) => '$count Traveller${count > 1 ? 's' : ''}',
-              value: travellerCount,
-              errorText: travellerCountError,
-              onChanged: (value) {
-                if (value != null) {
-                  onTravellerCountChanged(value);
-                }
-              },
+            child: Text(
+              breakdown.displayLabelWithClass(null),
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
         ),
@@ -70,4 +60,3 @@ class TravellerClassSelector extends StatelessWidget {
     );
   }
 }
-

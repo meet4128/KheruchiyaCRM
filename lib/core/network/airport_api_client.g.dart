@@ -11,9 +11,7 @@ part of 'airport_api_client.dart';
 // ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers,unused_element,unnecessary_string_interpolations,unused_element_parameter,avoid_unused_constructor_parameters,unreachable_from_main
 
 class _AirportApiClient implements AirportApiClient {
-  _AirportApiClient(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'https://www.airportroutes.com';
-  }
+  _AirportApiClient(this._dio, {this.baseUrl, this.errorLogger});
 
   final Dio _dio;
 
@@ -39,7 +37,7 @@ class _AirportApiClient implements AirportApiClient {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/api/search-airports/',
+            '',
             queryParameters: queryParameters,
             data: _data,
           )

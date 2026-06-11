@@ -6,7 +6,7 @@ import '../models/priority.dart';
 import '../models/visa_type.dart';
 import '../models/checklist_item.dart';
 import '../models/flight_segment.dart';
-import 'air_ticket_event.dart';
+import '../models/traveller_breakdown.dart';
 
 /// Submission status enum for air ticket form
 enum AirTicketSubmissionStatus {
@@ -24,7 +24,9 @@ class AirTicketState extends Equatable {
     this.to = '',
     this.departureDate,
     this.returnDate,
-    this.travellerCount = 1,
+    this.adultCount = 1,
+    this.childCount = 0,
+    this.infantCount = 0,
     this.classType = '',
     this.visaType,
     this.remark = '',
@@ -60,7 +62,18 @@ class AirTicketState extends Equatable {
   final String to;
   final DateTime? departureDate;
   final DateTime? returnDate;
-  final int travellerCount;
+  final int adultCount;
+  final int childCount;
+  final int infantCount;
+
+  int get travellerCount => adultCount + childCount + infantCount;
+
+  TravellerBreakdown get travellerBreakdown => TravellerBreakdown(
+        adultCount: adultCount,
+        childCount: childCount,
+        infantCount: infantCount,
+      );
+
   final String classType;
   final VisaType? visaType;
   final String remark;
@@ -152,7 +165,9 @@ class AirTicketState extends Equatable {
     String? to,
     DateTime? departureDate,
     DateTime? returnDate,
-    int? travellerCount,
+    int? adultCount,
+    int? childCount,
+    int? infantCount,
     String? classType,
     VisaType? visaType,
     String? remark,
@@ -192,7 +207,9 @@ class AirTicketState extends Equatable {
       to: to ?? this.to,
       departureDate: departureDate ?? this.departureDate,
       returnDate: returnDate ?? this.returnDate,
-      travellerCount: travellerCount ?? this.travellerCount,
+      adultCount: adultCount ?? this.adultCount,
+      childCount: childCount ?? this.childCount,
+      infantCount: infantCount ?? this.infantCount,
       classType: classType ?? this.classType,
       visaType: clearVisaType ? null : (visaType ?? this.visaType),
       remark: remark ?? this.remark,
@@ -223,7 +240,9 @@ class AirTicketState extends Equatable {
       travellerCountError: clearTravellerCountError
           ? null
           : (travellerCountError ??
-              (travellerCount != null ? null : this.travellerCountError)),
+              (adultCount != null || childCount != null || infantCount != null
+                  ? null
+                  : this.travellerCountError)),
       visaTypeError: clearVisaTypeError
           ? null
           : (visaTypeError ??
@@ -246,7 +265,9 @@ class AirTicketState extends Equatable {
         to,
         departureDate,
         returnDate,
-        travellerCount,
+        adultCount,
+        childCount,
+        infantCount,
         classType,
         visaType,
         remark,
