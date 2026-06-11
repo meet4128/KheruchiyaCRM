@@ -43,12 +43,3 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-/lib/core/models/inquiry/air_ticket_request.g.dart
-/lib/core/models/inquiry/airport_code_model.g.dart
-/lib/core/models/inquiry/create_inquiry_request.g.dart
-/lib/core/models/inquiry/flight_segment_request.g.dart
-/lib/core/network/inquiry_api_client.g.dart
-/lib/data/models/inquiry/list_inquiries_data.g.dart
-/lib/data/models/inquiry/list_inquiries_response.g.dart
-/lib/data/models/inquiry/list_inquiry_item.g.dart
-/lib/core/models/inquiry/phone_number_model.g.dart
