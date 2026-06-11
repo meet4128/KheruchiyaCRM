@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:travel_crm/data/repositories/airport_repository.dart';
 
@@ -77,14 +78,28 @@ class AirportSearchBloc extends Bloc<AirportSearchEvent, AirportSearchState> {
           clearErrorMessage: true,
         ));
       }
-    } catch (e, st) {
+    } catch (e) {
       if (!isClosed) {
         emit(state.copyWith(
           isLoading: false,
-          errorMessage: e.toString(),
+          errorMessage: _formatError(e),
         ));
       }
     }
+  }
+
+  String _formatError(Object error) {
+    if (error is DioException) {
+      if (error.type == DioExceptionType.connectionError) {
+        return 'Unable to reach the airport search service. Check your connection and try again.';
+      }
+      final statusCode = error.response?.statusCode;
+      if (statusCode != null) {
+        return 'Airport search failed (HTTP $statusCode). Please try again.';
+      }
+      return 'Airport search failed. Please try again.';
+    }
+    return 'Airport search failed. Please try again.';
   }
 
   @override

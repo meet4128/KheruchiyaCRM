@@ -1,4 +1,13 @@
 class Apis {
+  /// Third-party airport search (no CORS on web — use [inquirySearchAirportsUrl] there).
+  static const String airportRoutesHost = 'https://www.airportroutes.com';
+  static const String airportRoutesSearchPath = '/api/search-airports/';
+  static const String airportRoutesSearchUrl =
+      '$airportRoutesHost$airportRoutesSearchPath';
+
+  /// Inquiry API proxy for airport search (same-origin on web; forwards to airportroutes).
+  static const String inquirySearchAirportsPath = '/reference/search-airports/';
+
   /// Production site origin (uploads / public media — not under `/api/v1`).
   static const String inquiryHost = 'https://kheruchiyagroup.com';
 

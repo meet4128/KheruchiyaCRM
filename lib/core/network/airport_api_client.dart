@@ -1,5 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:retrofit/retrofit.dart';
+import 'package:travel_crm/core/network/apis.dart';
+import 'package:travel_crm/core/network/dio_client.dart';
 
 import 'airport_model.dart';
 
@@ -35,11 +38,28 @@ Dio createAirportApiDio() {
   return dio;
 }
 
-@RestApi(baseUrl: 'https://www.airportroutes.com')
+/// Platform-aware airport search client.
+///
+/// - **Web:** inquiry API proxy (same-origin, CORS-safe).
+/// - **Mobile / desktop:** direct [Apis.airportRoutesSearchUrl].
+AirportApiClient createAirportApiClient() {
+  if (kIsWeb) {
+    return AirportApiClient(
+      DioClient.getInstance(),
+      baseUrl: '${Apis.inquiryBaseUrl}${Apis.inquirySearchAirportsPath}',
+    );
+  }
+  return AirportApiClient(
+    createAirportApiDio(),
+    baseUrl: Apis.airportRoutesSearchUrl,
+  );
+}
+
+@RestApi()
 abstract class AirportApiClient {
   factory AirportApiClient(Dio dio, {String baseUrl}) = _AirportApiClient;
 
-  @GET('/api/search-airports/')
+  @GET('')
   Future<List<AirportModel>> searchAirports(
     @Query('q') String query,
     @Query('limit') int limit,

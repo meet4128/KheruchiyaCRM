@@ -20,9 +20,7 @@ void showAirportPicker(
   final bgColor = dialogBackgroundColor ?? _kDialogBackground;
   final barrier = barrierColor ?? Colors.black.withOpacity(0.7);
 
-  final dio = createAirportApiDio();
-  final apiClient = AirportApiClient(dio);
-  final repository = AirportRepository(apiClient: apiClient);
+  final repository = AirportRepository(apiClient: createAirportApiClient());
 
   showDialog<void>(
     context: context,
@@ -47,9 +45,7 @@ void showAirportPickerBottomSheet(
   BuildContext context, {
   required ValueChanged<String> onSelect,
 }) {
-  final dio = createAirportApiDio();
-  final apiClient = AirportApiClient(dio);
-  final repository = AirportRepository(apiClient: apiClient);
+  final repository = AirportRepository(apiClient: createAirportApiClient());
 
   final maxHeight = MediaQuery.of(context).size.height * 0.6;
   showModalBottomSheet<void>(
