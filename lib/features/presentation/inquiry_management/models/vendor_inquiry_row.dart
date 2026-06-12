@@ -234,6 +234,10 @@ class VendorInquiryRow {
   /// Live countdown text for the Priority column (see design: `00:15 min Left`, `1 day Left`).
   VendorInquiryRow copyWith({
     String? phoneDisplay,
+    String? emailDisplay,
+    String? addressDisplay,
+    String? referenceNumberDisplay,
+    String? referenceNameDisplay,
     List<InquiryChecklistItem>? checklist,
     String? status,
   }) {
@@ -246,11 +250,11 @@ class VendorInquiryRow {
       typeOfClient: typeOfClient,
       bookingId: bookingId,
       phoneDisplay: phoneDisplay ?? this.phoneDisplay,
-      emailDisplay: emailDisplay,
-      addressDisplay: addressDisplay,
+      emailDisplay: emailDisplay ?? this.emailDisplay,
+      addressDisplay: addressDisplay ?? this.addressDisplay,
       orderTypeDisplay: orderTypeDisplay,
-      referenceNumberDisplay: referenceNumberDisplay,
-      referenceNameDisplay: referenceNameDisplay,
+      referenceNumberDisplay: referenceNumberDisplay ?? this.referenceNumberDisplay,
+      referenceNameDisplay: referenceNameDisplay ?? this.referenceNameDisplay,
       priorityTrend: priorityTrend,
       priorityText: priorityText,
       checklist: checklist ?? this.checklist,

@@ -12,6 +12,10 @@ class InquiryDetailDto {
     this.title,
     this.fullName,
     this.phoneNumber,
+    this.email,
+    this.address,
+    this.referenceNumber,
+    this.referenceName,
     this.status,
     this.typeOfBooking,
     this.typeOfClient,
@@ -33,6 +37,10 @@ class InquiryDetailDto {
   final String? title;
   final String? fullName;
   final PhoneNumberDto? phoneNumber;
+  final String? email;
+  final String? address;
+  final PhoneNumberDto? referenceNumber;
+  final String? referenceName;
   final String? status;
   final String? typeOfBooking;
   final String? typeOfClient;

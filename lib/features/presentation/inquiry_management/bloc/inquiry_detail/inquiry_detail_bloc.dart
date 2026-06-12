@@ -100,11 +100,25 @@ class InquiryDetailBloc extends Bloc<InquiryDetailEvent, InquiryDetailState> {
       }
 
       final phoneDisplay = formatPeerPhoneDisplay(peerPhone);
+      final referencePhoneE164 = normalizePeerPhoneE164(
+        countryCode: inquiry.referenceNumber?.countryCode,
+        number: inquiry.referenceNumber?.number,
+      );
+      final referenceNumberDisplay = formatPeerPhoneDisplay(referencePhoneE164);
+      final referenceNameDisplay = _nonEmptyOrDash(inquiry.referenceName);
+      final emailDisplay = _nonEmptyOrDash(inquiry.email);
+      final addressDisplay = _nonEmptyOrDash(inquiry.address);
 
       emit(
         state.copyWith(
           status: InquiryDetailStatus.success,
-          vendorRow: row.copyWith(phoneDisplay: phoneDisplay),
+          vendorRow: row.copyWith(
+            phoneDisplay: phoneDisplay,
+            emailDisplay: emailDisplay,
+            addressDisplay: addressDisplay,
+            referenceNumberDisplay: referenceNumberDisplay,
+            referenceNameDisplay: referenceNameDisplay,
+          ),
           peerPhoneE164: peerPhone ?? '',
           amendments: amendments,
           clearErrorMessage: true,
@@ -182,5 +196,11 @@ class InquiryDetailBloc extends Bloc<InquiryDetailEvent, InquiryDetailState> {
         ),
       );
     }
+  }
+
+  static String _nonEmptyOrDash(String? v) {
+    final t = v?.trim();
+    if (t == null || t.isEmpty) return '—';
+    return t;
   }
 }
