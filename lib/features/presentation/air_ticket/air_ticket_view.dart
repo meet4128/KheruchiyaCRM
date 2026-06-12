@@ -11,6 +11,8 @@ import 'package:travel_crm/features/presentation/air_ticket/widgets/air_ticket_s
 import 'package:travel_crm/features/presentation/air_ticket/bloc/air_ticket_bloc.dart';
 import 'package:travel_crm/features/presentation/air_ticket/bloc/air_ticket_event.dart';
 import 'package:travel_crm/features/presentation/air_ticket/bloc/air_ticket_state.dart';
+import 'package:travel_crm/features/presentation/inquiry_form/bloc/inquiry_bloc.dart';
+import 'package:travel_crm/features/presentation/inquiry_form/bloc/inquiry_event.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/bloc/inquiry_state.dart';
 import 'package:travel_crm/features/presentation/dashboard/bloc/navigation_bloc.dart';
 import 'package:travel_crm/features/presentation/dashboard/bloc/navigation_event.dart';
@@ -36,6 +38,15 @@ class AirTicketView extends StatelessWidget {
   }
 }
 
+void _navigateBackToInquiry(BuildContext context) {
+  if (context.canPop()) {
+    context.pop();
+    return;
+  }
+  context.read<NavigationBloc>().add(ChangePageEvent(NavPage.inquiry));
+  context.go(PathConstant.inquiryView);
+}
+
 /// Internal screen widget with BLoC listener
 class _AirTicketScreen extends StatelessWidget {
   const _AirTicketScreen({this.inquirySnapshot});
@@ -44,6 +55,8 @@ class _AirTicketScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
+
     return BlocListener<AirTicketBloc, AirTicketState>(
       listenWhen: (previous, current) =>
           previous.submissionStatus != current.submissionStatus &&
@@ -60,6 +73,7 @@ class _AirTicketScreen extends StatelessWidget {
             message: message,
             onAcknowledge: () {
               context.read<AirTicketBloc>().add(const ResetAirTicketForm());
+              sl<InquiryBloc>().add(const ResetInquiryForm());
               // Shared singleton: refetch list so New Inquiry / vendor table shows the new inquiry.
               sl<InquiryManagementBloc>().add(InquiryManagementRefreshed());
               // Same as side menu: keep NavigationBloc in sync (router listener skips go() from sub-routes).
@@ -79,22 +93,39 @@ class _AirTicketScreen extends StatelessWidget {
           );
         }
       },
-      child: Scaffold(
-        body: Container(
-          padding: EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppTheme.colors(context).inputBackground,
-
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.5),
-                blurRadius: 24,
-                offset: const Offset(0, 12),
-                spreadRadius: 0,
-              ),
-            ],
+      child: PopScope(
+        canPop: context.canPop(),
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) _navigateBackToInquiry(context);
+        },
+        child: Scaffold(
+          body: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: colors.inputBackground,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 24,
+                  offset: const Offset(0, 12),
+                  spreadRadius: 0,
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                IconButton(
+                  onPressed: () => _navigateBackToInquiry(context),
+                  icon: Icon(Icons.arrow_back, color: colors.textPrimary),
+                  tooltip: StringConstant.messagesBack,
+                ),
+                Expanded(
+                  child: AirTicketFormScreen(inquirySnapshot: inquirySnapshot),
+                ),
+              ],
+            ),
           ),
-          child: AirTicketFormScreen(inquirySnapshot: inquirySnapshot),
         ),
       ),
     );

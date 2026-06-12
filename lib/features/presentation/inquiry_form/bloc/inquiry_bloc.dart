@@ -24,7 +24,8 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
     on<ReferenceDialCodeChanged>(_onReferenceDialCodeChanged);
     on<ClientBehaviourChanged>(_onClientBehaviourChanged);
     on<SubmitInquiry>(_onSubmitInquiry);
-    
+    on<ResetInquiryForm>(_onResetInquiryForm);
+
     // Support for legacy event (for backward compatibility)
     on<InquiryFieldChanged>(_onFieldChanged);
     on<InquiryBookingTypeChanged>(_onBookingTypeChangedLegacy);
@@ -35,6 +36,14 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
   /// Handle initialization event
   void _onInitialized(
     InquiryInitialized event,
+    Emitter<InquiryState> emit,
+  ) {
+    emit(const InquiryState());
+  }
+
+  /// Clears draft fields so a new inquiry does not reuse prior input.
+  void _onResetInquiryForm(
+    ResetInquiryForm event,
     Emitter<InquiryState> emit,
   ) {
     emit(const InquiryState());

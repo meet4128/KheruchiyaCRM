@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:travel_crm/core/constants/path_constants.dart';
 import 'package:travel_crm/core/theme/app_theme.dart';
+import 'package:travel_crm/di/injector.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/bloc/inquiry_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/bloc/inquiry_event.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/bloc/inquiry_state.dart';
@@ -13,8 +14,8 @@ class InquiryView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => InquiryBloc(),
+    return BlocProvider.value(
+      value: sl<InquiryBloc>(),
       child: const _InquiryScreen(),
     );
   }
@@ -38,7 +39,7 @@ class _InquiryScreen extends StatelessWidget {
         final colors = AppTheme.colors(context);
         if (state.pendingNavigateToAirTicket) {
           context.read<InquiryBloc>().add(ClearPendingNavigateToAirTicket());
-          context.go(PathConstant.airTicket, extra: state);
+          context.push(PathConstant.airTicket, extra: state);
           return;
         }
         if (state.successMessage != null) {
@@ -49,6 +50,7 @@ class _InquiryScreen extends StatelessWidget {
               backgroundColor: colors.success,
             ),
           );
+          context.read<InquiryBloc>().add(const ResetInquiryForm());
         }
         if (state.errorMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(

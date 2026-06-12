@@ -190,6 +190,14 @@ class SubmitInquiry extends InquiryEvent {
   List<Object> get props => [];
 }
 
+/// Clears the inquiry draft after successful submission or when starting fresh.
+class ResetInquiryForm extends InquiryEvent {
+  const ResetInquiryForm();
+
+  @override
+  List<Object> get props => [];
+}
+
 // ========== Legacy Events (for backward compatibility) ==========
 
 /// Legacy event for field changes (use specific events like TitleChanged instead)

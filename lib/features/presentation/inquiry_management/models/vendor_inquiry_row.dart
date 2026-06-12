@@ -104,8 +104,26 @@ class VendorInquiryRow {
       slaDeadline: deadline,
       assignedToNames: assignee.names,
       assignedToText: assignee.text,
-      status: e.status ?? '-',
+      status: statusDisplayLabel(e.status),
     );
+  }
+
+  /// Maps API inquiry status to vendor list labels (New In, Pending, Won, Loss).
+  static String statusDisplayLabel(String? status) {
+    switch (status?.trim().toUpperCase()) {
+      case 'IN_PROGRESS':
+        return 'New In';
+      case 'PENDING':
+        return 'Pending';
+      case 'COMPLETED':
+        return 'Won';
+      case 'CANCELLED':
+        return 'Loss';
+      default:
+        final t = status?.trim();
+        if (t == null || t.isEmpty) return '-';
+        return t;
+    }
   }
 
   static String _nonEmptyOrDash(String? v) {

@@ -95,7 +95,9 @@ class InquiryDetailBloc extends Bloc<InquiryDetailEvent, InquiryDetailState> {
       } else {
         row = row.copyWith(
           checklist: inquiry.checklist.isNotEmpty ? inquiry.checklist : row.checklist,
-          status: inquiry.status ?? row.status,
+          status: VendorInquiryRow.statusDisplayLabel(
+            inquiry.status ?? row.status,
+          ),
         );
       }
 

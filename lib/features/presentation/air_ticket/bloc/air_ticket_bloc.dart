@@ -690,7 +690,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
       referenceName: referenceName,
       clientBehaviour: clientBehaviour,
       typeOfBooking: typeOfBooking,
-      status: 'PENDING',
+      status: 'IN_PROGRESS',
       airTicket: airTicket,
       checklist: _buildChecklistPayload(state),
     );
