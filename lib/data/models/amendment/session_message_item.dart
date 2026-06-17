@@ -47,6 +47,7 @@ class SessionMessageItem {
 Map<String, dynamic> _normalizeSessionMessageJson(Map<String, dynamic> json) {
   final map = Map<String, dynamic>.from(json);
 
+  map['_id'] ??= json['wamid'];
   map['fileName'] ??= json['file_name'];
   map['mediaUrl'] ??= json['media_url'];
   map['mimeType'] ??= json['mime_type'];

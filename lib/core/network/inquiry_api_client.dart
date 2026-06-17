@@ -189,6 +189,12 @@ abstract class InquiryApiClient {
   @POST('/whatsapp/send')
   Future<void> sendWhatsappMessage(@Body() SendWhatsappMessageRequest body);
 
+  @GET('/whatsapp/conversations/{peerPhone}/messages')
+  Future<SessionMessagesResponse> listWhatsappMessages(
+    @Path('peerPhone') String peerPhone,
+    @Queries() Map<String, dynamic> queries,
+  );
+
   @POST('/inquiries/{inquiryId}/amendments/finalize')
   Future<FinalizeAmendmentResponse> finalizeAmendment(
     @Path('inquiryId') String inquiryId,

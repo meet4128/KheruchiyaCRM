@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
+import 'package:travel_crm/core/constants/whatsapp_constants.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_message.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_pending_attachment.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/utils/whatsapp_session_utils.dart';
 
 enum QnaChatStatus { idle, loading, success, failure }
 
@@ -10,6 +12,7 @@ class QnaChatState extends Equatable {
   const QnaChatState({
     this.inquiryId = '',
     this.peerPhone = '',
+    this.customerName = '',
     this.sessionId,
     this.isSectionExpanded = true,
     this.isInnerExpanded = true,
@@ -27,6 +30,7 @@ class QnaChatState extends Equatable {
 
   final String inquiryId;
   final String peerPhone;
+  final String customerName;
   final String? sessionId;
   final bool isSectionExpanded;
   final bool isInnerExpanded;
@@ -46,12 +50,16 @@ class QnaChatState extends Equatable {
   bool get hasSession => sessionId != null && sessionId!.isNotEmpty;
   bool get hasValidPeerPhone => peerPhone.length >= 10;
   bool get showFinalizeBar => hasSession;
+  bool get hasActiveWhatsappSession => computeHasActiveWhatsappSession(messages);
+  bool get showTemplateComposer => hasValidPeerPhone && !hasActiveWhatsappSession;
+  String get templatePreviewText => WhatsappConstants.templatePreview(customerName);
 
   List<QnaChatDateGroup> get groupedMessages => groupQnaChatMessagesByDate(messages);
 
   QnaChatState copyWith({
     String? inquiryId,
     String? peerPhone,
+    String? customerName,
     String? sessionId,
     bool clearSessionId = false,
     bool? isSectionExpanded,
@@ -74,6 +82,7 @@ class QnaChatState extends Equatable {
     return QnaChatState(
       inquiryId: inquiryId ?? this.inquiryId,
       peerPhone: peerPhone ?? this.peerPhone,
+      customerName: customerName ?? this.customerName,
       sessionId: clearSessionId ? null : (sessionId ?? this.sessionId),
       isSectionExpanded: isSectionExpanded ?? this.isSectionExpanded,
       isInnerExpanded: isInnerExpanded ?? this.isInnerExpanded,
@@ -97,6 +106,7 @@ class QnaChatState extends Equatable {
   List<Object?> get props => [
         inquiryId,
         peerPhone,
+        customerName,
         sessionId,
         isSectionExpanded,
         isInnerExpanded,

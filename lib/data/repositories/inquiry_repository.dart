@@ -112,6 +112,22 @@ class InquiryRepository {
     }
   }
 
+  Future<SessionMessagesResponse> listWhatsappMessages({
+    required String peerPhone,
+    int page = 1,
+    int limit = 50,
+    String sort = 'createdAt',
+  }) async {
+    try {
+      return await apiClient.listWhatsappMessages(
+        peerPhone,
+        {'page': page, 'limit': limit, 'sort': sort},
+      );
+    } on DioException catch (e) {
+      throw _mapDioException(e, logTag: 'ListWhatsappMessages');
+    }
+  }
+
   Future<FinalizeAmendmentResponse> finalizeAmendment({
     required String inquiryId,
     required FinalizeAmendmentRequest request,

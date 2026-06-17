@@ -12,14 +12,16 @@ final class QnaChatStarted extends QnaChatEvent {
     required this.inquiryId,
     required this.peerPhone,
     this.sessionId,
+    this.customerName = '',
   });
 
   final String inquiryId;
   final String peerPhone;
   final String? sessionId;
+  final String customerName;
 
   @override
-  List<Object?> get props => [inquiryId, peerPhone, sessionId];
+  List<Object?> get props => [inquiryId, peerPhone, sessionId, customerName];
 }
 
 final class QnaChatSessionIdUpdated extends QnaChatEvent {

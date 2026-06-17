@@ -4,11 +4,13 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
+import 'package:travel_crm/core/constants/whatsapp_constants.dart';
 import 'package:travel_crm/core/utils/inquiry_media_url.dart';
 import 'package:travel_crm/core/utils/whatsapp_media_url.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_message.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_pending_attachment.dart';
 import 'package:travel_crm/data/models/amendment/send_whatsapp_message_request.dart';
+import 'package:travel_crm/data/models/amendment/whatsapp_template_payload.dart';
 import 'package:travel_crm/data/repositories/inquiry_repository.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_chat/qna_chat_event.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_chat/qna_chat_state.dart';
@@ -51,13 +53,14 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
       state.copyWith(
         inquiryId: event.inquiryId,
         peerPhone: event.peerPhone,
+        customerName: event.customerName,
         sessionId: event.sessionId,
         messages: const [],
         loadStatus: QnaChatStatus.success,
         clearErrorMessage: true,
       ),
     );
-    if (event.sessionId != null && event.sessionId!.isNotEmpty) {
+    if (state.hasValidPeerPhone) {
       add(const QnaChatRefreshRequested());
       _startPolling();
     }
@@ -73,11 +76,10 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
     );
     if (!hadSession && state.hasSession) {
       add(const QnaChatRefreshRequested());
-      _startPolling();
+      if (state.hasValidPeerPhone) _startPolling();
     }
     if (!state.hasSession) {
       _pollTimer?.cancel();
-      emit(state.copyWith(messages: const []));
     }
   }
 
@@ -87,7 +89,7 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
   ) {
     final expanded = !state.isSectionExpanded;
     emit(state.copyWith(isSectionExpanded: expanded));
-    if (expanded && state.hasSession) {
+    if (expanded && state.hasValidPeerPhone) {
       _startPolling();
     } else {
       _pollTimer?.cancel();
@@ -141,6 +143,21 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
   Future<void> _onSendPressed(QnaChatSendPressed event, Emitter<QnaChatState> emit) async {
     if (state.sendStatus == QnaChatSendStatus.sending) return;
 
+    if (!state.hasValidPeerPhone) {
+      emit(
+        state.copyWith(
+          sendStatus: QnaChatSendStatus.failure,
+          sendErrorMessage: 'Customer phone is not available.',
+        ),
+      );
+      return;
+    }
+
+    if (state.showTemplateComposer) {
+      await _sendTemplate(emit);
+      return;
+    }
+
     final pending = state.pendingAttachment;
     if (pending != null) {
       await _sendDocument(
@@ -155,15 +172,6 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
 
     final draft = state.messageDraft.trim();
     if (draft.isEmpty) return;
-    if (!state.hasValidPeerPhone) {
-      emit(
-        state.copyWith(
-          sendStatus: QnaChatSendStatus.failure,
-          sendErrorMessage: 'Customer phone is not available.',
-        ),
-      );
-      return;
-    }
 
     emit(
       state.copyWith(
@@ -193,6 +201,48 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
         ),
       );
 
+      await _fetchMessages(emit, silent: false);
+    } catch (e) {
+      emit(
+        state.copyWith(
+          sendStatus: QnaChatSendStatus.failure,
+          sendErrorMessage: _userFacingError(e),
+        ),
+      );
+    }
+  }
+
+  Future<void> _sendTemplate(Emitter<QnaChatState> emit) async {
+    emit(
+      state.copyWith(
+        sendStatus: QnaChatSendStatus.sending,
+        clearSendErrorMessage: true,
+      ),
+    );
+
+    try {
+      final sessionId = await _ensureSessionId(emit);
+      if (sessionId == null) return;
+
+      final customerName = state.customerName.trim().isEmpty
+          ? 'there'
+          : state.customerName.trim();
+
+      await _repository.sendWhatsappMessage(
+        SendWhatsappMessageRequest(
+          to: state.peerPhone,
+          sessionId: sessionId,
+          inquiryId: state.inquiryId,
+          type: 'template',
+          template: WhatsappTemplatePayload(
+            name: WhatsappConstants.templateName,
+            language: WhatsappConstants.templateLanguage,
+            bodyParams: [customerName],
+          ),
+        ),
+      );
+
+      emit(state.copyWith(sendStatus: QnaChatSendStatus.idle));
       await _fetchMessages(emit, silent: false);
     } catch (e) {
       emit(
@@ -363,18 +413,17 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
     QnaChatRefreshRequested event,
     Emitter<QnaChatState> emit,
   ) async {
-    if (!state.hasSession) return;
+    if (!state.hasValidPeerPhone) return;
     await _fetchMessages(emit, silent: event.silent);
   }
 
   Future<void> _onPollTick(QnaChatPollTick event, Emitter<QnaChatState> emit) async {
-    if (!state.hasSession || !state.isSectionExpanded) return;
+    if (!state.hasValidPeerPhone || !state.isSectionExpanded) return;
     await _fetchMessages(emit, silent: true);
   }
 
   Future<void> _fetchMessages(Emitter<QnaChatState> emit, {required bool silent}) async {
-    final sessionId = state.sessionId;
-    if (sessionId == null || sessionId.isEmpty || state.inquiryId.isEmpty) return;
+    if (!state.hasValidPeerPhone) return;
 
     if (!silent) {
       emit(
@@ -387,9 +436,8 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
     }
 
     try {
-      final response = await _repository.listSessionMessages(
-        inquiryId: state.inquiryId,
-        sessionId: sessionId,
+      final response = await _repository.listWhatsappMessages(
+        peerPhone: state.peerPhone,
       );
       final fromServer = qnaMessagesFromSessionItems(response.data.items);
       final messages = mergeQnaChatMessages(state.messages, fromServer);

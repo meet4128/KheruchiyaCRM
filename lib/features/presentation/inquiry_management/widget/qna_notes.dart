@@ -28,11 +28,13 @@ class QnaNotes extends StatefulWidget {
     required this.inquiryId,
     required this.peerPhone,
     this.sessionId,
+    this.customerName = '',
   });
 
   final String inquiryId;
   final String peerPhone;
   final String? sessionId;
+  final String customerName;
 
   @override
   State<QnaNotes> createState() => _QnaNotesState();
@@ -53,6 +55,7 @@ class _QnaNotesState extends State<QnaNotes> {
           inquiryId: widget.inquiryId,
           peerPhone: widget.peerPhone,
           sessionId: widget.sessionId,
+          customerName: widget.customerName,
         ),
       );
   }
@@ -63,12 +66,15 @@ class _QnaNotesState extends State<QnaNotes> {
     if (oldWidget.sessionId != widget.sessionId) {
       _chatBloc.add(QnaChatSessionIdUpdated(widget.sessionId));
     }
-    if (oldWidget.peerPhone != widget.peerPhone || oldWidget.inquiryId != widget.inquiryId) {
+    if (oldWidget.peerPhone != widget.peerPhone ||
+        oldWidget.inquiryId != widget.inquiryId ||
+        oldWidget.customerName != widget.customerName) {
       _chatBloc.add(
         QnaChatStarted(
           inquiryId: widget.inquiryId,
           peerPhone: widget.peerPhone,
           sessionId: widget.sessionId,
+          customerName: widget.customerName,
         ),
       );
     }
@@ -207,6 +213,7 @@ class _QnaNotesState extends State<QnaNotes> {
 
   Future<void> _onAttach(BuildContext context) async {
     if (_chatBloc.state.sendStatus == QnaChatSendStatus.sending) return;
+    if (_chatBloc.state.showTemplateComposer) return;
 
     final attachment = await pickQnaChatAttachment();
     if (attachment == null) return;

@@ -53,14 +53,18 @@ class _QnaChatComposerState extends State<QnaChatComposer> {
           previous.sendStatus != current.sendStatus ||
           previous.sendErrorMessage != current.sendErrorMessage ||
           previous.amendmentType != current.amendmentType ||
-          previous.pendingAttachment != current.pendingAttachment,
+          previous.pendingAttachment != current.pendingAttachment ||
+          previous.showTemplateComposer != current.showTemplateComposer ||
+          previous.templatePreviewText != current.templatePreviewText,
       builder: (context, state) {
         final sending = state.sendStatus == QnaChatSendStatus.sending;
         final hasDraft = state.messageDraft.trim().isNotEmpty;
         final hasAttachment = state.hasPendingAttachment;
-        final canSend =
-            state.hasValidPeerPhone && !sending && (hasDraft || hasAttachment);
-        final canCompose = state.hasValidPeerPhone && !sending;
+        final templateMode = state.showTemplateComposer;
+        final canSend = state.hasValidPeerPhone &&
+            !sending &&
+            (templateMode || hasDraft || hasAttachment);
+        final canCompose = state.hasValidPeerPhone && !sending && !templateMode;
 
         return Container(
           padding: const EdgeInsets.symmetric(
@@ -99,7 +103,7 @@ class _QnaChatComposerState extends State<QnaChatComposer> {
                     ),
                   ),
                 ),
-              if (state.pendingAttachment != null)
+              if (!templateMode && state.pendingAttachment != null)
                 QnaChatAttachmentPreview(
                   fileName: state.pendingAttachment!.fileName,
                   onClear: () => context
@@ -117,87 +121,186 @@ class _QnaChatComposerState extends State<QnaChatComposer> {
                     ),
                   ),
                 ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  IconButton(
-                    onPressed: canCompose ? widget.onAttachTap : null,
-                    icon: Icon(
-                      Icons.add,
-                      color: sending
-                          ? ColorConstant.whiteColor.withValues(alpha: 0.35)
-                          : ColorConstant.whiteColor,
-                    ),
-                    tooltip: sending
-                        ? StringConstant.qnaChatUploadingDocument
-                        : StringConstant.qnaChatAttach,
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      enabled: canCompose,
-                      minLines: 1,
-                      maxLines: 4,
-                      style: FontConstant.interNormal(
-                        color: ColorConstant.whiteColor,
-                        fontSize: DimensionConstant.d13,
-                      ),
-                      cursorColor: ColorConstant.whiteColor,
-                      decoration: InputDecoration(
-                        hintText: StringConstant.typeYourMessageHere,
-                        hintStyle: FontConstant.interNormal(
-                          color: ColorConstant.whiteColor.withValues(alpha: 0.4),
-                          fontSize: DimensionConstant.d13,
-                        ),
-                        filled: true,
-                        fillColor: Colors.black.withValues(alpha: 0.35),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: DimensionConstant.d14,
-                          vertical: DimensionConstant.d12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(DimensionConstant.d8),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      onChanged: (text) => context
-                          .read<QnaChatBloc>()
-                          .add(QnaChatMessageDraftChanged(text)),
-                      onSubmitted: (_) {
-                        if (canSend) {
-                          context.read<QnaChatBloc>().add(const QnaChatSendPressed());
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: DimensionConstant.d4),
-                  IconButton(
-                    onPressed: canSend
-                        ? () => context.read<QnaChatBloc>().add(const QnaChatSendPressed())
-                        : null,
-                    icon: sending
-                        ? SizedBox(
-                            width: DimensionConstant.d20,
-                            height: DimensionConstant.d20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: ColorConstant.whiteColor.withValues(alpha: 0.8),
-                            ),
-                          )
-                        : Icon(
-                            Icons.send_rounded,
-                            color: canSend
-                                ? ColorConstant.whiteColor
-                                : ColorConstant.whiteColor.withValues(alpha: 0.35),
-                          ),
-                    tooltip: StringConstant.submit,
-                  ),
-                ],
-              ),
+              if (templateMode)
+                _TemplateComposerRow(
+                  previewText: state.templatePreviewText,
+                  sending: sending,
+                  canSend: canSend,
+                )
+              else
+                _NormalComposerRow(
+                  controller: _controller,
+                  canCompose: canCompose,
+                  canSend: canSend,
+                  sending: sending,
+                  onAttachTap: widget.onAttachTap,
+                ),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+class _TemplateComposerRow extends StatelessWidget {
+  const _TemplateComposerRow({
+    required this.previewText,
+    required this.sending,
+    required this.canSend,
+  });
+
+  final String previewText;
+  final bool sending;
+  final bool canSend;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: DimensionConstant.d14,
+              vertical: DimensionConstant.d12,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(DimensionConstant.d8),
+              border: Border.all(
+                color: ColorConstant.whiteColor.withValues(alpha: 0.12),
+              ),
+            ),
+            child: Text(
+              previewText,
+              style: FontConstant.interNormal(
+                color: ColorConstant.whiteColor.withValues(alpha: 0.85),
+                fontSize: DimensionConstant.d13,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: DimensionConstant.d4),
+        IconButton(
+          onPressed: canSend
+              ? () => context.read<QnaChatBloc>().add(const QnaChatSendPressed())
+              : null,
+          icon: sending
+              ? SizedBox(
+                  width: DimensionConstant.d20,
+                  height: DimensionConstant.d20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: ColorConstant.whiteColor.withValues(alpha: 0.8),
+                  ),
+                )
+              : Icon(
+                  Icons.send_rounded,
+                  color: canSend
+                      ? ColorConstant.whiteColor
+                      : ColorConstant.whiteColor.withValues(alpha: 0.35),
+                ),
+          tooltip: StringConstant.submit,
+        ),
+      ],
+    );
+  }
+}
+
+class _NormalComposerRow extends StatelessWidget {
+  const _NormalComposerRow({
+    required this.controller,
+    required this.canCompose,
+    required this.canSend,
+    required this.sending,
+    required this.onAttachTap,
+  });
+
+  final TextEditingController controller;
+  final bool canCompose;
+  final bool canSend;
+  final bool sending;
+  final VoidCallback onAttachTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        IconButton(
+          onPressed: canCompose ? onAttachTap : null,
+          icon: Icon(
+            Icons.add,
+            color: sending
+                ? ColorConstant.whiteColor.withValues(alpha: 0.35)
+                : ColorConstant.whiteColor,
+          ),
+          tooltip: sending
+              ? StringConstant.qnaChatUploadingDocument
+              : StringConstant.qnaChatAttach,
+        ),
+        Expanded(
+          child: TextField(
+            controller: controller,
+            enabled: canCompose,
+            minLines: 1,
+            maxLines: 4,
+            style: FontConstant.interNormal(
+              color: ColorConstant.whiteColor,
+              fontSize: DimensionConstant.d13,
+            ),
+            cursorColor: ColorConstant.whiteColor,
+            decoration: InputDecoration(
+              hintText: StringConstant.typeYourMessageHere,
+              hintStyle: FontConstant.interNormal(
+                color: ColorConstant.whiteColor.withValues(alpha: 0.4),
+                fontSize: DimensionConstant.d13,
+              ),
+              filled: true,
+              fillColor: Colors.black.withValues(alpha: 0.35),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: DimensionConstant.d14,
+                vertical: DimensionConstant.d12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(DimensionConstant.d8),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            onChanged: (text) => context
+                .read<QnaChatBloc>()
+                .add(QnaChatMessageDraftChanged(text)),
+            onSubmitted: (_) {
+              if (canSend) {
+                context.read<QnaChatBloc>().add(const QnaChatSendPressed());
+              }
+            },
+          ),
+        ),
+        const SizedBox(width: DimensionConstant.d4),
+        IconButton(
+          onPressed: canSend
+              ? () => context.read<QnaChatBloc>().add(const QnaChatSendPressed())
+              : null,
+          icon: sending
+              ? SizedBox(
+                  width: DimensionConstant.d20,
+                  height: DimensionConstant.d20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: ColorConstant.whiteColor.withValues(alpha: 0.8),
+                  ),
+                )
+              : Icon(
+                  Icons.send_rounded,
+                  color: canSend
+                      ? ColorConstant.whiteColor
+                      : ColorConstant.whiteColor.withValues(alpha: 0.35),
+                ),
+          tooltip: StringConstant.submit,
+        ),
+      ],
     );
   }
 }

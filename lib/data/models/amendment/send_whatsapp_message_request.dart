@@ -1,8 +1,9 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:travel_crm/data/models/amendment/whatsapp_template_payload.dart';
 
 part 'send_whatsapp_message_request.g.dart';
 
-@JsonSerializable(includeIfNull: false)
+@JsonSerializable(includeIfNull: false, explicitToJson: true)
 class SendWhatsappMessageRequest {
   const SendWhatsappMessageRequest({
     required this.to,
@@ -12,6 +13,7 @@ class SendWhatsappMessageRequest {
     this.text,
     this.mediaUrl,
     this.fileName,
+    this.template,
   });
 
   factory SendWhatsappMessageRequest.fromJson(Map<String, dynamic> json) =>
@@ -26,4 +28,5 @@ class SendWhatsappMessageRequest {
   final String? text;
   final String? mediaUrl;
   final String? fileName;
+  final WhatsappTemplatePayload? template;
 }
