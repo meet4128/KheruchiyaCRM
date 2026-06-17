@@ -341,6 +341,24 @@ class StringConstant {
   static const String messagesSelectInquiryHint =
       'Open an inquiry and use Talk To Purchase Team to chat in context';
   static const String qnaPutFollowUp = 'Put Follow Up';
+  static const String putFollowUpSubtitle = 'Set Reminder';
+  static const String addFollowUpNote = 'Add Follow Up Note';
+  static const String addFollowUpNoteHint = 'Enter follow up note';
+  static const String putFollowUpSetDate = 'Set Date';
+  static const String putFollowUpTime = 'Time';
+  static const String putFollowUpSelectTime = 'Select time';
+  static const String putFollowUpSelectAgent = 'Select Agent';
+  static const String putFollowUpSelectUser = 'Select User';
+  static const String saveFollowUpReminder = 'Save Follow up Reminder';
+  static const String putFollowUpRepeat = 'Repeat';
+  static const String putFollowUpSaveSuccess = 'Follow up reminder saved';
+  static const String putFollowUpSaveErrorGeneric = 'Could not save follow up reminder';
+  static const String putFollowUpNoteRequired = 'Follow up note is required';
+  static const String putFollowUpAgentRequired = 'Please select an agent';
+  static const String putFollowUpAgentsLoadFailed = 'Could not load agents';
+  static const String putFollowUpRetryLoadAgents = 'Retry';
+  static const String putFollowUpClearForm = 'Clear form';
+  static const String attachment = 'Attachment';
   static const String qnaMarkAsPending = 'Mark as Pending';
   static const String qnaMarkAsLoss = 'Mark as Loss';
   static const String qnaMarkAsWon = 'Mark as Won';

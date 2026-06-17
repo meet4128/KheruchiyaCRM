@@ -6,9 +6,11 @@ import 'package:travel_crm/core/constants/dimension_constant.dart';
 import 'package:travel_crm/core/constants/font_constant.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 
-/// Figma bottom bar — stub actions in v1.
+/// Figma bottom bar — stub actions in v1 except Set Follow Up.
 class QnaChatBottomActionBar extends StatelessWidget {
-  const QnaChatBottomActionBar({super.key});
+  const QnaChatBottomActionBar({super.key, this.onSetFollowUp});
+
+  final VoidCallback? onSetFollowUp;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +36,7 @@ class QnaChatBottomActionBar extends StatelessWidget {
               child: _node(
                 label: items[i].$1,
                 icon: items[i].$2,
-                isLast: false,
+                onTap: items[i].$1 == 'Set Follow Up' ? onSetFollowUp : null,
               ),
             ),
           Expanded(
@@ -48,30 +50,36 @@ class QnaChatBottomActionBar extends StatelessWidget {
   Widget _node({
     required String label,
     required String icon,
-    required bool isLast,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      height: DimensionConstant.d50,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SvgPicture.asset(icon, width: DimensionConstant.d16, height: DimensionConstant.d16),
-          const SizedBox(width: DimensionConstant.d6),
-          Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: FontConstant.interNormal(
-                color: ColorConstant.whiteColor,
-                fontSize: DimensionConstant.d12,
-              ),
-            ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          height: DimensionConstant.d50,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
           ),
-        ],
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SvgPicture.asset(icon, width: DimensionConstant.d16, height: DimensionConstant.d16),
+              const SizedBox(width: DimensionConstant.d6),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: FontConstant.interNormal(
+                    color: ColorConstant.whiteColor,
+                    fontSize: DimensionConstant.d12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

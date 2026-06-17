@@ -18,6 +18,7 @@ import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_cha
 import 'package:travel_crm/features/presentation/inquiry_management/widgets/qna_chat/qna_chat_section_body.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/utils/qna_attachment_pick_util.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widgets/qna_chat/qna_chat_sub_header.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/widgets/follow_up/show_put_follow_up_dialog.dart';
 import 'package:travel_crm/features/presentation/purchase_team/models/messages_route_args.dart';
 
 /// Live Q&A — Figma §2.2 (bottom of inquiry detail). Finalize buttons live here only.
@@ -184,6 +185,7 @@ class _QnaNotesState extends State<QnaNotes> {
                                   _onFinalize(context, action),
                               onTalkToPurchaseTeam: () =>
                                   _onTalkToPurchaseTeam(context),
+                              onSetFollowUp: () => _onPutFollowUp(context),
                             ),
                           ],
                         );
@@ -278,6 +280,11 @@ class _QnaNotesState extends State<QnaNotes> {
   }
 
   Future<void> _onFinalize(BuildContext context, String action) async {
+    if (action == 'put_follow_up') {
+      await _onPutFollowUp(context);
+      return;
+    }
+
     final chatBloc = context.read<QnaChatBloc>();
     final amendmentApi = chatBloc.amendmentTypeApi;
     if (amendmentApi == null) {
@@ -302,6 +309,34 @@ class _QnaNotesState extends State<QnaNotes> {
             amountCharged: amount,
           ),
         );
+  }
+
+  Future<void> _onPutFollowUp(BuildContext context) async {
+    final chatBloc = _chatBloc;
+    final amendmentApi = chatBloc.amendmentTypeApi;
+    if (amendmentApi == null) {
+      _showSnack(context, 'Please select amendment type.');
+      return;
+    }
+
+    final sessionId = chatBloc.state.sessionId;
+    if (sessionId == null || sessionId.trim().isEmpty) {
+      _showSnack(context, StringConstant.qnaChatSendMessageFirstForNotes);
+      return;
+    }
+
+    await showPutFollowUpDialog(
+      context,
+      inquiryId: widget.inquiryId,
+      sessionId: sessionId,
+      amendmentTypeApi: amendmentApi,
+      onSaved: () {
+        if (!context.mounted) return;
+        context.read<InquiryDetailBloc>()
+          ..add(const InquiryDetailSessionCleared())
+          ..add(const InquiryDetailRefreshRequested());
+      },
+    );
   }
 
   Future<double?> _promptAmount(BuildContext context) async {

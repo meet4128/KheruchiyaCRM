@@ -18,6 +18,7 @@ class QnaChatSectionBody extends StatelessWidget {
     required this.onAttachTap,
     required this.onFinalizeAction,
     this.onTalkToPurchaseTeam,
+    this.onSetFollowUp,
     this.isFinalizeSubmitting = false,
     this.viewportHeight = 440,
   });
@@ -25,6 +26,7 @@ class QnaChatSectionBody extends StatelessWidget {
   final VoidCallback onAttachTap;
   final void Function(String action) onFinalizeAction;
   final VoidCallback? onTalkToPurchaseTeam;
+  final VoidCallback? onSetFollowUp;
   final bool isFinalizeSubmitting;
   final double viewportHeight;
 
@@ -72,7 +74,7 @@ class QnaChatSectionBody extends StatelessWidget {
                 onAddNotes: state.hasSession ? () => _promptAddNote(context) : null,
               ),
               const SizedBox(height: DimensionConstant.d20),
-              const QnaChatBottomActionBar(),
+              QnaChatBottomActionBar(onSetFollowUp: onSetFollowUp),
             ],
           ],
         );
