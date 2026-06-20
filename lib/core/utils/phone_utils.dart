@@ -1,11 +1,15 @@
 /// Normalizes inquiry phone to E.164 digits only (no +), 10–15 digits.
 String? normalizePeerPhoneE164({String? countryCode, String? number}) {
   final cc = countryCode?.replaceAll(RegExp(r'\D'), '') ?? '';
-  final nn = number?.replaceAll(RegExp(r'\D'), '') ?? '';
+  var nn = number?.replaceAll(RegExp(r'\D'), '') ?? '';
   if (cc.isEmpty && nn.isEmpty) return null;
-  final combined = '$cc$nn';
-  if (combined.length < 10 || combined.length > 15) return null;
-  return combined;
+
+  if (cc.isNotEmpty && (nn.length <= 10 || !nn.startsWith(cc))) {
+    nn = '$cc$nn';
+  }
+
+  if (nn.length < 10 || nn.length > 15) return null;
+  return nn;
 }
 
 String? normalizePeerPhoneRaw(String? raw) {

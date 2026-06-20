@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -56,11 +57,13 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
         customerName: event.customerName,
         sessionId: event.sessionId,
         messages: const [],
+        messageDraft: '',
+        greetingTemplateSent: false,
         loadStatus: QnaChatStatus.success,
         clearErrorMessage: true,
       ),
     );
-    if (state.hasValidPeerPhone) {
+    if (state.hasValidPeerPhone || state.hasSession) {
       add(const QnaChatRefreshRequested());
       _startPolling();
     }
@@ -76,10 +79,11 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
     );
     if (!hadSession && state.hasSession) {
       add(const QnaChatRefreshRequested());
-      if (state.hasValidPeerPhone) _startPolling();
     }
-    if (!state.hasSession) {
+    if (!state.hasValidPeerPhone) {
       _pollTimer?.cancel();
+    } else if (state.isSectionExpanded) {
+      _startPolling();
     }
   }
 
@@ -89,7 +93,7 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
   ) {
     final expanded = !state.isSectionExpanded;
     emit(state.copyWith(isSectionExpanded: expanded));
-    if (expanded && state.hasValidPeerPhone) {
+    if (expanded && (state.hasValidPeerPhone || state.hasSession)) {
       _startPolling();
     } else {
       _pollTimer?.cancel();
@@ -228,6 +232,8 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
           ? 'there'
           : state.customerName.trim();
 
+      final previewText = WhatsappConstants.templatePreview(customerName);
+
       await _repository.sendWhatsappMessage(
         SendWhatsappMessageRequest(
           to: state.peerPhone,
@@ -242,7 +248,23 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
         ),
       );
 
-      emit(state.copyWith(sendStatus: QnaChatSendStatus.idle));
+      final optimistic = QnaChatMessage(
+        id: 'local-template-${_uuid.v4()}',
+        kind: QnaChatMessageKind.answer,
+        contentType: QnaChatMessageContentType.text,
+        body: previewText,
+        createdAt: DateTime.now(),
+      );
+
+      emit(
+        state.copyWith(
+          sendStatus: QnaChatSendStatus.idle,
+          messageDraft: '',
+          greetingTemplateSent: true,
+          messages: [...state.messages, optimistic],
+          scrollToBottom: true,
+        ),
+      );
       await _fetchMessages(emit, silent: false);
     } catch (e) {
       emit(
@@ -413,17 +435,21 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
     QnaChatRefreshRequested event,
     Emitter<QnaChatState> emit,
   ) async {
-    if (!state.hasValidPeerPhone) return;
+    if (!state.hasValidPeerPhone && !state.hasSession) return;
     await _fetchMessages(emit, silent: event.silent);
   }
 
   Future<void> _onPollTick(QnaChatPollTick event, Emitter<QnaChatState> emit) async {
-    if (!state.hasValidPeerPhone || !state.isSectionExpanded) return;
+    if ((!state.hasValidPeerPhone && !state.hasSession) ||
+        !state.isSectionExpanded ||
+        !state.isInnerExpanded) {
+      return;
+    }
     await _fetchMessages(emit, silent: true);
   }
 
   Future<void> _fetchMessages(Emitter<QnaChatState> emit, {required bool silent}) async {
-    if (!state.hasValidPeerPhone) return;
+    if (!state.hasValidPeerPhone && !state.hasSession) return;
 
     if (!silent) {
       emit(
@@ -436,11 +462,61 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
     }
 
     try {
-      final response = await _repository.listWhatsappMessages(
-        peerPhone: state.peerPhone,
+      final sessionId = state.sessionId;
+      final serverLists = <List<QnaChatMessage>>[];
+      Object? lastError;
+
+      // Inbound customer replies are stored on the WhatsApp conversation feed.
+      if (state.hasValidPeerPhone) {
+        try {
+          final response = await _repository.listWhatsappMessages(
+            peerPhone: state.peerPhone,
+          );
+          final mapped = qnaMessagesFromSessionItems(response.data.items);
+          serverLists.add(mapped);
+          _logMessageFeed(
+            source: 'whatsapp',
+            peerPhone: state.peerPhone,
+            rawCount: response.data.items.length,
+            mapped: mapped,
+          );
+        } catch (e) {
+          lastError = e;
+          developer.log('WhatsApp messages fetch failed: $e', name: 'QnaChatBloc');
+        }
+      }
+
+      // Outbound agent messages (template, text, docs) are on the session feed.
+      if (sessionId != null &&
+          sessionId.isNotEmpty &&
+          state.inquiryId.isNotEmpty) {
+        try {
+          final response = await _repository.listSessionMessages(
+            inquiryId: state.inquiryId,
+            sessionId: sessionId,
+          );
+          final mapped = qnaMessagesFromSessionItems(response.data.items);
+          serverLists.add(mapped);
+          _logMessageFeed(
+            source: 'session',
+            peerPhone: state.peerPhone,
+            rawCount: response.data.items.length,
+            mapped: mapped,
+          );
+        } catch (e) {
+          lastError = e;
+          developer.log('Session messages fetch failed: $e', name: 'QnaChatBloc');
+        }
+      }
+
+      if (serverLists.isEmpty) {
+        throw lastError ?? Exception('Could not load messages.');
+      }
+
+      final fromServer = mergeServerMessageLists(serverLists);
+      final messages = deduplicateQnaChatMessages(
+        mergeQnaChatMessages(state.messages, fromServer),
       );
-      final fromServer = qnaMessagesFromSessionItems(response.data.items);
-      final messages = mergeQnaChatMessages(state.messages, fromServer);
       emit(
         state.copyWith(
           messages: messages,
@@ -463,7 +539,7 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
 
   void _startPolling() {
     _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+    _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       add(const QnaChatPollTick());
     });
   }
@@ -510,4 +586,20 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
 
   /// API value for finalize from selected amendment type label.
   String? get amendmentTypeApi => amendmentTypeApiValue(state.amendmentType);
+
+  void _logMessageFeed({
+    required String source,
+    required String peerPhone,
+    required int rawCount,
+    required List<QnaChatMessage> mapped,
+  }) {
+    if (!kDebugMode) return;
+    final inbound = mapped.where((m) => m.kind == QnaChatMessageKind.question).length;
+    final outbound = mapped.where((m) => m.kind == QnaChatMessageKind.answer).length;
+    developer.log(
+      '$source feed peerPhone=$peerPhone raw=$rawCount mapped=${mapped.length} '
+      'inbound=$inbound outbound=$outbound',
+      name: 'QnaChatBloc',
+    );
+  }
 }

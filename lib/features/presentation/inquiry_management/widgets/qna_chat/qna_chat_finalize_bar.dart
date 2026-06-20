@@ -42,7 +42,7 @@ class QnaChatFinalizeBar extends StatelessWidget {
           _cell(
             title: StringConstant.qnaPutFollowUp,
             color: ColorConstant.navyBlue,
-            onTap: isSubmitting ? null : () => onAction('put_follow_up'),
+            onTap: (){},
           ),
           _cell(
             title: StringConstant.qnaMarkAsPending,

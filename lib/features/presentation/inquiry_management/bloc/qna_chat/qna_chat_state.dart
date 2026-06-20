@@ -26,6 +26,7 @@ class QnaChatState extends Equatable {
     this.sendErrorMessage,
     this.scrollToBottom = false,
     this.isRefreshing = false,
+    this.greetingTemplateSent = false,
   });
 
   final String inquiryId;
@@ -46,12 +47,20 @@ class QnaChatState extends Equatable {
   final String? sendErrorMessage;
   final bool scrollToBottom;
   final bool isRefreshing;
+  final bool greetingTemplateSent;
 
   bool get hasSession => sessionId != null && sessionId!.isNotEmpty;
   bool get hasValidPeerPhone => peerPhone.length >= 10;
   bool get showFinalizeBar => hasSession;
   bool get hasActiveWhatsappSession => computeHasActiveWhatsappSession(messages);
-  bool get showTemplateComposer => hasValidPeerPhone && !hasActiveWhatsappSession;
+  bool get greetingTemplateDelivered =>
+      greetingTemplateSent || computeHasOutboundMessage(messages);
+  bool get hasInboundMessages =>
+      messages.any((message) => message.kind == QnaChatMessageKind.question);
+  bool get showAwaitingCustomerReplyHint =>
+      hasValidPeerPhone && greetingTemplateDelivered && !hasInboundMessages;
+  bool get showTemplateComposer =>
+      hasValidPeerPhone && !hasActiveWhatsappSession && !greetingTemplateDelivered;
   String get templatePreviewText => WhatsappConstants.templatePreview(customerName);
 
   List<QnaChatDateGroup> get groupedMessages => groupQnaChatMessagesByDate(messages);
@@ -78,6 +87,7 @@ class QnaChatState extends Equatable {
     bool clearSendErrorMessage = false,
     bool? scrollToBottom,
     bool? isRefreshing,
+    bool? greetingTemplateSent,
   }) {
     return QnaChatState(
       inquiryId: inquiryId ?? this.inquiryId,
@@ -99,6 +109,7 @@ class QnaChatState extends Equatable {
           clearSendErrorMessage ? null : (sendErrorMessage ?? this.sendErrorMessage),
       scrollToBottom: scrollToBottom ?? this.scrollToBottom,
       isRefreshing: isRefreshing ?? this.isRefreshing,
+      greetingTemplateSent: greetingTemplateSent ?? this.greetingTemplateSent,
     );
   }
 
@@ -120,5 +131,6 @@ class QnaChatState extends Equatable {
         sendErrorMessage,
         scrollToBottom,
         isRefreshing,
+        greetingTemplateSent,
       ];
 }

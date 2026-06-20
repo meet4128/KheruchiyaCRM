@@ -12,3 +12,8 @@ bool computeHasActiveWhatsappSession(List<QnaChatMessage> messages) {
   if (lastInbound == null) return false;
   return DateTime.now().difference(lastInbound).inHours < 24;
 }
+
+/// True when we have already sent at least one outbound message (e.g. greeting template).
+bool computeHasOutboundMessage(List<QnaChatMessage> messages) {
+  return messages.any((message) => message.kind == QnaChatMessageKind.answer);
+}

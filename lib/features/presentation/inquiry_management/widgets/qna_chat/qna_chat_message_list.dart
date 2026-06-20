@@ -55,7 +55,8 @@ class _QnaChatMessageListState extends State<QnaChatMessageList> {
       buildWhen: (previous, current) =>
           previous.messages != current.messages ||
           previous.loadStatus != current.loadStatus ||
-          previous.errorMessage != current.errorMessage,
+          previous.errorMessage != current.errorMessage ||
+          previous.showAwaitingCustomerReplyHint != current.showAwaitingCustomerReplyHint,
       builder: (context, state) {
         if (state.loadStatus == QnaChatStatus.loading && state.messages.isEmpty) {
           return const Center(child: CircularProgressIndicator(strokeWidth: 2));
@@ -98,14 +99,37 @@ class _QnaChatMessageListState extends State<QnaChatMessageList> {
         }
 
         final groups = state.groupedMessages;
-        return ListView.builder(
-          controller: _scrollController,
-          padding: const EdgeInsets.symmetric(
-            horizontal: DimensionConstant.d16,
-            vertical: DimensionConstant.d12,
-          ),
-          itemCount: _itemCount(groups),
-          itemBuilder: (context, index) => _buildItem(groups, index),
+        return Column(
+          children: [
+            if (state.showAwaitingCustomerReplyHint)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  DimensionConstant.d16,
+                  DimensionConstant.d8,
+                  DimensionConstant.d16,
+                  0,
+                ),
+                child: Text(
+                  StringConstant.qnaChatAwaitingCustomerReply,
+                  textAlign: TextAlign.center,
+                  style: FontConstant.interNormal(
+                    color: ColorConstant.whiteColor.withValues(alpha: 0.55),
+                    fontSize: DimensionConstant.d12,
+                  ),
+                ),
+              ),
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: DimensionConstant.d16,
+                  vertical: DimensionConstant.d12,
+                ),
+                itemCount: _itemCount(groups),
+                itemBuilder: (context, index) => _buildItem(groups, index),
+              ),
+            ),
+          ],
         );
       },
     );

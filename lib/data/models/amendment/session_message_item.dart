@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:travel_crm/core/constants/whatsapp_constants.dart';
 
 part 'session_message_item.g.dart';
 
@@ -19,6 +20,8 @@ class SessionMessageItem {
     this.mediaUrl,
     this.waTimestamp,
     this.createdAt,
+    this.templateName,
+    this.templateBodyParams,
   });
 
   factory SessionMessageItem.fromJson(Map<String, dynamic> json) =>
@@ -42,12 +45,17 @@ class SessionMessageItem {
   final String? mediaUrl;
   final String? waTimestamp;
   final String? createdAt;
+  final String? templateName;
+
+  @JsonKey(defaultValue: [])
+  final List<String>? templateBodyParams;
 }
 
 Map<String, dynamic> _normalizeSessionMessageJson(Map<String, dynamic> json) {
   final map = Map<String, dynamic>.from(json);
 
   map['_id'] ??= json['wamid'];
+  map['text'] ??= json['body'] ?? json['message'] ?? json['content'];
   map['fileName'] ??= json['file_name'];
   map['mediaUrl'] ??= json['media_url'];
   map['mimeType'] ??= json['mime_type'];
@@ -58,6 +66,7 @@ Map<String, dynamic> _normalizeSessionMessageJson(Map<String, dynamic> json) {
   map['inquiryId'] ??= json['inquiry_id'];
   map['sessionId'] ??= json['session_id'];
   map['amendmentId'] ??= json['amendment_id'];
+  map['direction'] ??= _directionFromLegacyFlags(json);
 
   final media = json['media'];
   if (media is Map<String, dynamic>) {
@@ -81,5 +90,34 @@ Map<String, dynamic> _normalizeSessionMessageJson(Map<String, dynamic> json) {
     map['text'] ??= document['caption'] ?? document['text'];
   }
 
+  final template = json['template'];
+  if (template is Map<String, dynamic>) {
+    map['type'] ??= 'template';
+    map['templateName'] ??= template['name'];
+    final params = template['bodyParams'] ?? template['body_params'];
+    if (params is List) {
+      map['templateBodyParams'] = params.map((e) => e.toString()).toList();
+    }
+    final existingText = map['text']?.toString().trim();
+    if (existingText == null || existingText.isEmpty) {
+      final bodyParams = map['templateBodyParams'];
+      if (bodyParams is List && bodyParams.isNotEmpty) {
+        map['text'] = WhatsappConstants.templatePreview(bodyParams.first.toString());
+      } else if (map['templateName'] == WhatsappConstants.templateName) {
+        map['text'] = WhatsappConstants.templatePreview('');
+      }
+    }
+  }
+
   return map;
+}
+
+String? _directionFromLegacyFlags(Map<String, dynamic> json) {
+  final fromMe = json['fromMe'] ?? json['from_me'] ?? json['isFromMe'];
+  if (fromMe is bool) return fromMe ? 'outbound' : 'inbound';
+
+  final isInbound = json['isInbound'] ?? json['is_inbound'];
+  if (isInbound is bool) return isInbound ? 'inbound' : 'outbound';
+
+  return null;
 }

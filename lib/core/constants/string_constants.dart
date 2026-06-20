@@ -306,6 +306,9 @@ class StringConstant {
   static const String qnaChatYesterday = 'Yesterday';
   static const String qnaChatToday = 'TODAY';
   static const String qnaChatEmpty = 'No messages yet';
+  static const String qnaChatAwaitingCustomerReply =
+      'Waiting for customer reply on WhatsApp. If replies never appear, confirm the '
+      'inquiry phone matches the customer\'s WhatsApp number and that the Meta webhook is receiving events.';
   static const String qnaChatLoadFailed = 'Could not load messages';
   static const String qnaChatRetry = 'Retry';
   static const String qnaChatAttach = 'Attachments and options';
