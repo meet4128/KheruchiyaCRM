@@ -9,7 +9,7 @@ import 'package:travel_crm/features/presentation/inquiry_management/widgets/qna_
 import 'package:travel_crm/features/presentation/inquiry_management/widgets/qna_chat/qna_chat_composer.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widgets/qna_chat/qna_chat_finalize_bar.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widgets/qna_chat/qna_chat_message_list.dart';
-import 'package:travel_crm/features/presentation/inquiry_management/widgets/qna_chat/qna_chat_quick_actions.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/widgets/qna_chat/qna_chat_payment_status_section.dart';
 
 /// Figma §2.2 — chat viewport, composer, finalize (live only), quick + bottom bars.
 class QnaChatSectionBody extends StatelessWidget {
@@ -36,7 +36,10 @@ class QnaChatSectionBody extends StatelessWidget {
       buildWhen: (p, c) =>
           p.isInnerExpanded != c.isInnerExpanded ||
           p.showFinalizeBar != c.showFinalizeBar ||
-          p.hasSession != c.hasSession,
+          p.hasSession != c.hasSession ||
+          p.customerName != c.customerName ||
+          p.inquiryId != c.inquiryId ||
+          p.amendmentType != c.amendmentType,
       builder: (context, state) {
         if (!state.isInnerExpanded) return const SizedBox.shrink();
 
@@ -70,7 +73,10 @@ class QnaChatSectionBody extends StatelessWidget {
                 isSubmitting: isFinalizeSubmitting,
               ),
               const SizedBox(height: DimensionConstant.d20),
-              QnaChatQuickActions(
+              QnaChatPaymentStatusSection(
+                customerName: state.customerName,
+                inquiryId: state.inquiryId,
+                bookingType: state.amendmentType,
                 onAddNotes: state.hasSession ? () => _promptAddNote(context) : null,
               ),
               const SizedBox(height: DimensionConstant.d20),

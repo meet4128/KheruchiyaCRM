@@ -5,9 +5,11 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
+import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/constants/whatsapp_constants.dart';
 import 'package:travel_crm/core/utils/inquiry_media_url.dart';
 import 'package:travel_crm/core/utils/whatsapp_media_url.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_installment_row.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_message.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_pending_attachment.dart';
 import 'package:travel_crm/data/models/amendment/send_whatsapp_message_request.dart';
@@ -36,6 +38,14 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
     on<QnaChatAttachmentPicked>(_onAttachmentPicked);
     on<QnaChatAttachmentCleared>(_onAttachmentCleared);
     on<QnaChatDocumentUploadRequested>(_onDocumentUploadRequested);
+    on<QnaChatPaymentStatusChanged>(_onPaymentStatusChanged);
+    on<QnaChatTravelDateChanged>(_onTravelDateChanged);
+    on<QnaChatTravelTimeChanged>(_onTravelTimeChanged);
+    on<QnaChatTotalAmountChanged>(_onTotalAmountChanged);
+    on<QnaChatInstallmentCountChanged>(_onInstallmentCountChanged);
+    on<QnaChatInstallmentRowAmountChanged>(_onInstallmentRowAmountChanged);
+    on<QnaChatInstallmentRowDateChanged>(_onInstallmentRowDateChanged);
+    on<QnaChatInstallmentRowModeChanged>(_onInstallmentRowModeChanged);
   }
 
   final InquiryRepository _repository;
@@ -586,6 +596,195 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
 
   /// API value for finalize from selected amendment type label.
   String? get amendmentTypeApi => amendmentTypeApiValue(state.amendmentType);
+
+  /// Stable id for the auto-computed remainder row so its controller and
+  /// table position stay consistent as it appears/disappears.
+  static const String _autoRowId = '__auto_remainder__';
+
+  int get _totalAmountValue => int.tryParse(state.totalAmount) ?? 0;
+
+  /// Rebuilds the installment rows so the final row always reflects the
+  /// outstanding (`total` − received installments) amount as a non-editable
+  /// auto row.
+  ///
+  /// The leading `count - 1` rows are user-editable; the last slot is the auto
+  /// remainder. Only rows whose received date is set count towards the total,
+  /// so the remainder updates (and the auto row is dropped or reappears) once a
+  /// received date is added or a received amount is changed.
+  List<QnaChatInstallmentRow> _normalizeInstallmentRows({
+    required List<QnaChatInstallmentRow> rows,
+    required int count,
+    required int total,
+  }) {
+    QnaChatInstallmentRow? existingAuto;
+    final manual = <QnaChatInstallmentRow>[];
+    for (final row in rows) {
+      if (row.isAuto) {
+        existingAuto = row;
+      } else {
+        manual.add(row);
+      }
+    }
+    while (manual.length < count) {
+      manual.add(QnaChatInstallmentRow(id: _uuid.v4()));
+    }
+
+    // No total entered yet — keep `count` plain editable rows.
+    if (total <= 0) {
+      return manual.take(count).toList();
+    }
+
+    final leading = manual.take(count - 1).toList();
+    // Only installments with a received date reduce the outstanding remainder.
+    final receivedSum = leading
+        .where((row) => row.receivedDate != null)
+        .fold<int>(0, (sum, row) => sum + (int.tryParse(row.amountText) ?? 0));
+    final remaining = total - receivedSum;
+
+    // Received installments cover the full total — drop the remainder row.
+    if (remaining <= 0) return leading;
+
+    // Preserve the auto row's own date/mode while refreshing its amount.
+    final autoRow = (existingAuto ?? const QnaChatInstallmentRow(id: _autoRowId))
+        .copyWith(amountText: '$remaining', isAuto: true);
+    return [...leading, autoRow];
+  }
+
+  void _onPaymentStatusChanged(
+    QnaChatPaymentStatusChanged event,
+    Emitter<QnaChatState> emit,
+  ) {
+    final isInstallment = event.paymentStatus == StringConstant.qnaChatPaymentStatusInstallment;
+    emit(
+      state.copyWith(
+        paymentStatus: event.paymentStatus,
+        clearPaymentStatus: event.paymentStatus == null,
+        installmentRows: _normalizeInstallmentRows(
+          rows: const [],
+          count: isInstallment ? state.installmentCount : 1,
+          total: _totalAmountValue,
+        ),
+      ),
+    );
+  }
+
+  void _onTravelDateChanged(QnaChatTravelDateChanged event, Emitter<QnaChatState> emit) {
+    emit(state.copyWith(travelDate: event.date));
+  }
+
+  void _onTravelTimeChanged(QnaChatTravelTimeChanged event, Emitter<QnaChatState> emit) {
+    emit(state.copyWith(travelTime: event.time));
+  }
+
+  void _onTotalAmountChanged(QnaChatTotalAmountChanged event, Emitter<QnaChatState> emit) {
+    final total = int.tryParse(event.text) ?? 0;
+    emit(
+      state.copyWith(
+        totalAmount: event.text,
+        installmentRows: _normalizeInstallmentRows(
+          rows: state.installmentRows,
+          count: state.effectiveInstallmentCount,
+          total: total,
+        ),
+      ),
+    );
+  }
+
+  void _onInstallmentCountChanged(
+    QnaChatInstallmentCountChanged event,
+    Emitter<QnaChatState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        installmentCount: event.count,
+        installmentRows: _normalizeInstallmentRows(
+          rows: const [],
+          count: event.count,
+          total: _totalAmountValue,
+        ),
+      ),
+    );
+  }
+
+  void _onInstallmentRowAmountChanged(
+    QnaChatInstallmentRowAmountChanged event,
+    Emitter<QnaChatState> emit,
+  ) {
+    // The auto remainder row is computed, never edited directly.
+    if (event.rowId == _autoRowId) return;
+
+    final total = int.tryParse(state.totalAmount) ?? 0;
+    final othersTotal = state.installmentRows
+        .where((row) => row.id != event.rowId && !row.isAuto)
+        .fold<int>(0, (sum, row) => sum + (int.tryParse(row.amountText) ?? 0));
+    final maxForRow = total - othersTotal;
+    final newAmount = int.tryParse(event.text) ?? 0;
+
+    // Keep leading rows from exceeding the total; surface the remaining amount.
+    if (total > 0 && newAmount > maxForRow) {
+      emit(
+        state.copyWith(
+          installmentAmountErrorRemaining: maxForRow < 0 ? 0 : maxForRow,
+          installmentAmountErrorToken: state.installmentAmountErrorToken + 1,
+        ),
+      );
+      return;
+    }
+
+    final updated = [
+      for (final row in state.installmentRows)
+        row.id == event.rowId ? row.copyWith(amountText: event.text) : row,
+    ];
+    emit(
+      state.copyWith(
+        installmentRows: _normalizeInstallmentRows(
+          rows: updated,
+          count: state.effectiveInstallmentCount,
+          total: total,
+        ),
+      ),
+    );
+  }
+
+  void _onInstallmentRowDateChanged(
+    QnaChatInstallmentRowDateChanged event,
+    Emitter<QnaChatState> emit,
+  ) {
+    final updated = [
+      for (final row in state.installmentRows)
+        if (row.id == event.rowId)
+          event.isDueDate
+              ? row.copyWith(dueDate: event.date)
+              : row.copyWith(receivedDate: event.date)
+        else
+          row,
+    ];
+    emit(
+      state.copyWith(
+        // Setting a received date may change the outstanding remainder, so
+        // recompute the auto row (drop/reappear/resize) accordingly.
+        installmentRows: _normalizeInstallmentRows(
+          rows: updated,
+          count: state.effectiveInstallmentCount,
+          total: _totalAmountValue,
+        ),
+      ),
+    );
+  }
+
+  void _onInstallmentRowModeChanged(
+    QnaChatInstallmentRowModeChanged event,
+    Emitter<QnaChatState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        installmentRows: [
+          for (final row in state.installmentRows)
+            row.id == event.rowId ? row.copyWith(mode: event.mode) : row,
+        ],
+      ),
+    );
+  }
 
   void _logMessageFeed({
     required String source,

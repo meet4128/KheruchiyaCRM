@@ -1,5 +1,8 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart' show TimeOfDay;
+import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/constants/whatsapp_constants.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_installment_row.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_message.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_pending_attachment.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/utils/whatsapp_session_utils.dart';
@@ -27,6 +30,14 @@ class QnaChatState extends Equatable {
     this.scrollToBottom = false,
     this.isRefreshing = false,
     this.greetingTemplateSent = false,
+    this.paymentStatus,
+    this.travelDate,
+    this.travelTime,
+    this.totalAmount = '',
+    this.installmentCount = 1,
+    this.installmentRows = const [],
+    this.installmentAmountErrorRemaining,
+    this.installmentAmountErrorToken = 0,
   });
 
   final String inquiryId;
@@ -48,6 +59,20 @@ class QnaChatState extends Equatable {
   final bool scrollToBottom;
   final bool isRefreshing;
   final bool greetingTemplateSent;
+  final String? paymentStatus;
+  final DateTime? travelDate;
+  final TimeOfDay? travelTime;
+  final String totalAmount;
+  final int installmentCount;
+  final List<QnaChatInstallmentRow> installmentRows;
+  final int? installmentAmountErrorRemaining;
+  final int installmentAmountErrorToken;
+
+  bool get isInstallmentPayment => paymentStatus == StringConstant.qnaChatPaymentStatusInstallment;
+  int get effectiveInstallmentCount => isInstallmentPayment ? installmentCount : 1;
+  int get paymentReceivedTillNow => installmentRows
+      .where((row) => row.receivedDate != null)
+      .fold(0, (sum, row) => sum + (int.tryParse(row.amountText) ?? 0));
 
   bool get hasSession => sessionId != null && sessionId!.isNotEmpty;
   bool get hasValidPeerPhone => peerPhone.length >= 10;
@@ -88,6 +113,16 @@ class QnaChatState extends Equatable {
     bool? scrollToBottom,
     bool? isRefreshing,
     bool? greetingTemplateSent,
+    String? paymentStatus,
+    bool clearPaymentStatus = false,
+    DateTime? travelDate,
+    TimeOfDay? travelTime,
+    String? totalAmount,
+    int? installmentCount,
+    List<QnaChatInstallmentRow>? installmentRows,
+    int? installmentAmountErrorRemaining,
+    bool clearInstallmentAmountErrorRemaining = false,
+    int? installmentAmountErrorToken,
   }) {
     return QnaChatState(
       inquiryId: inquiryId ?? this.inquiryId,
@@ -110,6 +145,16 @@ class QnaChatState extends Equatable {
       scrollToBottom: scrollToBottom ?? this.scrollToBottom,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       greetingTemplateSent: greetingTemplateSent ?? this.greetingTemplateSent,
+      paymentStatus: clearPaymentStatus ? null : (paymentStatus ?? this.paymentStatus),
+      travelDate: travelDate ?? this.travelDate,
+      travelTime: travelTime ?? this.travelTime,
+      totalAmount: totalAmount ?? this.totalAmount,
+      installmentCount: installmentCount ?? this.installmentCount,
+      installmentRows: installmentRows ?? this.installmentRows,
+      installmentAmountErrorRemaining: clearInstallmentAmountErrorRemaining
+          ? null
+          : (installmentAmountErrorRemaining ?? this.installmentAmountErrorRemaining),
+      installmentAmountErrorToken: installmentAmountErrorToken ?? this.installmentAmountErrorToken,
     );
   }
 
@@ -132,5 +177,13 @@ class QnaChatState extends Equatable {
         scrollToBottom,
         isRefreshing,
         greetingTemplateSent,
+        paymentStatus,
+        travelDate,
+        travelTime,
+        totalAmount,
+        installmentCount,
+        installmentRows,
+        installmentAmountErrorRemaining,
+        installmentAmountErrorToken,
       ];
 }

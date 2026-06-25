@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart' show TimeOfDay;
 
 sealed class QnaChatEvent extends Equatable {
   const QnaChatEvent();
@@ -125,4 +126,84 @@ final class QnaChatDocumentUploadRequested extends QnaChatEvent {
 
   @override
   List<Object?> get props => [fileName, filePath, bytes, caption];
+}
+
+final class QnaChatPaymentStatusChanged extends QnaChatEvent {
+  const QnaChatPaymentStatusChanged(this.paymentStatus);
+
+  final String? paymentStatus;
+
+  @override
+  List<Object?> get props => [paymentStatus];
+}
+
+final class QnaChatTravelDateChanged extends QnaChatEvent {
+  const QnaChatTravelDateChanged(this.date);
+
+  final DateTime date;
+
+  @override
+  List<Object?> get props => [date];
+}
+
+final class QnaChatTravelTimeChanged extends QnaChatEvent {
+  const QnaChatTravelTimeChanged(this.time);
+
+  final TimeOfDay time;
+
+  @override
+  List<Object?> get props => [time];
+}
+
+final class QnaChatTotalAmountChanged extends QnaChatEvent {
+  const QnaChatTotalAmountChanged(this.text);
+
+  final String text;
+
+  @override
+  List<Object?> get props => [text];
+}
+
+final class QnaChatInstallmentCountChanged extends QnaChatEvent {
+  const QnaChatInstallmentCountChanged(this.count);
+
+  final int count;
+
+  @override
+  List<Object?> get props => [count];
+}
+
+final class QnaChatInstallmentRowAmountChanged extends QnaChatEvent {
+  const QnaChatInstallmentRowAmountChanged({required this.rowId, required this.text});
+
+  final String rowId;
+  final String text;
+
+  @override
+  List<Object?> get props => [rowId, text];
+}
+
+final class QnaChatInstallmentRowDateChanged extends QnaChatEvent {
+  const QnaChatInstallmentRowDateChanged({
+    required this.rowId,
+    required this.isDueDate,
+    required this.date,
+  });
+
+  final String rowId;
+  final bool isDueDate;
+  final DateTime date;
+
+  @override
+  List<Object?> get props => [rowId, isDueDate, date];
+}
+
+final class QnaChatInstallmentRowModeChanged extends QnaChatEvent {
+  const QnaChatInstallmentRowModeChanged({required this.rowId, required this.mode});
+
+  final String rowId;
+  final String mode;
+
+  @override
+  List<Object?> get props => [rowId, mode];
 }

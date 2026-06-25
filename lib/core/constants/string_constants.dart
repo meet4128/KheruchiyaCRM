@@ -332,6 +332,37 @@ class StringConstant {
     'Booking',
     'Baggage',
   ];
+  static const String qnaChatPaymentStatus = 'Payment Status';
+  static const String qnaChatPaymentStatusOneTime = 'One-Time';
+  static const String qnaChatPaymentStatusInstallment = 'Installment';
+  static const List<String> qnaChatPaymentStatusOptions = [
+    qnaChatPaymentStatusOneTime,
+    qnaChatPaymentStatusInstallment,
+  ];
+  static const String qnaChatPaymentTermsOf = 'Payment Terms of';
+  static const String qnaChatInquiryInformation = 'Inquiry Information';
+  static const String qnaChatEnterTravelDateTime = 'Enter Travel Date & Time';
+  static const String qnaChatBookingType = 'Booking Type';
+  static const String qnaChatTotalAmountToBeReceived = 'Total Amount to be received';
+  static const String qnaChatInclusiveOfAllTaxes = 'Inclusive of all taxes';
+  static const String qnaChatNoOfInstallments = 'No. of Installments';
+  static const String qnaChatPaymentReceivedTillNow = 'Payment Received Till Now';
+  static const List<String> qnaChatPaymentModeOptions = ['Cash', 'UPI', 'Cheque'];
+  static const String qnaChatColumnAmount = 'Amount';
+  static const String qnaChatColumnDueDate = 'Due Date';
+  static const String qnaChatColumnReceivedDate = 'Recieved Date';
+  static const String qnaChatColumnMode = 'Mode';
+  static const String qnaChatColumnStatus = 'Status';
+  static const String qnaChatColumnPaymentProof = 'Payment Proof';
+  static const String qnaChatNotReceivedYet = 'Not Recieved Yet';
+  static const String qnaChatOnTime = 'On-Time';
+  static const String qnaChatLate = 'Late';
+  static const String qnaChatUploadProof = 'Upload Proof';
+  static const String qnaChatPaymentLateTooltip = 'Payment late';
+  static const String qnaChatPaymentTermsFinalisedOn = 'Payment Terms Finalised on';
+  static const String qnaChatInstallmentSingular = 'Installment';
+  static const String qnaChatInstallmentPlural = 'Installments';
+  static const String qnaChatRemainingAmount = 'Remaining amount';
   static const String qnaGetPersonalDocumentDetails = 'Get Personal Document Details';
   static const String qnaTalkToPurchaseTeam = 'Talk To Purchase Team';
   static const String messagesTitle = 'Messages';

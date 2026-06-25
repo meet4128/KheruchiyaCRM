@@ -3,8 +3,7 @@ import 'package:travel_crm/core/utils/shared_pref_utils.dart';
 import 'navigation_event.dart';
 import 'navigation_state.dart';
 
-class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {
-  NavigationBloc()
+class NavigationBloc extends Bloc<NavigationEvent, NavigationState> {NavigationBloc()
       : super(const NavigationState(currentPage: NavPage.dashboard)) {
     on<ChangePageEvent>((event, emit) {
       emit(state.copyWith(currentPage: event.page));
