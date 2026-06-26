@@ -13,11 +13,16 @@ class QnaChatFinalizeBar extends StatelessWidget {
     required this.onAction,
     this.onTalkToPurchaseTeam,
     this.isSubmitting = false,
+    this.canMarkWon = false,
   });
 
   final FinalizeActionCallback onAction;
   final VoidCallback? onTalkToPurchaseTeam;
   final bool isSubmitting;
+
+  /// Whether "Mark as Won" is allowed — only once the received amount matches
+  /// the total amount to be received.
+  final bool canMarkWon;
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +63,8 @@ class QnaChatFinalizeBar extends StatelessWidget {
             title: StringConstant.qnaMarkAsWon,
             color: ColorConstant.subTitleGreenColor,
             textColor: Colors.black,
-            onTap: isSubmitting ? null : () => onAction('mark_won'),
+            enabled: canMarkWon,
+            onTap: (isSubmitting || !canMarkWon) ? null : () => onAction('mark_won'),
           ),
         ],
       ),
@@ -70,28 +76,32 @@ class QnaChatFinalizeBar extends StatelessWidget {
     required Color color,
     required VoidCallback? onTap,
     Color textColor = ColorConstant.whiteColor,
+    bool enabled = true,
   }) {
     return Expanded(
-      child: Material(
-        color: color,
-        child: InkWell(
-          onTap: onTap,
-          child: Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: DimensionConstant.d8),
-            decoration: BoxDecoration(
-              border: Border(
-                right: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+      child: Opacity(
+        opacity: enabled ? 1 : 0.45,
+        child: Material(
+          color: color,
+          child: InkWell(
+            onTap: onTap,
+            child: Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: DimensionConstant.d8),
+              decoration: BoxDecoration(
+                border: Border(
+                  right: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                ),
               ),
-            ),
-            child: Text(
-              title,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: FontConstant.interNormal(
-                color: textColor,
-                fontSize: DimensionConstant.d12,
+              child: Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: FontConstant.interNormal(
+                  color: textColor,
+                  fontSize: DimensionConstant.d12,
+                ),
               ),
             ),
           ),

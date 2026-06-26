@@ -16,6 +16,7 @@ class QnaChatState extends Equatable {
     this.inquiryId = '',
     this.peerPhone = '',
     this.customerName = '',
+    this.bookingType,
     this.sessionId,
     this.isSectionExpanded = true,
     this.isInnerExpanded = true,
@@ -43,7 +44,13 @@ class QnaChatState extends Equatable {
   final String inquiryId;
   final String peerPhone;
   final String customerName;
+  final String? bookingType;
   final String? sessionId;
+
+  /// Short display form of [inquiryId] (last 8 chars), e.g. `1add3d4e`.
+  String get shortInquiryId => inquiryId.length > 8
+      ? inquiryId.substring(inquiryId.length - 8)
+      : inquiryId;
   final bool isSectionExpanded;
   final bool isInnerExpanded;
   final List<QnaChatMessage> messages;
@@ -74,6 +81,13 @@ class QnaChatState extends Equatable {
       .where((row) => row.receivedDate != null)
       .fold(0, (sum, row) => sum + (int.tryParse(row.amountText) ?? 0));
 
+  /// Won can only be finalized once the full amount has been received, i.e.
+  /// "Payment Received Till Now" matches the "Total Amount to be received".
+  bool get canMarkWon {
+    final total = int.tryParse(totalAmount.trim());
+    return total != null && total > 0 && paymentReceivedTillNow >= total;
+  }
+
   bool get hasSession => sessionId != null && sessionId!.isNotEmpty;
   bool get hasValidPeerPhone => peerPhone.length >= 10;
   bool get showFinalizeBar => hasSession;
@@ -94,6 +108,7 @@ class QnaChatState extends Equatable {
     String? inquiryId,
     String? peerPhone,
     String? customerName,
+    String? bookingType,
     String? sessionId,
     bool clearSessionId = false,
     bool? isSectionExpanded,
@@ -128,6 +143,7 @@ class QnaChatState extends Equatable {
       inquiryId: inquiryId ?? this.inquiryId,
       peerPhone: peerPhone ?? this.peerPhone,
       customerName: customerName ?? this.customerName,
+      bookingType: bookingType ?? this.bookingType,
       sessionId: clearSessionId ? null : (sessionId ?? this.sessionId),
       isSectionExpanded: isSectionExpanded ?? this.isSectionExpanded,
       isInnerExpanded: isInnerExpanded ?? this.isInnerExpanded,
@@ -163,6 +179,7 @@ class QnaChatState extends Equatable {
         inquiryId,
         peerPhone,
         customerName,
+        bookingType,
         sessionId,
         isSectionExpanded,
         isInnerExpanded,

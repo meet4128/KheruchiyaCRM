@@ -65,6 +65,7 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
         inquiryId: event.inquiryId,
         peerPhone: event.peerPhone,
         customerName: event.customerName,
+        bookingType: event.bookingType,
         sessionId: event.sessionId,
         messages: const [],
         messageDraft: '',

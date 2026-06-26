@@ -199,6 +199,7 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
                         peerPhone: detailState.peerPhoneE164,
                         sessionId: detailState.activeSessionId,
                         customerName: row?.name ?? '',
+                        bookingType: row?.bookingType,
                       ),
                     ],
                   ],

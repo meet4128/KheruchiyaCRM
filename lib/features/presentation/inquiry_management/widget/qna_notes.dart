@@ -29,12 +29,14 @@ class QnaNotes extends StatefulWidget {
     required this.peerPhone,
     this.sessionId,
     this.customerName = '',
+    this.bookingType,
   });
 
   final String inquiryId;
   final String peerPhone;
   final String? sessionId;
   final String customerName;
+  final String? bookingType;
 
   @override
   State<QnaNotes> createState() => _QnaNotesState();
@@ -56,6 +58,7 @@ class _QnaNotesState extends State<QnaNotes> {
           peerPhone: widget.peerPhone,
           sessionId: widget.sessionId,
           customerName: widget.customerName,
+          bookingType: widget.bookingType,
         ),
       );
   }
@@ -68,13 +71,15 @@ class _QnaNotesState extends State<QnaNotes> {
     }
     if (oldWidget.peerPhone != widget.peerPhone ||
         oldWidget.inquiryId != widget.inquiryId ||
-        oldWidget.customerName != widget.customerName) {
+        oldWidget.customerName != widget.customerName ||
+        oldWidget.bookingType != widget.bookingType) {
       _chatBloc.add(
         QnaChatStarted(
           inquiryId: widget.inquiryId,
           peerPhone: widget.peerPhone,
           sessionId: widget.sessionId,
           customerName: widget.customerName,
+          bookingType: widget.bookingType,
         ),
       );
     }

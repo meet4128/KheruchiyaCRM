@@ -39,7 +39,7 @@ class QnaChatSectionBody extends StatelessWidget {
           p.hasSession != c.hasSession ||
           p.customerName != c.customerName ||
           p.inquiryId != c.inquiryId ||
-          p.amendmentType != c.amendmentType,
+          p.bookingType != c.bookingType,
       builder: (context, state) {
         if (!state.isInnerExpanded) return const SizedBox.shrink();
 
@@ -67,16 +67,20 @@ class QnaChatSectionBody extends StatelessWidget {
             QnaChatComposer(onAttachTap: onAttachTap),
             if (state.showFinalizeBar) ...[
               const SizedBox(height: DimensionConstant.d20),
-              QnaChatFinalizeBar(
-                onAction: onFinalizeAction,
-                onTalkToPurchaseTeam: onTalkToPurchaseTeam,
-                isSubmitting: isFinalizeSubmitting,
+              BlocSelector<QnaChatBloc, QnaChatState, bool>(
+                selector: (s) => s.canMarkWon,
+                builder: (context, canMarkWon) => QnaChatFinalizeBar(
+                  onAction: onFinalizeAction,
+                  onTalkToPurchaseTeam: onTalkToPurchaseTeam,
+                  isSubmitting: isFinalizeSubmitting,
+                  canMarkWon: canMarkWon,
+                ),
               ),
               const SizedBox(height: DimensionConstant.d20),
               QnaChatPaymentStatusSection(
                 customerName: state.customerName,
-                inquiryId: state.inquiryId,
-                bookingType: state.amendmentType,
+                inquiryId: state.shortInquiryId,
+                bookingType: state.bookingType,
                 onAddNotes: state.hasSession ? () => _promptAddNote(context) : null,
               ),
               const SizedBox(height: DimensionConstant.d20),
