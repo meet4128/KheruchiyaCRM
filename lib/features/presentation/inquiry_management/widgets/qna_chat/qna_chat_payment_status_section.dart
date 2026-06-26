@@ -10,6 +10,7 @@ import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_cha
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_chat/qna_chat_event.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_chat/qna_chat_state.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_installment_row.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/utils/qna_attachment_pick_util.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widgets/qna_chat/qna_chat_quick_actions.dart';
 
 /// Payment status selection (One-Time / Installment) shown alongside the
@@ -159,6 +160,7 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
   final TextEditingController _totalAmountController = TextEditingController();
   final Map<String, TextEditingController> _rowControllers = {};
   int _lastShownErrorToken = 0;
+  int _lastShownSaveToken = 0;
 
   TextEditingController _controllerFor(QnaChatInstallmentRow row) {
     return _rowControllers.putIfAbsent(
@@ -280,7 +282,8 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
       listenWhen: (previous, current) =>
           previous.totalAmount != current.totalAmount ||
           previous.installmentRows != current.installmentRows ||
-          previous.installmentAmountErrorToken != current.installmentAmountErrorToken,
+          previous.installmentAmountErrorToken != current.installmentAmountErrorToken ||
+          previous.paymentSaveResultToken != current.paymentSaveResultToken,
       listener: (context, state) {
         if (_totalAmountController.text != state.totalAmount) {
           _totalAmountController.value = TextEditingValue(
@@ -311,6 +314,21 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
             );
           }
         }
+        if (state.paymentSaveResultToken != _lastShownSaveToken) {
+          _lastShownSaveToken = state.paymentSaveResultToken;
+          final isSuccess = state.paymentSaveStatus == QnaChatPaymentSaveStatus.success;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                isSuccess
+                    ? StringConstant.qnaChatPaymentSaveSuccess
+                    : (state.paymentSaveError ?? StringConstant.qnaChatPaymentSaveFailure),
+              ),
+              backgroundColor:
+                  isSuccess ? ColorConstant.subTitleGreenColor : ColorConstant.purpleBrown,
+            ),
+          );
+        }
       },
       buildWhen: (previous, current) =>
           previous.travelDate != current.travelDate ||
@@ -319,7 +337,11 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
           previous.installmentCount != current.installmentCount ||
           previous.installmentRows != current.installmentRows ||
           previous.isInstallmentPayment != current.isInstallmentPayment ||
-          previous.paymentReceivedTillNow != current.paymentReceivedTillNow,
+          previous.paymentReceivedTillNow != current.paymentReceivedTillNow ||
+          previous.bookingType != current.bookingType ||
+          previous.travelTime != current.travelTime ||
+          previous.paymentStatus != current.paymentStatus ||
+          previous.paymentSaveStatus != current.paymentSaveStatus,
       builder: (context, state) {
         return Container(
           padding: const EdgeInsets.all(DimensionConstant.d15),
@@ -425,10 +447,57 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
               ),
               const SizedBox(height: DimensionConstant.d20),
               _installmentTable(context, state.installmentRows),
+              const SizedBox(height: DimensionConstant.d20),
+              Align(
+                alignment: Alignment.centerRight,
+                child: _saveButton(context, isSaving: state.isPaymentSaving),
+              ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _saveButton(BuildContext context, {required bool isSaving}) {
+    return InkWell(
+      onTap: isSaving
+          ? null
+          : () => context.read<QnaChatBloc>().add(const QnaChatPaymentTermsSaveRequested()),
+      borderRadius: BorderRadius.circular(DimensionConstant.d4),
+      child: Opacity(
+        opacity: isSaving ? 0.7 : 1,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: DimensionConstant.d40,
+            vertical: DimensionConstant.d12,
+          ),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [ColorConstant.purple, ColorConstant.indigo],
+            ),
+            borderRadius: BorderRadius.circular(DimensionConstant.d4),
+          ),
+          child: isSaving
+              ? const SizedBox(
+                  height: DimensionConstant.d16,
+                  width: DimensionConstant.d16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(ColorConstant.whiteColor),
+                  ),
+                )
+              : Text(
+                  StringConstant.qnaChatSave,
+                  style: FontConstant.interMedium(
+                    color: ColorConstant.whiteColor,
+                    fontSize: DimensionConstant.d14,
+                  ),
+                ),
+        ),
+      ),
     );
   }
 
@@ -723,7 +792,7 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
           ),
           Expanded(
             flex: 2,
-            child: Center(child: _paymentProofCell(row, isLate: isLate)),
+            child: Center(child: _paymentProofCell(context, row, isLate: isLate)),
           ),
         ],
       ),
@@ -799,15 +868,44 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
     );
   }
 
-  Widget _paymentProofCell(QnaChatInstallmentRow row, {required bool isLate}) {
+  Widget _paymentProofCell(BuildContext context, QnaChatInstallmentRow row, {required bool isLate}) {
     if (row.mode == 'Cash') {
       return Text(
         row.mode!,
         style: FontConstant.interNormal(color: ColorConstant.whiteColor, fontSize: DimensionConstant.d13),
       );
     }
+    if (row.isUploadingProof) {
+      return const SizedBox(
+        height: DimensionConstant.d14,
+        width: DimensionConstant.d14,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation(ColorConstant.whiteColor),
+        ),
+      );
+    }
+    if (row.hasProof) {
+      return InkWell(
+        onTap: () => _pickAndUploadProof(context, row),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle, color: ColorConstant.subTitleGreenColor, size: 14),
+            const SizedBox(width: DimensionConstant.d6),
+            Text(
+              StringConstant.qnaChatProofUploaded,
+              style: FontConstant.interNormal(
+                color: ColorConstant.subTitleGreenColor,
+                fontSize: DimensionConstant.d13,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return InkWell(
-      onTap: () {},
+      onTap: () => _pickAndUploadProof(context, row),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -835,6 +933,20 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
           const SizedBox(width: DimensionConstant.d6),
           const Icon(Icons.upload, color: ColorConstant.whiteColor, size: 14),
         ],
+      ),
+    );
+  }
+
+  Future<void> _pickAndUploadProof(BuildContext context, QnaChatInstallmentRow row) async {
+    final bloc = context.read<QnaChatBloc>();
+    final attachment = await pickQnaChatAttachment();
+    if (attachment == null) return;
+    bloc.add(
+      QnaChatInstallmentProofUploadRequested(
+        rowId: row.id,
+        fileName: attachment.fileName,
+        filePath: attachment.filePath,
+        bytes: attachment.bytes,
       ),
     );
   }

@@ -10,6 +10,9 @@ import 'package:travel_crm/data/models/amendment/session_note_request.dart';
 import 'package:travel_crm/data/models/amendment/upload_session_file_data.dart';
 import 'package:travel_crm/data/models/inquiry/inquiry_detail_response.dart';
 import 'package:travel_crm/data/models/inquiry/list_inquiries_response.dart';
+import 'package:travel_crm/data/models/inquiry/payment_plan_response.dart';
+import 'package:travel_crm/data/models/inquiry/payment_proof_upload_response.dart';
+import 'package:travel_crm/data/models/inquiry/update_payment_plan_request.dart';
 import 'package:travel_crm/data/models/members/create_member_request.dart';
 import 'package:travel_crm/data/models/members/create_member_response.dart';
 import 'package:travel_crm/data/models/members/list_members_response.dart';
@@ -252,6 +255,22 @@ abstract class InquiryApiClient {
   Future<UploadPurchaseChatFileResponse> uploadPurchaseChatFile(
     @Path('inquiryId') String inquiryId,
     @Path('purchaseTeamMemberId') String purchaseTeamMemberId,
+    @Part(name: 'file') MultipartFile file,
+  );
+
+  @GET('/inquiries/{inquiryId}/payment-plan')
+  Future<PaymentPlanResponse> getPaymentPlan(@Path('inquiryId') String inquiryId);
+
+  @PUT('/inquiries/{inquiryId}/payment-plan')
+  Future<PaymentPlanResponse> updatePaymentPlan(
+    @Path('inquiryId') String inquiryId,
+    @Body() UpdatePaymentPlanRequest body,
+  );
+
+  @POST('/inquiries/{inquiryId}/payment-plan/uploads')
+  @MultiPart()
+  Future<PaymentProofUploadResponse> uploadPaymentProof(
+    @Path('inquiryId') String inquiryId,
     @Part(name: 'file') MultipartFile file,
   );
 }

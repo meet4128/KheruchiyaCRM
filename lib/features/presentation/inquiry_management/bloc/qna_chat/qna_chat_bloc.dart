@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
@@ -14,6 +15,9 @@ import 'package:travel_crm/features/presentation/inquiry_management/models/qna_c
 import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_pending_attachment.dart';
 import 'package:travel_crm/data/models/amendment/send_whatsapp_message_request.dart';
 import 'package:travel_crm/data/models/amendment/whatsapp_template_payload.dart';
+import 'package:travel_crm/data/models/inquiry/payment_plan_dto.dart';
+import 'package:travel_crm/data/models/inquiry/payment_plan_installment_dto.dart';
+import 'package:travel_crm/data/models/inquiry/update_payment_plan_request.dart';
 import 'package:travel_crm/data/repositories/inquiry_repository.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_chat/qna_chat_event.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_chat/qna_chat_state.dart';
@@ -46,6 +50,9 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
     on<QnaChatInstallmentRowAmountChanged>(_onInstallmentRowAmountChanged);
     on<QnaChatInstallmentRowDateChanged>(_onInstallmentRowDateChanged);
     on<QnaChatInstallmentRowModeChanged>(_onInstallmentRowModeChanged);
+    on<QnaChatPaymentPlanLoadRequested>(_onPaymentPlanLoadRequested);
+    on<QnaChatPaymentTermsSaveRequested>(_onPaymentTermsSaveRequested);
+    on<QnaChatInstallmentProofUploadRequested>(_onInstallmentProofUploadRequested);
   }
 
   final InquiryRepository _repository;
@@ -77,6 +84,9 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
     if (state.hasValidPeerPhone || state.hasSession) {
       add(const QnaChatRefreshRequested());
       _startPolling();
+    }
+    if (event.inquiryId.isNotEmpty) {
+      add(const QnaChatPaymentPlanLoadRequested());
     }
   }
 
@@ -786,6 +796,198 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
       ),
     );
   }
+
+  Future<void> _onPaymentPlanLoadRequested(
+    QnaChatPaymentPlanLoadRequested event,
+    Emitter<QnaChatState> emit,
+  ) async {
+    if (state.inquiryId.isEmpty) return;
+    try {
+      final response = await _repository.getPaymentPlan(state.inquiryId);
+      final plan = response.data.paymentPlan;
+      if (plan == null) return;
+      _applyPaymentPlan(plan, emit);
+    } on Object catch (error) {
+      // A missing plan (404) is expected for new inquiries — log and ignore.
+      if (kDebugMode) {
+        developer.log('Load payment plan failed: $error', name: 'QnaChatBloc');
+      }
+    }
+  }
+
+  void _applyPaymentPlan(PaymentPlanDto plan, Emitter<QnaChatState> emit) {
+    final travel = plan.travelDate;
+    final installmentCount = plan.numberOfInstallments ?? plan.installments.length;
+    final isInstallment = installmentCount > 1;
+    final rows = [
+      for (final dto in plan.installments)
+        QnaChatInstallmentRow(
+          id: _uuid.v4(),
+          amountText: dto.amount == null ? '' : _amountToText(dto.amount!),
+          dueDate: dto.dueDate,
+          receivedDate: dto.receivedDate,
+          mode: dto.mode,
+          status: dto.status,
+          paymentProofUrl: dto.paymentProofUrl,
+        ),
+    ];
+    emit(
+      state.copyWith(
+        paymentStatus: isInstallment
+            ? StringConstant.qnaChatPaymentStatusInstallment
+            : StringConstant.qnaChatPaymentStatusOneTime,
+        bookingType: plan.bookingType ?? state.bookingType,
+        travelDate: travel == null
+            ? null
+            : DateTime(travel.year, travel.month, travel.day),
+        travelTime:
+            travel == null ? null : TimeOfDay(hour: travel.hour, minute: travel.minute),
+        totalAmount: plan.totalAmount == null ? '' : _amountToText(plan.totalAmount!),
+        installmentCount: installmentCount < 1 ? 1 : installmentCount,
+        installmentRows: rows,
+      ),
+    );
+  }
+
+  Future<void> _onPaymentTermsSaveRequested(
+    QnaChatPaymentTermsSaveRequested event,
+    Emitter<QnaChatState> emit,
+  ) async {
+    if (state.isPaymentSaving) return;
+    if (state.inquiryId.isEmpty) {
+      emit(
+        state.copyWith(
+          paymentSaveStatus: QnaChatPaymentSaveStatus.failure,
+          paymentSaveError: 'Inquiry is not available.',
+          paymentSaveResultToken: state.paymentSaveResultToken + 1,
+        ),
+      );
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        paymentSaveStatus: QnaChatPaymentSaveStatus.saving,
+        clearPaymentSaveError: true,
+      ),
+    );
+
+    final request = UpdatePaymentPlanRequest(
+      travelDate: _combinedTravelDateTime(),
+      bookingType: state.bookingType,
+      totalAmount: num.tryParse(state.totalAmount.trim()),
+      numberOfInstallments: state.effectiveInstallmentCount,
+      paymentReceivedTillNow: state.paymentReceivedTillNow,
+      installments: [
+        for (final row in state.installmentRows)
+          PaymentPlanInstallmentDto(
+            amount: num.tryParse(row.amountText.trim()),
+            dueDate: row.dueDate,
+            receivedDate: row.receivedDate,
+            mode: row.mode,
+            status: _apiStatusFor(row),
+            paymentProofUrl: row.hasProof ? row.paymentProofUrl : null,
+          ),
+      ],
+    );
+
+    try {
+      final response = await _repository.updatePaymentPlan(
+        inquiryId: state.inquiryId,
+        request: request,
+      );
+      final plan = response.data.paymentPlan;
+      if (plan != null) {
+        _applyPaymentPlan(plan, emit);
+      }
+      emit(
+        state.copyWith(
+          paymentSaveStatus: QnaChatPaymentSaveStatus.success,
+          clearPaymentSaveError: true,
+          paymentSaveResultToken: state.paymentSaveResultToken + 1,
+        ),
+      );
+    } on Object catch (error) {
+      emit(
+        state.copyWith(
+          paymentSaveStatus: QnaChatPaymentSaveStatus.failure,
+          paymentSaveError: error.toString(),
+          paymentSaveResultToken: state.paymentSaveResultToken + 1,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onInstallmentProofUploadRequested(
+    QnaChatInstallmentProofUploadRequested event,
+    Emitter<QnaChatState> emit,
+  ) async {
+    final exists = state.installmentRows.any((row) => row.id == event.rowId);
+    if (!exists || state.inquiryId.isEmpty) return;
+
+    emit(state.copyWith(installmentRows: _setRowUploading(event.rowId, true)));
+
+    try {
+      final multipart = await _multipartFromPick(
+        fileName: event.fileName,
+        filePath: event.filePath,
+        bytes: event.bytes,
+      );
+      final upload = await _repository.uploadPaymentProof(
+        inquiryId: state.inquiryId,
+        file: multipart,
+      );
+      emit(
+        state.copyWith(
+          installmentRows: [
+            for (final row in state.installmentRows)
+              row.id == event.rowId
+                  ? row.copyWith(
+                      paymentProofUrl: upload.data.paymentProofUrl,
+                      isUploadingProof: false,
+                    )
+                  : row,
+          ],
+        ),
+      );
+    } on Object catch (error) {
+      if (kDebugMode) {
+        developer.log('Upload payment proof failed: $error', name: 'QnaChatBloc');
+      }
+      emit(
+        state.copyWith(
+          installmentRows: _setRowUploading(event.rowId, false),
+          paymentSaveStatus: QnaChatPaymentSaveStatus.failure,
+          paymentSaveError: error.toString(),
+          paymentSaveResultToken: state.paymentSaveResultToken + 1,
+        ),
+      );
+    }
+  }
+
+  List<QnaChatInstallmentRow> _setRowUploading(String rowId, bool uploading) {
+    return [
+      for (final row in state.installmentRows)
+        row.id == rowId ? row.copyWith(isUploadingProof: uploading) : row,
+    ];
+  }
+
+  /// Combines the picked travel date and time into a single datetime for the API.
+  DateTime? _combinedTravelDateTime() {
+    final date = state.travelDate;
+    if (date == null) return null;
+    final time = state.travelTime;
+    return DateTime(date.year, date.month, date.day, time?.hour ?? 0, time?.minute ?? 0);
+  }
+
+  /// API-facing status: only set once a payment has been received.
+  String? _apiStatusFor(QnaChatInstallmentRow row) {
+    if (row.receivedDate == null) return null;
+    return row.isLate ? 'Late' : 'On Time';
+  }
+
+  String _amountToText(num amount) =>
+      amount == amount.roundToDouble() ? amount.toInt().toString() : amount.toString();
 
   void _logMessageFeed({
     required String source,

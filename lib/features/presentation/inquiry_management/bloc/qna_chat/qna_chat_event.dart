@@ -210,3 +210,32 @@ final class QnaChatInstallmentRowModeChanged extends QnaChatEvent {
   @override
   List<Object?> get props => [rowId, mode];
 }
+
+/// Loads the saved payment plan for the inquiry and prefills the form.
+final class QnaChatPaymentPlanLoadRequested extends QnaChatEvent {
+  const QnaChatPaymentPlanLoadRequested();
+}
+
+/// Persists the current payment terms form (travel date/time, total amount,
+/// installments and their rows) for the inquiry.
+final class QnaChatPaymentTermsSaveRequested extends QnaChatEvent {
+  const QnaChatPaymentTermsSaveRequested();
+}
+
+/// Uploads a payment proof file for the installment [rowId].
+final class QnaChatInstallmentProofUploadRequested extends QnaChatEvent {
+  const QnaChatInstallmentProofUploadRequested({
+    required this.rowId,
+    required this.fileName,
+    this.filePath,
+    this.bytes,
+  });
+
+  final String rowId;
+  final String fileName;
+  final String? filePath;
+  final List<int>? bytes;
+
+  @override
+  List<Object?> get props => [rowId, fileName, filePath, bytes];
+}

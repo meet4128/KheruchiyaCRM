@@ -11,6 +11,8 @@ enum QnaChatStatus { idle, loading, success, failure }
 
 enum QnaChatSendStatus { idle, sending, failure }
 
+enum QnaChatPaymentSaveStatus { idle, saving, success, failure }
+
 class QnaChatState extends Equatable {
   const QnaChatState({
     this.inquiryId = '',
@@ -39,6 +41,9 @@ class QnaChatState extends Equatable {
     this.installmentRows = const [],
     this.installmentAmountErrorRemaining,
     this.installmentAmountErrorToken = 0,
+    this.paymentSaveStatus = QnaChatPaymentSaveStatus.idle,
+    this.paymentSaveError,
+    this.paymentSaveResultToken = 0,
   });
 
   final String inquiryId;
@@ -74,6 +79,14 @@ class QnaChatState extends Equatable {
   final List<QnaChatInstallmentRow> installmentRows;
   final int? installmentAmountErrorRemaining;
   final int installmentAmountErrorToken;
+  final QnaChatPaymentSaveStatus paymentSaveStatus;
+  final String? paymentSaveError;
+
+  /// Bumped each time a save attempt resolves (success or failure) so the UI
+  /// can surface a one-shot snackbar without re-triggering on rebuilds.
+  final int paymentSaveResultToken;
+
+  bool get isPaymentSaving => paymentSaveStatus == QnaChatPaymentSaveStatus.saving;
 
   bool get isInstallmentPayment => paymentStatus == StringConstant.qnaChatPaymentStatusInstallment;
   int get effectiveInstallmentCount => isInstallmentPayment ? installmentCount : 1;
@@ -138,6 +151,10 @@ class QnaChatState extends Equatable {
     int? installmentAmountErrorRemaining,
     bool clearInstallmentAmountErrorRemaining = false,
     int? installmentAmountErrorToken,
+    QnaChatPaymentSaveStatus? paymentSaveStatus,
+    String? paymentSaveError,
+    bool clearPaymentSaveError = false,
+    int? paymentSaveResultToken,
   }) {
     return QnaChatState(
       inquiryId: inquiryId ?? this.inquiryId,
@@ -171,6 +188,10 @@ class QnaChatState extends Equatable {
           ? null
           : (installmentAmountErrorRemaining ?? this.installmentAmountErrorRemaining),
       installmentAmountErrorToken: installmentAmountErrorToken ?? this.installmentAmountErrorToken,
+      paymentSaveStatus: paymentSaveStatus ?? this.paymentSaveStatus,
+      paymentSaveError:
+          clearPaymentSaveError ? null : (paymentSaveError ?? this.paymentSaveError),
+      paymentSaveResultToken: paymentSaveResultToken ?? this.paymentSaveResultToken,
     );
   }
 
@@ -202,5 +223,8 @@ class QnaChatState extends Equatable {
         installmentRows,
         installmentAmountErrorRemaining,
         installmentAmountErrorToken,
+        paymentSaveStatus,
+        paymentSaveError,
+        paymentSaveResultToken,
       ];
 }

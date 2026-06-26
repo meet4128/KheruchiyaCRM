@@ -363,6 +363,10 @@ class StringConstant {
   static const String qnaChatInstallmentSingular = 'Installment';
   static const String qnaChatInstallmentPlural = 'Installments';
   static const String qnaChatRemainingAmount = 'Remaining amount';
+  static const String qnaChatSave = 'Save';
+  static const String qnaChatPaymentSaveSuccess = 'Payment terms saved.';
+  static const String qnaChatPaymentSaveFailure = 'Could not save payment terms.';
+  static const String qnaChatProofUploaded = 'Uploaded';
   static const String qnaGetPersonalDocumentDetails = 'Get Personal Document Details';
   static const String qnaTalkToPurchaseTeam = 'Talk To Purchase Team';
   static const String messagesTitle = 'Messages';
