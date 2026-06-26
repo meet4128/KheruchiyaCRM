@@ -162,6 +162,21 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
   int _lastShownErrorToken = 0;
   int _lastShownSaveToken = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    // Seed controllers from the current bloc state. The BlocConsumer listener
+    // below only fires on state *changes*, so when this form is mounted with a
+    // payment plan already loaded (e.g. after saving and reopening), the field
+    // would otherwise stay blank.
+    final state = context.read<QnaChatBloc>().state;
+    _totalAmountController.text = state.totalAmount;
+    for (final row in state.installmentRows) {
+      if (row.isAuto) continue;
+      _controllerFor(row).text = row.amountText;
+    }
+  }
+
   TextEditingController _controllerFor(QnaChatInstallmentRow row) {
     return _rowControllers.putIfAbsent(
       row.id,
