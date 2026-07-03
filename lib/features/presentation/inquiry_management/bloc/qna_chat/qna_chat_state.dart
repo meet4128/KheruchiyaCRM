@@ -103,7 +103,7 @@ class QnaChatState extends Equatable {
 
   bool get hasSession => sessionId != null && sessionId!.isNotEmpty;
   bool get hasValidPeerPhone => peerPhone.length >= 10;
-  bool get showFinalizeBar => hasSession;
+  bool get showFinalizeBar => true;
   bool get hasActiveWhatsappSession => computeHasActiveWhatsappSession(messages);
   bool get greetingTemplateDelivered =>
       greetingTemplateSent || computeHasOutboundMessage(messages);

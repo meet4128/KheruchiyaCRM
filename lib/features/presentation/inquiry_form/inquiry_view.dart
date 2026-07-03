@@ -31,6 +31,10 @@ class _InquiryScreen extends StatelessWidget {
         if (current.pendingNavigateToAirTicket && !previous.pendingNavigateToAirTicket) {
           return true;
         }
+        if (current.pendingNavigateToHotelBooking &&
+            !previous.pendingNavigateToHotelBooking) {
+          return true;
+        }
         return previous.status != current.status &&
             (current.status == InquirySubmissionStatus.success ||
                 current.status == InquirySubmissionStatus.failure);
@@ -40,6 +44,11 @@ class _InquiryScreen extends StatelessWidget {
         if (state.pendingNavigateToAirTicket) {
           context.read<InquiryBloc>().add(ClearPendingNavigateToAirTicket());
           context.push(PathConstant.airTicket, extra: state);
+          return;
+        }
+        if (state.pendingNavigateToHotelBooking) {
+          context.read<InquiryBloc>().add(ClearPendingNavigateToHotelBooking());
+          context.push(PathConstant.hotelBooking, extra: state);
           return;
         }
         if (state.successMessage != null) {

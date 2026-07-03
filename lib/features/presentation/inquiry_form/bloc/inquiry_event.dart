@@ -222,6 +222,14 @@ class ClearPendingNavigateToAirTicket extends InquiryEvent {
   List<Object> get props => [];
 }
 
+/// Clears the pending-navigate flag after the listener has navigated to hotel booking.
+class ClearPendingNavigateToHotelBooking extends InquiryEvent {
+  const ClearPendingNavigateToHotelBooking();
+
+  @override
+  List<Object> get props => [];
+}
+
 /// Legacy event for booking type changes (use BookingTypeChanged instead)
 class InquiryBookingTypeChanged extends InquiryEvent {
   const InquiryBookingTypeChanged(this.bookingType);

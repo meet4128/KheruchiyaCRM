@@ -156,7 +156,8 @@ bool isAtNavPageRootPath(String path, NavPage page) {
 /// Full-screen flows that should not overwrite drawer selection when URL changes.
 bool shouldSyncBlocFromRoute(String path) {
   final p = normalizeRoutePath(path);
-  return !p.startsWith(PathConstant.airTicket);
+  return !p.startsWith(PathConstant.airTicket) &&
+      !p.startsWith(PathConstant.hotelBooking);
 }
 
 /// Provides a GoRouter that syncs with the NavigationBloc.
@@ -260,6 +261,13 @@ GoRouter createRouter(NavigationBloc navBloc) {
             name: 'airTicket',
             pageBuilder: (context, state) => NoTransitionPage(
               child: AirTicketViewPage(initialInquiryState: state.extra),
+            ),
+          ),
+          GoRoute(
+            path: PathConstant.hotelBooking,
+            name: 'hotelBooking',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: HotelBookingViewPage(initialInquiryState: state.extra),
             ),
           ),
         ],
@@ -419,6 +427,7 @@ class PathConstant {
   static const String reminders = '/reminders';
   static const String analysis = '/analysis';
   static const String airTicket = '/air-ticket';
+  static const String hotelBooking = '/hotel-booking';
 
   static const String dashboardConstant = "Dashboard";
   static const String clientLeadsConstant = "Follow Up";

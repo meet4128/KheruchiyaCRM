@@ -17,6 +17,7 @@ import 'package:travel_crm/features/presentation/set_password/bloc/set_password_
 import 'package:travel_crm/features/presentation/set_password/view/set_password_screen.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/inquiry_view.dart';
 import 'package:travel_crm/features/presentation/air_ticket/air_ticket_view.dart';
+import 'package:travel_crm/features/presentation/hotel_booking/hotel_booking_view.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/view/inquiry_management_screen.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/view/vendor_list_view.dart';
@@ -202,6 +203,17 @@ class AirTicketViewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       AirTicketView(initialInquiryState: initialInquiryState);
+}
+
+class HotelBookingViewPage extends StatelessWidget {
+  const HotelBookingViewPage({super.key, this.initialInquiryState});
+
+  /// Inquiry form data passed when navigating from inquiry form (e.g. after selecting Hotel).
+  final Object? initialInquiryState;
+
+  @override
+  Widget build(BuildContext context) =>
+      HotelBookingView(initialInquiryState: initialInquiryState);
 }
 
 Widget _page(String title) {

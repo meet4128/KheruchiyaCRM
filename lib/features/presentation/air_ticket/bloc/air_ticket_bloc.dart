@@ -3,12 +3,17 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:uuid/uuid.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
+import 'package:travel_crm/core/constants/whatsapp_constants.dart';
 import 'package:travel_crm/core/models/inquiry/airport_code_model.dart';
 import 'package:travel_crm/core/models/inquiry/air_ticket_request.dart';
 import 'package:travel_crm/core/models/inquiry/create_inquiry_request.dart';
 import 'package:travel_crm/core/models/inquiry/flight_segment_request.dart';
 import 'package:travel_crm/core/models/inquiry/phone_number_model.dart';
+import 'package:travel_crm/core/utils/phone_utils.dart';
+import 'package:travel_crm/data/models/amendment/send_whatsapp_message_request.dart';
+import 'package:travel_crm/data/models/amendment/whatsapp_template_payload.dart';
 import 'package:travel_crm/data/repositories/inquiry_repository.dart';
 import '../../inquiry_form/bloc/inquiry_state.dart';
 import 'air_ticket_event.dart';
@@ -59,6 +64,8 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
   }
 
   final InquiryRepository inquiryRepository;
+
+  final _uuid = const Uuid();
 
   /// Clears visa when routes are domestic only (international no longer applies).
   AirTicketState _clearVisaIfDomestic(AirTicketState next) {
@@ -496,7 +503,17 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
       final bodyJson = const JsonEncoder.withIndent('  ').convert(payload);
       developer.log('CreateInquiry POST payload:\n$bodyJson', name: 'AirTicketBloc');
       debugPrint('[AirTicket Submit] Request body params:\n$bodyJson');
-      await inquiryRepository.createInquiry(request);
+      final response = await inquiryRepository.createInquiry(request);
+
+      // Best-effort: greet the customer and reference on WhatsApp with the
+      // approved `kheruchiya_greeting` template (same one the Q&A chat uses). A
+      // failure here must not fail the inquiry creation, so it's handled
+      // internally per recipient.
+      await _sendGreetingTemplates(
+        inquiryId: response.data.inquiry.id,
+        inquiryState: event.inquiryState,
+      );
+
       emit(state.copyWith(
         submissionStatus: AirTicketSubmissionStatus.success,
       ));
@@ -506,6 +523,85 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
         submissionStatus: AirTicketSubmissionStatus.failure,
         submissionError: message.isEmpty ? 'Submission failed' : message,
       ));
+    }
+  }
+
+  /// Greets both the customer and the reference contact on WhatsApp with the
+  /// approved `kheruchiya_greeting` template. Each send is independent and
+  /// best-effort, so one failing (or one number being absent) never affects the
+  /// other or the inquiry submission result.
+  Future<void> _sendGreetingTemplates({
+    required String? inquiryId,
+    required dynamic inquiryState,
+  }) async {
+    if (inquiryId == null || inquiryId.isEmpty) {
+      developer.log(
+        'Skipping WhatsApp greeting: missing inquiryId in create response.',
+        name: 'AirTicketBloc',
+      );
+      return;
+    }
+
+    await _sendGreeting(
+      inquiryId: inquiryId,
+      recipient: 'customer',
+      countryCode: _inquiryPhoneDialCode(inquiryState),
+      number: _inquiryPhoneNumber(inquiryState),
+      name: _inquiryFullName(inquiryState),
+    );
+
+    await _sendGreeting(
+      inquiryId: inquiryId,
+      recipient: 'reference',
+      countryCode: _inquiryReferenceDialCode(inquiryState),
+      number: _inquiryReferenceNumber(inquiryState),
+      name: _inquiryReferenceName(inquiryState),
+    );
+  }
+
+  /// Sends a single `kheruchiya_greeting` template to one recipient.
+  /// Best-effort: any failure is logged and swallowed.
+  Future<void> _sendGreeting({
+    required String inquiryId,
+    required String recipient,
+    required String countryCode,
+    required String number,
+    required String name,
+  }) async {
+    try {
+      final to = normalizePeerPhoneE164(
+        countryCode: countryCode,
+        number: number,
+      );
+      if (to == null || to.isEmpty) {
+        developer.log(
+          'Skipping WhatsApp greeting: $recipient phone unavailable.',
+          name: 'AirTicketBloc',
+        );
+        return;
+      }
+
+      final trimmedName = name.trim();
+      final displayName = trimmedName.isEmpty ? 'there' : trimmedName;
+
+      await inquiryRepository.sendWhatsappMessage(
+        SendWhatsappMessageRequest(
+          to: to,
+          sessionId: _uuid.v4(),
+          inquiryId: inquiryId,
+          type: 'template',
+          template: WhatsappTemplatePayload(
+            name: WhatsappConstants.templateName,
+            language: WhatsappConstants.templateLanguage,
+            bodyParams: [displayName],
+          ),
+        ),
+      );
+    } catch (e) {
+      developer.log(
+        'WhatsApp greeting send to $recipient failed (inquiry was still created): $e',
+        name: 'AirTicketBloc',
+      );
     }
   }
 

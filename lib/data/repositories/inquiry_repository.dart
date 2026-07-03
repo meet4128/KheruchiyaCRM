@@ -26,9 +26,9 @@ class InquiryRepository {
 
   final InquiryApiClient apiClient;
 
-  Future<void> createInquiry(CreateInquiryRequest request) async {
+  Future<InquiryDetailResponse> createInquiry(CreateInquiryRequest request) async {
     try {
-      await apiClient.createInquiry(request);
+      return await apiClient.createInquiry(request);
     } on DioException catch (e) {
       throw _mapDioException(e, logTag: 'CreateInquiry');
     }

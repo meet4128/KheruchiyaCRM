@@ -1,11 +1,12 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import 'air_ticket_request.dart';
+import 'hotel_booking_request.dart';
 import 'phone_number_model.dart';
 
 part 'create_inquiry_request.g.dart';
 
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable(explicitToJson: true, includeIfNull: false)
 class CreateInquiryRequest {
   const CreateInquiryRequest({
     required this.title,
@@ -19,7 +20,8 @@ class CreateInquiryRequest {
     required this.clientBehaviour,
     required this.typeOfBooking,
     required this.status,
-    required this.airTicket,
+    this.airTicket,
+    this.hotelBooking,
     required this.checklist,
   });
 
@@ -39,6 +41,7 @@ class CreateInquiryRequest {
   final String clientBehaviour;
   final String typeOfBooking;
   final String status;
-  final AirTicketRequest airTicket;
+  final AirTicketRequest? airTicket;
+  final HotelBookingRequest? hotelBooking;
   final List<dynamic> checklist;
 }

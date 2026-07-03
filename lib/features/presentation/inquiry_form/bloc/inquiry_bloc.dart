@@ -18,6 +18,7 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
     on<BookingTypeChanged>(_onBookingTypeChanged);
     on<TypeOfClientChanged>(_onTypeOfClientChanged);
     on<ClearPendingNavigateToAirTicket>(_onClearPendingNavigateToAirTicket);
+    on<ClearPendingNavigateToHotelBooking>(_onClearPendingNavigateToHotelBooking);
     on<ReferenceNameChanged>(_onReferenceNameChanged);
     on<ReferenceNumberChanged>(_onReferenceNumberChanged);
     on<PhoneDialCodeChanged>(_onPhoneDialCodeChanged);
@@ -128,7 +129,8 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
   }
 
   /// Handle booking type changed event (typeOfBooking).
-  /// When user selects Flight, run full form validation; only allow navigate if valid.
+  /// When user selects Flight or Hotel, run full form validation; only allow
+  /// navigate to the matching sub-form if valid.
   void _onBookingTypeChanged(
     BookingTypeChanged event,
     Emitter<InquiryState> emit,
@@ -138,8 +140,13 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
       bookingTypeError: null,
       clearBookingTypeError: true,
       pendingNavigateToAirTicket: false,
+      pendingNavigateToHotelBooking: false,
     );
-    if (event.bookingType == BookingType.flight) {
+
+    final isFlight = event.bookingType == BookingType.flight;
+    final isHotel = event.bookingType == BookingType.hotel;
+
+    if (isFlight || isHotel) {
       final errors = _validateAllForState(nextState);
       final hasErrors = errors.values.any((e) => e != null);
       if (hasErrors) {
@@ -156,9 +163,13 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
           clientBehaviourError: errors[InquiryField.clientBehaviour],
           showValidationMessages: true,
           pendingNavigateToAirTicket: false,
+          pendingNavigateToHotelBooking: false,
         ));
       } else {
-        emit(nextState.copyWith(pendingNavigateToAirTicket: true));
+        emit(nextState.copyWith(
+          pendingNavigateToAirTicket: isFlight,
+          pendingNavigateToHotelBooking: isHotel,
+        ));
       }
     } else {
       emit(nextState);
@@ -171,6 +182,14 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
     Emitter<InquiryState> emit,
   ) {
     emit(state.copyWith(pendingNavigateToAirTicket: false));
+  }
+
+  /// Clears the pending-navigate flag after listener has navigated to hotel booking.
+  void _onClearPendingNavigateToHotelBooking(
+    ClearPendingNavigateToHotelBooking event,
+    Emitter<InquiryState> emit,
+  ) {
+    emit(state.copyWith(pendingNavigateToHotelBooking: false));
   }
 
   /// Handle type of client changed event (typeOfClient — independent from typeOfBooking)

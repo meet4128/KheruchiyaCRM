@@ -37,6 +37,7 @@ class InquiryState extends Equatable {
     this.clientBehaviourError,
     this.showValidationMessages = false,
     this.pendingNavigateToAirTicket = false,
+    this.pendingNavigateToHotelBooking = false,
     this.status = InquirySubmissionStatus.idle,
     this.successMessage,
     this.errorMessage,
@@ -73,6 +74,8 @@ class InquiryState extends Equatable {
   final bool showValidationMessages;
   /// Set to true when user selects Flight and inquiry form is valid; listener navigates then clears.
   final bool pendingNavigateToAirTicket;
+  /// Set to true when user selects Hotel and inquiry form is valid; listener navigates then clears.
+  final bool pendingNavigateToHotelBooking;
   final InquirySubmissionStatus status;
   final String? successMessage;
   final String? errorMessage;
@@ -162,6 +165,7 @@ class InquiryState extends Equatable {
     String? referenceNumberError,
     bool? showValidationMessages,
     bool? pendingNavigateToAirTicket,
+    bool? pendingNavigateToHotelBooking,
     InquirySubmissionStatus? status,
     String? successMessage,
     String? errorMessage,
@@ -230,6 +234,8 @@ class InquiryState extends Equatable {
           showValidationMessages ?? this.showValidationMessages,
       pendingNavigateToAirTicket:
           pendingNavigateToAirTicket ?? this.pendingNavigateToAirTicket,
+      pendingNavigateToHotelBooking:
+          pendingNavigateToHotelBooking ?? this.pendingNavigateToHotelBooking,
       status: status ?? this.status,
       successMessage: successMessage ?? this.successMessage,
       errorMessage: errorMessage ?? this.errorMessage,
@@ -263,6 +269,7 @@ class InquiryState extends Equatable {
         clientBehaviourError,
         showValidationMessages,
         pendingNavigateToAirTicket,
+        pendingNavigateToHotelBooking,
         status,
         successMessage,
         errorMessage,

@@ -185,6 +185,47 @@ class StringConstant {
   static const String airTicketSubmissionFailed =
       'Failed to submit air ticket booking. Please try again.';
 
+  // ========== Hotel Booking Form ==========
+  static const String hotelBookingForm = 'Hotel Booking Form';
+  static const String provideHotelBookingInformation = 'Provide hotel booking information';
+
+  // ========== Hotel Booking Form Fields ==========
+  static const String cityOrLocation = 'City or Location';
+  static const String checkIn = 'Check-In';
+  static const String checkOut = 'Check Out';
+  static const String roomAndGuests = 'Room & Guests';
+  static const String propertyType = 'Property Type';
+  static const String hotelCategory = 'Hotel Category:';
+  static const String roomView = 'Room View:';
+  static const String amenities = 'Amenities';
+  static const String mealPlan = 'Meal Plan:';
+  static const String transfers = 'Transfers';
+  static const String yourBudget = 'Your Budget';
+  static const String rooms = 'Rooms';
+  static const String adults = 'Adults';
+
+  // ========== Hotel Booking Form Hints ==========
+  static const String enterCityOrLocation = 'Enter city or location';
+  static const String selectCheckInDate = 'Select check-in date';
+  static const String selectCheckOutDate = 'Select check-out date';
+  static const String budgetMin = 'Min';
+  static const String budgetMax = 'Max';
+
+  // ========== Hotel Booking Form Validation Messages ==========
+  static const String cityRequired = 'City or location is required';
+  static const String checkInRequired = 'Check-in date is required';
+  static const String checkOutRequired = 'Check-out date is required';
+  static const String checkOutAfterCheckIn = 'Check-out date must be after check-in date';
+  static const String roomGuestsRequired = 'At least 1 room and 1 adult are required';
+  static const String propertyTypeRequired = 'Property type is required';
+  static const String hotelCategoryRequired = 'Hotel category is required';
+  static const String budgetInvalid = 'Maximum budget must be greater than minimum budget';
+
+  // ========== Hotel Booking Form Success/Error Messages ==========
+  static const String hotelBookingSubmittedSuccessfully = 'Hotel booking submitted successfully!';
+  static const String hotelBookingSubmissionFailed =
+      'Failed to submit hotel booking. Please try again.';
+
   // ========== Flight Booking Types ==========
   static const String oneWay = 'One Way';
   static const String roundTrip = 'Round Trip';

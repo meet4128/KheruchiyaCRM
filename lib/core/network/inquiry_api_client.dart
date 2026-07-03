@@ -130,7 +130,7 @@ abstract class InquiryApiClient {
   factory InquiryApiClient(Dio dio, {String baseUrl}) = _InquiryApiClient;
 
   @POST('/inquiries')
-  Future<void> createInquiry(@Body() CreateInquiryRequest body);
+  Future<InquiryDetailResponse> createInquiry(@Body() CreateInquiryRequest body);
 
   @GET('/inquiries')
   Future<ListInquiriesResponse> listInquiries(
