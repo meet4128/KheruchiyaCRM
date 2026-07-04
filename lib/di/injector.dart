@@ -10,6 +10,7 @@ import 'package:travel_crm/data/repositories/purchase_chat_repository.dart';
 import 'package:travel_crm/features/presentation/forgot_password/bloc/forgot_password_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_detail/inquiry_detail_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/bloc/inquiry_bloc.dart';
+import 'package:travel_crm/features/presentation/vendor_inquiry/bloc/vendor_inquiry_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_management_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/qna_chat/qna_chat_bloc.dart';
 import 'package:travel_crm/features/presentation/purchase_team/bloc/purchase_team_chat/purchase_team_chat_bloc.dart';
@@ -47,6 +48,7 @@ Future setup() async {
   // register blocs
   sl.registerLazySingleton(() => InquiryManagementBloc(inquiryRepository: sl<InquiryRepository>()));
   sl.registerLazySingleton(() => InquiryBloc());
+  sl.registerLazySingleton(() => VendorInquiryBloc());
   sl.registerFactoryParam<InquiryDetailBloc, VendorInquiryRow?, void>(
     (vendorRow, _) => InquiryDetailBloc(
       inquiryRepository: sl<InquiryRepository>(),

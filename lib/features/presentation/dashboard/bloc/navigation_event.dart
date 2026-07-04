@@ -4,6 +4,7 @@ enum NavPage {
   dashboard,
   inquiryManagement,
   clientLeads,
+  vendorList,
   inquiry,
   messages,
   projectJobs,

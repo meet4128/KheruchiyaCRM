@@ -120,6 +120,100 @@ class StringConstant {
   static const String inquirySubmittedSuccessfully = 'Inquiry submitted successfully!';
   static const String inquirySubmissionFailed = 'Failed to submit inquiry. Please try again.';
 
+  // ========== Vendor Inquiry Form ==========
+  static const String vendorInquiryForm = "Vendor's Inquiry Form";
+  static const String vendorInquiryFormSubtitle = "Fill in the form for Vendor's inquiry";
+  static const String vendorInquiryFormTitle = 'VENDOR INQUIRY FORM';
+  static const String vendorInquiryFormCardSubtitle =
+      'Fill form for a quote, help or to assist client';
+  static const String vendorListConstant = 'Vendor List';
+
+  // Vendor Inquiry Form fields / hints
+  static const String designation = 'Designation';
+  static const String enterDesignation = 'Enter designation';
+  static const String specializeIn = 'Specialize In';
+  static const String enterSpecializeIn = 'Enter specialization';
+  static const String subSpecializeIn = 'Sub-Specialize In';
+  static const String enterSubSpecializeIn = 'Enter sub-specialization';
+
+  // Vendor Inquiry Form footer / step navigation
+  static const String vendorStep1 = 'STEP 1';
+  static const String vendorStep2 = 'STEP 2';
+  static const String vendorNext = 'NEXT';
+  static const String fillCompanyDetailsInStep2 = 'Fill Company Details in step 2';
+  static const String vendorCompanyDetailsTitle = 'Company Details';
+  static const String vendorCompanyDetailsComingSoon =
+      'Step 2 — Company Details form coming soon.';
+
+  // Vendor Inquiry Form validation messages
+  static const String designationRequired = 'Designation is required';
+  static const String specializeInRequired = 'Specialize In is required';
+  static const String subSpecializeInRequired = 'Sub-Specialize In is required';
+
+  // ========== Vendor Company Details Form (Step 2) ==========
+  static const String vendorCompanyDetailsFormTitle = 'VENDOR COMPANY DETAILS FORM';
+  static const String vendorCompanyDetailsFormCardSubtitle =
+      'Fill form for a quote, help or to assist client';
+
+  // Fields
+  static const String companyName = 'Company Name';
+  static const String companyAddress = 'Company Address';
+  static const String gstNo = 'GST No.';
+  static const String panCard = 'PAN Card';
+  static const String bankName = 'Bank Name';
+  static const String accountNo = 'Account No.';
+  static const String ifscCode = 'IFSC Code';
+  static const String attachQr = 'Attach QR';
+  static const String attachVisitingCard = 'Attach Visiting Card';
+  static const String serviceRating = 'Service Rating';
+  static const String servicePricing = 'Service Pricing';
+  static const String note = 'Note';
+
+  // Hints
+  static const String enterCompanyName = 'Enter company name';
+  static const String enterCompanyAddress = 'Enter company address';
+  static const String enterGstNo = 'Enter GST number';
+  static const String enterPanCard = 'Enter PAN card number';
+  static const String enterAccountNo = 'Enter account number';
+  static const String enterIfscCode = 'Enter IFSC code';
+  static const String enterNote = 'Remark/Behaviour';
+  static const String selectBankName = 'Select bank';
+  static const String selectServiceRating = 'Select rating';
+  static const String selectServicePricing = 'Select pricing';
+
+  // Attachment upload
+  static const String uploadFile = 'Upload file';
+  static const String attachmentRemove = 'Remove';
+
+  // Footer / submit
+  static const String vendorSubmit = 'SUBMIT';
+  static const String vendorReadyToSubmitHelper =
+      'If details are filled the form is ready to submit.';
+
+  // Success / error
+  static const String vendorSubmittedSuccessfully =
+      'Vendor submitted successfully!';
+  static const String vendorSubmissionFailed =
+      'Failed to submit vendor. Please try again.';
+  static const String vendorSubmitSuccessTitle = 'Vendor Added';
+
+  // Validation messages
+  static const String companyNameRequired = 'Company name is required';
+  static const String companyAddressRequired = 'Company address is required';
+  static const String gstNoRequired = 'GST number is required';
+  static const String panCardRequired = 'PAN card is required';
+  static const String bankNameRequired = 'Bank name is required';
+  static const String accountNoRequired = 'Account number is required';
+  static const String accountNoDigitsOnly =
+      'Account number must contain only digits';
+  static const String ifscCodeRequired = 'IFSC code is required';
+  static const String attachQrRequired = 'Please attach a QR';
+  static const String attachVisitingCardRequired =
+      'Please attach a visiting card';
+  static const String serviceRatingRequired = 'Service rating is required';
+  static const String servicePricingRequired = 'Service pricing is required';
+  static const String noteRequired = 'Note is required';
+
   // ========== Air Ticket Form ==========
   static const String airTicketForm = 'Air Ticket Form';
   static const String airTicketFormTitle = 'AIR TICKET FORM';

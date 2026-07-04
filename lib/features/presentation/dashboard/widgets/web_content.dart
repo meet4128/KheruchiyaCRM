@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/inquiry_view.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/view/vendor_list_view.dart';
+import 'package:travel_crm/features/presentation/vendor_inquiry/vendor_inquiry_view.dart';
 import '../bloc/navigation_bloc.dart';
 import '../bloc/navigation_state.dart';
 import '../bloc/navigation_event.dart';
@@ -19,6 +20,8 @@ class WebContent extends StatelessWidget {
             return _dashboard();
           case NavPage.clientLeads:
             return _clientLeads();
+          case NavPage.vendorList:
+            return const VendorInquiryView();
           case NavPage.inquiry:
             return _inquiry();
           case NavPage.projectJobs:

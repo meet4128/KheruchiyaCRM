@@ -1,7 +1,10 @@
+import 'dart:developer' as developer;
+
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 import 'package:travel_crm/core/network/inquiry_api_client.dart';
 import 'package:travel_crm/data/models/inquiry/list_inquiry_item.dart';
+import 'package:travel_crm/data/models/inquiry/phone_number_dto.dart';
 import 'package:travel_crm/data/repositories/inquiry_repository.dart';
 
 part 'inquiry_management_event.dart';
@@ -139,6 +142,22 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
   List<dynamic> _filterItemsBySearch(List<dynamic> allItems, String? search) {
     if (search == null || search.trim().isEmpty) return allItems;
     final term = search.trim().toLowerCase();
+    // Digit-normalized phone term: only used when the query contains digits, so
+    // e.g. "98765" matches "+91 98765-43210" regardless of formatting.
+    final termDigits = term.replaceAll(RegExp(r'\D'), '');
+    // TEMP DIAGNOSTIC — remove once phone search is confirmed working.
+    if (termDigits.isNotEmpty) {
+      for (final e in allItems) {
+        if (e is ListInquiryItem) {
+          developer.log(
+            'PHONE-SEARCH item="${e.fullName}" '
+            'countryCode=${e.phoneNumber?.countryCode} '
+            'number=${e.phoneNumber?.number} term=$termDigits',
+            name: 'VendorSearch',
+          );
+        }
+      }
+    }
     return allItems.where((e) {
       if (e is! ListInquiryItem) return true;
       final id = e.id ?? '';
@@ -150,8 +169,19 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
           (e.user?.toLowerCase().contains(term) ?? false) ||
           (e.assignedTo?.toLowerCase().contains(term) ?? false) ||
           id.toLowerCase().contains(term) ||
-          inquiryNo.toLowerCase().contains(term);
+          inquiryNo.toLowerCase().contains(term) ||
+          _matchesPhone(e.phoneNumber, termDigits);
     }).toList();
+  }
+
+  /// True when [termDigits] is a non-empty digit run contained in the item's
+  /// phone (country code + number, stripped to digits).
+  bool _matchesPhone(PhoneNumberDto? phone, String termDigits) {
+    if (termDigits.isEmpty || phone == null) return false;
+    final phoneDigits =
+        '${phone.countryCode ?? ''}${phone.number ?? ''}'.replaceAll(RegExp(r'\D'), '');
+    if (phoneDigits.isEmpty) return false;
+    return phoneDigits.contains(termDigits);
   }
 
   Future<void> _onSortChanged(

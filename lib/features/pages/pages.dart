@@ -16,6 +16,8 @@ import 'package:travel_crm/features/presentation/set_password/bloc/set_password_
 import 'package:travel_crm/features/presentation/set_password/bloc/set_password_event.dart';
 import 'package:travel_crm/features/presentation/set_password/view/set_password_screen.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/inquiry_view.dart';
+import 'package:travel_crm/features/presentation/vendor_inquiry/vendor_inquiry_view.dart';
+import 'package:travel_crm/features/presentation/vendor_inquiry/vendor_company_details_view.dart';
 import 'package:travel_crm/features/presentation/air_ticket/air_ticket_view.dart';
 import 'package:travel_crm/features/presentation/hotel_booking/hotel_booking_view.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
@@ -143,6 +145,28 @@ class InquiryViewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const InquiryView();
+}
+
+/// Vendor Leads — Step 1. Mirrors [InquiryViewPage]; the NEXT button in the
+/// form routes to [VendorCompanyDetailsPage] (Step 2).
+class VendorInquiryPage extends StatelessWidget {
+  const VendorInquiryPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => const VendorInquiryView();
+}
+
+/// Vendor Leads — Step 2 (Company Details). Placeholder until the design is
+/// provided; receives the Step 1 snapshot via `state.extra`.
+class VendorCompanyDetailsPage extends StatelessWidget {
+  const VendorCompanyDetailsPage({super.key, this.initialVendorState});
+
+  /// Step 1 vendor form data passed when navigating from the vendor form.
+  final Object? initialVendorState;
+
+  @override
+  Widget build(BuildContext context) =>
+      VendorCompanyDetailsView(initialVendorState: initialVendorState);
 }
 
 class ProjectJobsPage extends StatelessWidget {

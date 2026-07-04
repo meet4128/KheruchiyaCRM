@@ -98,6 +98,8 @@ String pathForNavPage(NavPage page) {
       return PathConstant.inquiryManagement;
     case NavPage.clientLeads:
       return PathConstant.clientLeads;
+    case NavPage.vendorList:
+      return PathConstant.vendorInquiry;
     case NavPage.inquiry:
       return PathConstant.inquiryView;
     case NavPage.messages:
@@ -131,6 +133,7 @@ NavPage navPageFromPath(String path) {
   if (p == PathConstant.dashboard) return NavPage.dashboard;
   if (p.startsWith(PathConstant.inquiryManagement)) return NavPage.inquiryManagement;
   if (p.startsWith(PathConstant.clientLeads)) return NavPage.clientLeads;
+  if (p.startsWith(PathConstant.vendorInquiry)) return NavPage.vendorList;
   if (p.startsWith(PathConstant.inquiryView)) return NavPage.inquiry;
   if (p.startsWith(PathConstant.messages)) return NavPage.messages;
   if (p.startsWith(PathConstant.projectJobs)) return NavPage.projectJobs;
@@ -220,6 +223,21 @@ GoRouter createRouter(NavigationBloc navBloc) {
             path: PathConstant.inquiryView,
             name: 'inquiryView',
             pageBuilder: (context, state) => NoTransitionPage(child: InquiryViewPage()),
+          ),
+          GoRoute(
+            path: PathConstant.vendorInquiry,
+            name: 'vendorInquiry',
+            routes: [
+              GoRoute(
+                path: 'company-details',
+                name: 'vendorCompanyDetails',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  child: VendorCompanyDetailsPage(initialVendorState: state.extra),
+                ),
+              ),
+            ],
+            pageBuilder: (context, state) =>
+                NoTransitionPage(child: VendorInquiryPage()),
           ),
           GoRoute(
             path: PathConstant.projectJobs,
@@ -419,6 +437,8 @@ class PathConstant {
   static const String inquiryManagement = '/inquiry-management';
   static const String inquiryManagementDetail = '/inquiry-management/detail';
   static const String inquiryView = '/inquiry-view';
+  static const String vendorInquiry = '/vendor-inquiry';
+  static const String vendorCompanyDetails = '/vendor-inquiry/company-details';
   static const String projectJobs = '/project-jobs';
   static const String invoices = '/invoices';
   static const String payments = '/payments';
@@ -431,6 +451,7 @@ class PathConstant {
 
   static const String dashboardConstant = "Dashboard";
   static const String clientLeadsConstant = "Follow Up";
+  static const String vendorListConstant = "Vendor List";
   static const String messagesConstant = "Messages";
   static const String inquiryManagementConstant = "New Inquiry";
   static const String invoicesConstant = "Invoices";
