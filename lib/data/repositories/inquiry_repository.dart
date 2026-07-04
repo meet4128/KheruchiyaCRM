@@ -11,6 +11,7 @@ import 'package:travel_crm/data/models/amendment/send_whatsapp_message_request.d
 import 'package:travel_crm/data/models/amendment/session_messages_response.dart';
 import 'package:travel_crm/data/models/amendment/session_note_request.dart';
 import 'package:travel_crm/data/models/amendment/upload_session_file_data.dart';
+import 'package:travel_crm/data/models/inquiry/inquiry_by_phone_response.dart';
 import 'package:travel_crm/data/models/inquiry/inquiry_detail_response.dart';
 import 'package:travel_crm/data/models/inquiry/list_inquiries_response.dart';
 import 'package:travel_crm/data/models/inquiry/payment_plan_response.dart';
@@ -39,6 +40,18 @@ class InquiryRepository {
       return await apiClient.listInquiries(query.toQuery());
     } on DioException catch (e) {
       throw _mapDioException(e, logTag: 'ListInquiries');
+    }
+  }
+
+  /// Looks up existing inquiries by phone number for form auto-fill.
+  /// Returns an empty `items` list (not an error) when no inquiry matches.
+  Future<InquiryByPhoneResponse> searchInquiriesByPhone(
+    InquiryByPhoneQuery query,
+  ) async {
+    try {
+      return await apiClient.getInquiriesByPhone(query.toQuery());
+    } on DioException catch (e) {
+      throw _mapDioException(e, logTag: 'SearchInquiriesByPhone');
     }
   }
 

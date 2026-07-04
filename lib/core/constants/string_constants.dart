@@ -119,6 +119,8 @@ class StringConstant {
   // ========== Inquiry Form Success/Error Messages ==========
   static const String inquirySubmittedSuccessfully = 'Inquiry submitted successfully!';
   static const String inquirySubmissionFailed = 'Failed to submit inquiry. Please try again.';
+  static const String inquiryAutoFilledFromExisting =
+      'Details auto-filled from an existing inquiry with this phone number.';
 
   // ========== Vendor Inquiry Form ==========
   static const String vendorInquiryForm = "Vendor's Inquiry Form";

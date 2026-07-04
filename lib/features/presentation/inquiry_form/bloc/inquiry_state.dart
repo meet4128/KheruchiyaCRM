@@ -38,6 +38,8 @@ class InquiryState extends Equatable {
     this.showValidationMessages = false,
     this.pendingNavigateToAirTicket = false,
     this.pendingNavigateToHotelBooking = false,
+    this.isPhoneLookupLoading = false,
+    this.phoneAutoFilled = false,
     this.status = InquirySubmissionStatus.idle,
     this.successMessage,
     this.errorMessage,
@@ -76,6 +78,13 @@ class InquiryState extends Equatable {
   final bool pendingNavigateToAirTicket;
   /// Set to true when user selects Hotel and inquiry form is valid; listener navigates then clears.
   final bool pendingNavigateToHotelBooking;
+
+  /// True while a phone-number lookup is in flight (shows a spinner in the field).
+  final bool isPhoneLookupLoading;
+
+  /// True when the form was just auto-filled from an existing inquiry match.
+  /// Used to sync the text controllers and show a subtle hint.
+  final bool phoneAutoFilled;
   final InquirySubmissionStatus status;
   final String? successMessage;
   final String? errorMessage;
@@ -166,6 +175,8 @@ class InquiryState extends Equatable {
     bool? showValidationMessages,
     bool? pendingNavigateToAirTicket,
     bool? pendingNavigateToHotelBooking,
+    bool? isPhoneLookupLoading,
+    bool? phoneAutoFilled,
     InquirySubmissionStatus? status,
     String? successMessage,
     String? errorMessage,
@@ -179,6 +190,7 @@ class InquiryState extends Equatable {
     bool clearReferenceNameError = false,
     bool clearReferenceNumberError = false,
     bool clearClientBehaviourError = false,
+    bool clearTypeOfClient = false,
     String? clientBehaviourError,
   }) {
     return InquiryState(
@@ -189,7 +201,8 @@ class InquiryState extends Equatable {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,
       address: address ?? this.address,
-      typeOfClient: typeOfClient ?? this.typeOfClient,
+      typeOfClient:
+          clearTypeOfClient ? null : (typeOfClient ?? this.typeOfClient),
       bookingType: bookingType ?? this.bookingType,
       referenceName: referenceName ?? this.referenceName,
       referenceDialCode: referenceDialCode ?? this.referenceDialCode,
@@ -236,6 +249,9 @@ class InquiryState extends Equatable {
           pendingNavigateToAirTicket ?? this.pendingNavigateToAirTicket,
       pendingNavigateToHotelBooking:
           pendingNavigateToHotelBooking ?? this.pendingNavigateToHotelBooking,
+      isPhoneLookupLoading:
+          isPhoneLookupLoading ?? this.isPhoneLookupLoading,
+      phoneAutoFilled: phoneAutoFilled ?? this.phoneAutoFilled,
       status: status ?? this.status,
       successMessage: successMessage ?? this.successMessage,
       errorMessage: errorMessage ?? this.errorMessage,
@@ -270,6 +286,8 @@ class InquiryState extends Equatable {
         showValidationMessages,
         pendingNavigateToAirTicket,
         pendingNavigateToHotelBooking,
+        isPhoneLookupLoading,
+        phoneAutoFilled,
         status,
         successMessage,
         errorMessage,

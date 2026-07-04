@@ -334,11 +334,89 @@ class _LeftTextSection extends StatelessWidget {
   }
 }
 
-/// Right section with inquiry form card
-class _InquiryFormCard extends StatelessWidget {
+/// Right section with inquiry form card.
+///
+/// Uses [TextEditingController]s (not the `value:` prop) for text fields so the
+/// form can be programmatically auto-filled when a phone-number match is found —
+/// [AppTextField] intentionally ignores later `value:` changes to avoid breaking
+/// typing, so external state updates must flow through controllers.
+class _InquiryFormCard extends StatefulWidget {
+  @override
+  State<_InquiryFormCard> createState() => _InquiryFormCardState();
+}
+
+class _InquiryFormCardState extends State<_InquiryFormCard> {
+  late final TextEditingController _titleController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _fullNameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _addressController;
+  late final TextEditingController _referenceNumberController;
+  late final TextEditingController _referenceNameController;
+  late final TextEditingController _clientBehaviourController;
+
+  @override
+  void initState() {
+    super.initState();
+    final state = context.read<InquiryBloc>().state;
+    _titleController = TextEditingController(text: state.title);
+    _phoneController = TextEditingController(text: state.phoneNumber);
+    _fullNameController = TextEditingController(text: _fullNameOf(state));
+    _emailController = TextEditingController(text: state.email);
+    _addressController = TextEditingController(text: state.address);
+    _referenceNumberController =
+        TextEditingController(text: state.referenceNumber);
+    _referenceNameController = TextEditingController(text: state.referenceName);
+    _clientBehaviourController =
+        TextEditingController(text: state.clientBehaviour);
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _phoneController.dispose();
+    _fullNameController.dispose();
+    _emailController.dispose();
+    _addressController.dispose();
+    _referenceNumberController.dispose();
+    _referenceNameController.dispose();
+    _clientBehaviourController.dispose();
+    super.dispose();
+  }
+
+  String _fullNameOf(InquiryState state) =>
+      [state.firstName, state.lastName].where((s) => s.isNotEmpty).join(' ').trim();
+
+  /// Pushes an externally-sourced [value] into [controller] without disturbing
+  /// the caret when the value is unchanged (e.g. during normal typing).
+  void _sync(TextEditingController controller, String value) {
+    if (controller.text != value) {
+      controller.value = TextEditingValue(
+        text: value,
+        selection: TextSelection.collapsed(offset: value.length),
+      );
+    }
+  }
+
+  /// Mirrors BLoC state into the controllers (auto-fill and form reset).
+  void _syncFromState(InquiryState state) {
+    _sync(_titleController, state.title);
+    _sync(_phoneController, state.phoneNumber);
+    _sync(_fullNameController, _fullNameOf(state));
+    _sync(_emailController, state.email);
+    _sync(_addressController, state.address);
+    _sync(_referenceNumberController, state.referenceNumber);
+    _sync(_referenceNameController, state.referenceName);
+    _sync(_clientBehaviourController, state.clientBehaviour);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<InquiryBloc, InquiryState>(
+    final colors = AppTheme.colors(context);
+    final textStyles = AppTheme.textStyles(context);
+
+    return BlocConsumer<InquiryBloc, InquiryState>(
+      listener: (context, state) => _syncFromState(state),
       builder: (context, state) {
         return AppFormCard(
           title: StringConstant.inquiryFormTitle,
@@ -358,7 +436,7 @@ class _InquiryFormCard extends StatelessWidget {
                           isRequired: true,
                           child: AppTextField(
                             hint: StringConstant.enterTitle,
-                            value: state.title,
+                            controller: _titleController,
                             errorText: state.titleError,
                             onChanged: (value) =>
                                 context.read<InquiryBloc>().add(TitleChanged(value)),
@@ -375,14 +453,10 @@ class _InquiryFormCard extends StatelessWidget {
                                 isRequired: true,
                                 child: Row(
                                   children: [
-                                    BlocBuilder<InquiryBloc, InquiryState>(
-                                      builder: (context, state) {
-                                        return DialCodePicker(
-                                          dialCode: state.phoneDialCode,
-                                          onChanged: (code) {
-                                            context.read<InquiryBloc>().add(PhoneDialCodeChanged(code));
-                                          },
-                                        );
+                                    DialCodePicker(
+                                      dialCode: state.phoneDialCode,
+                                      onChanged: (code) {
+                                        context.read<InquiryBloc>().add(PhoneDialCodeChanged(code));
                                       },
                                     ),
                                     const SizedBox(width: 12),
@@ -390,8 +464,11 @@ class _InquiryFormCard extends StatelessWidget {
                                       child: AppTextField(
                                         hint: StringConstant.enterPhoneNumber,
                                         keyboardType: TextInputType.phone,
-                                        value: state.phoneNumber,
+                                        controller: _phoneController,
                                         errorText: state.phoneError,
+                                        suffixWidget: state.isPhoneLookupLoading
+                                            ? const _FieldSpinner()
+                                            : null,
                                         onChanged: (value) =>
                                             context.read<InquiryBloc>().add(PhoneChanged(value)),
                                       ),
@@ -407,7 +484,7 @@ class _InquiryFormCard extends StatelessWidget {
                                 isRequired: true,
                                 child: AppTextField(
                                   hint: StringConstant.enterFullName,
-                                  value: [state.firstName, state.lastName].where((s) => s.isNotEmpty).join(' ').trim(),
+                                  controller: _fullNameController,
                                   errorText: state.firstNameError ?? state.lastNameError,
                                   onChanged: (value) {
                                     final parts = value.trim().split(RegExp(r'\s+'));
@@ -421,6 +498,25 @@ class _InquiryFormCard extends StatelessWidget {
                             ),
                           ],
                         ),
+
+                        // Subtle hint shown when the form was auto-filled from a match.
+                        if (state.phoneAutoFilled) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(Icons.info_outline, size: 14, color: colors.textSecondary),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  StringConstant.inquiryAutoFilledFromExisting,
+                                  style: textStyles.bodySmall.copyWith(
+                                    color: colors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                         SizedBox(height: fieldGap),
 
                         // 3. E-mail | Type of Client* (one row)
@@ -433,7 +529,7 @@ class _InquiryFormCard extends StatelessWidget {
                                 child: AppTextField(
                                   hint: StringConstant.enterEmail,
                                   keyboardType: TextInputType.emailAddress,
-                                  value: state.email,
+                                  controller: _emailController,
                                   errorText: state.emailError,
                                   onChanged: (value) =>
                                       context.read<InquiryBloc>().add(EmailChanged(value)),
@@ -471,7 +567,7 @@ class _InquiryFormCard extends StatelessWidget {
                             hint: StringConstant.enterAddress,
                             maxLines: 2,
                             minLines: 2,
-                            value: state.address,
+                            controller: _addressController,
                             errorText: state.addressError,
                             onChanged: (value) =>
                                 context.read<InquiryBloc>().add(AddressChanged(value)),
@@ -488,14 +584,10 @@ class _InquiryFormCard extends StatelessWidget {
                                 isRequired: true,
                                 child: Row(
                                   children: [
-                                    BlocBuilder<InquiryBloc, InquiryState>(
-                                      builder: (context, state) {
-                                        return DialCodePicker(
-                                          dialCode: state.referenceDialCode,
-                                          onChanged: (code) {
-                                            context.read<InquiryBloc>().add(ReferenceDialCodeChanged(code));
-                                          },
-                                        );
+                                    DialCodePicker(
+                                      dialCode: state.referenceDialCode,
+                                      onChanged: (code) {
+                                        context.read<InquiryBloc>().add(ReferenceDialCodeChanged(code));
                                       },
                                     ),
                                     const SizedBox(width: 12),
@@ -503,7 +595,7 @@ class _InquiryFormCard extends StatelessWidget {
                                       child: AppTextField(
                                         hint: StringConstant.enterReferenceNumber,
                                         keyboardType: TextInputType.phone,
-                                        value: state.referenceNumber,
+                                        controller: _referenceNumberController,
                                         errorText: state.referenceNumberError,
                                         onChanged: (value) =>
                                             context.read<InquiryBloc>().add(ReferenceNumberChanged(value)),
@@ -520,7 +612,7 @@ class _InquiryFormCard extends StatelessWidget {
                                 isRequired: true,
                                 child: AppTextField(
                                   hint: StringConstant.enterReferenceName,
-                                  value: state.referenceName,
+                                  controller: _referenceNameController,
                                   errorText: state.referenceNameError,
                                   onChanged: (value) =>
                                       context.read<InquiryBloc>().add(ReferenceNameChanged(value)),
@@ -539,7 +631,7 @@ class _InquiryFormCard extends StatelessWidget {
                             hint: StringConstant.enterClientBehaviour,
                             maxLines: 2,
                             minLines: 2,
-                            value: state.clientBehaviour,
+                            controller: _clientBehaviourController,
                             errorText: state.clientBehaviourError,
                             onChanged: (value) =>
                                 context.read<InquiryBloc>().add(ClientBehaviourChanged(value)),
@@ -552,6 +644,27 @@ class _InquiryFormCard extends StatelessWidget {
               ),
           );
       },
+    );
+  }
+}
+
+/// Small inline progress indicator shown inside the phone field during lookup.
+class _FieldSpinner extends StatelessWidget {
+  const _FieldSpinner();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: SizedBox(
+        width: 16,
+        height: 16,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: colors.inputBorderFocused,
+        ),
+      ),
     );
   }
 }

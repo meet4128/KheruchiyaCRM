@@ -8,6 +8,7 @@ import 'package:travel_crm/data/models/amendment/send_whatsapp_message_request.d
 import 'package:travel_crm/data/models/amendment/session_messages_response.dart';
 import 'package:travel_crm/data/models/amendment/session_note_request.dart';
 import 'package:travel_crm/data/models/amendment/upload_session_file_data.dart';
+import 'package:travel_crm/data/models/inquiry/inquiry_by_phone_response.dart';
 import 'package:travel_crm/data/models/inquiry/inquiry_detail_response.dart';
 import 'package:travel_crm/data/models/inquiry/list_inquiries_response.dart';
 import 'package:travel_crm/data/models/inquiry/payment_plan_response.dart';
@@ -62,6 +63,42 @@ class ListInquiriesQuery {
       'typeOfClient': typeOfClient,
       'status': status,
       'search': search,
+      'sort': sort,
+    };
+    queries.removeWhere((key, value) => value == null);
+    return queries;
+  }
+}
+
+/// Query params for `GET /inquiries/by-phone` (phone-number auto-fill lookup).
+class InquiryByPhoneQuery {
+  const InquiryByPhoneQuery({
+    required this.number,
+    this.countryCode,
+    this.page = 1,
+    this.limit = 20,
+    this.sort = '-createdAt',
+  });
+
+  /// Digits-only phone number, e.g. `9876543210`.
+  final String number;
+
+  /// Dial code, e.g. `+91`. Omitted from the query when null/empty.
+  final String? countryCode;
+  final int page;
+  final int limit;
+
+  /// Newest first by default so auto-fill uses the most recent inquiry.
+  final String? sort;
+
+  Map<String, dynamic> toQuery() {
+    final queries = <String, dynamic>{
+      'number': number,
+      'countryCode': (countryCode != null && countryCode!.isNotEmpty)
+          ? countryCode
+          : null,
+      'page': page,
+      'limit': limit,
       'sort': sort,
     };
     queries.removeWhere((key, value) => value == null);
@@ -134,6 +171,11 @@ abstract class InquiryApiClient {
 
   @GET('/inquiries')
   Future<ListInquiriesResponse> listInquiries(
+    @Queries() Map<String, dynamic> queries,
+  );
+
+  @GET('/inquiries/by-phone')
+  Future<InquiryByPhoneResponse> getInquiriesByPhone(
     @Queries() Map<String, dynamic> queries,
   );
 

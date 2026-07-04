@@ -92,6 +92,24 @@ class PhoneChanged extends InquiryEvent {
   List<Object> get props => [phone];
 }
 
+/// Internal event fired (debounced) after the phone number changes, to look up
+/// an existing inquiry by phone and auto-fill the form when a match is found.
+class PhoneLookupRequested extends InquiryEvent {
+  const PhoneLookupRequested({
+    required this.number,
+    required this.countryCode,
+  });
+
+  /// Digits-only phone number to search for.
+  final String number;
+
+  /// Dial code selected for the phone field, e.g. `+91`.
+  final String countryCode;
+
+  @override
+  List<Object> get props => [number, countryCode];
+}
+
 /// Event fired when email changes
 class EmailChanged extends InquiryEvent {
   const EmailChanged(this.email);

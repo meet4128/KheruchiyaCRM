@@ -47,7 +47,7 @@ Future setup() async {
 
   // register blocs
   sl.registerLazySingleton(() => InquiryManagementBloc(inquiryRepository: sl<InquiryRepository>()));
-  sl.registerLazySingleton(() => InquiryBloc());
+  sl.registerLazySingleton(() => InquiryBloc(sl<InquiryRepository>()));
   sl.registerLazySingleton(() => VendorInquiryBloc());
   sl.registerFactoryParam<InquiryDetailBloc, VendorInquiryRow?, void>(
     (vendorRow, _) => InquiryDetailBloc(
