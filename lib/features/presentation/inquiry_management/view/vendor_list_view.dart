@@ -26,9 +26,6 @@ class _VendorListViewState extends State<VendorListView> {
   final TextEditingController _searchController = TextEditingController();
   final InquiryManagementBloc _bloc = sl<InquiryManagementBloc>();
 
-  /// Max high-priority lead cards shown in the "High Priority Leads" row.
-  static const int _kMaxLeadCards = 5;
-
   final List<_TableColumnData> _columns = const [
     _TableColumnData(key: 'expand', title: 'Expand', width: 100),
     _TableColumnData(key: 'inquiry', title: 'Inquiry Number', width: 152.5),
@@ -225,26 +222,10 @@ class _VendorListViewState extends State<VendorListView> {
     );
   }
 
-  /// High-priority leads for the top cards row: inquiries whose first non-empty
-  /// checklist priority is HIGH, newest first (by `createdAt`), capped at
-  /// [_kMaxLeadCards]. Derived from [InquiryManagementLoaded.allItems] so it is
-  /// independent of the table's search/status-chip filters.
+  /// Maps the high-priority leads selected by the BLoC state
+  /// ([InquiryManagementLoaded.highPriorityLeads]) to presentation cards.
   List<_LeadCardData> _highPriorityLeadCards(InquiryManagementLoaded state) {
-    final highItems = state.allItems
-        .whereType<ListInquiryItem>()
-        .where(_isHighPriorityInquiry)
-        .toList();
-
-    highItems.sort((a, b) {
-      final da = _parseCreatedAt(a.createdAt);
-      final db = _parseCreatedAt(b.createdAt);
-      if (da == null && db == null) return 0;
-      if (da == null) return 1; // nulls last
-      if (db == null) return -1;
-      return db.compareTo(da); // newest first
-    });
-
-    return highItems.take(_kMaxLeadCards).map((e) {
+    return state.highPriorityLeads.map((e) {
       final row = VendorInquiryRow.fromListInquiryItem(e);
       return _LeadCardData(
         name: row.name,
@@ -258,59 +239,33 @@ class _VendorListViewState extends State<VendorListView> {
     }).toList();
   }
 
-  /// True when the inquiry's first non-empty checklist priority is HIGH.
-  /// Mirrors the "first non-empty priority wins" rule used by [VendorInquiryRow].
-  bool _isHighPriorityInquiry(ListInquiryItem e) {
-    for (final c in e.checklist) {
-      final p = c.priority?.trim();
-      if (p == null || p.isEmpty) continue;
-      return p.toUpperCase() == 'HIGH';
-    }
-    return false;
-  }
-
-  DateTime? _parseCreatedAt(String? raw) {
-    if (raw == null || raw.trim().isEmpty) return null;
-    try {
-      return DateTime.parse(raw);
-    } catch (_) {
-      return null;
-    }
-  }
-
   List<_SummaryChipData> _buildSummaryItems(InquiryManagementLoaded state) {
-    final allItems = state.allItems.whereType<ListInquiryItem>().toList();
-
-    int countByStatus(String status) => allItems
-        .where((e) => (e.status ?? '').toLowerCase() == status.toLowerCase())
-        .length;
-
     return [
       _SummaryChipData(
         label: 'All',
-        value: '${allItems.length}',
+        value: '${state.totalInquiryCount}',
         valueBg: Colors.white,
       ),
       _SummaryChipData(
         label: 'New In',
-        value: '${countByStatus('IN_PROGRESS')}',
+        value: '${state.inquiryCountByStatus('IN_PROGRESS')}',
         valueBg: const Color(0xFF0088FF),
       ),
       _SummaryChipData(
         label: 'Pending',
-        value: '${countByStatus('PENDING')}',
+        value: '${state.inquiryCountByStatus('PENDING')}',
         valueBg: const Color(0xFFFF8D28),
       ),
       const _SummaryChipData(label: 'New Follow Up', icon: Icons.send_rounded),
       const _SummaryChipData(label: 'Set Follow Up', icon: Icons.send_rounded),
       _SummaryChipData(
         label: 'Loss',
-        value: '${countByStatus('CANCELLED')}',
+        value: '${state.inquiryCountByStatus('CANCELLED')}',
         valueBg: const Color(0xFFFF383C),
       ),
       _SummaryChipData(
         label: 'Won',
-        value: '${countByStatus('COMPLETED')}',
+        value: '${state.inquiryCountByStatus('COMPLETED')}',
         valueBg: const Color(0xFF34C759),
       ),
     ];
@@ -544,7 +499,8 @@ class _VendorListViewState extends State<VendorListView> {
     }
 
     final rows = items.map(VendorInquiryRow.fromListInquiryItem).toList();
-    final needsSlaTicker = rows.any((r) => r.slaDeadline != null);
+    // Only tick while at least one row's SLA is actually running (New In).
+    final needsSlaTicker = rows.any((r) => r.isSlaRunning);
 
     final Widget tableRows = needsSlaTicker
         ? _VendorTableRowsWithSlaTicker(
@@ -901,19 +857,16 @@ class _VendorTableRowsWithSlaTicker extends StatefulWidget {
 
 class _VendorTableRowsWithSlaTickerState
     extends State<_VendorTableRowsWithSlaTicker> {
-  Timer? _timer;
+
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
-    });
+
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
     super.dispose();
   }
 
@@ -935,9 +888,15 @@ class _VendorTableRowsWithSlaTickerState
   }
 }
 
-/// Priority column: trend icon + SLA countdown (15m / 1h / 8h from inquiry `createdAt`).
+/// Priority column: trend icon + SLA countdown (15m / 1h / 8h from inquiry
+/// `createdAt`). The countdown runs only while the inquiry is **New In**; past
+/// its deadline it keeps counting into red "Overdue". Once the status leaves
+/// New In the timer stops and only the priority label is shown.
 class _PrioritySlaCell extends StatelessWidget {
   const _PrioritySlaCell({required this.row, required this.now});
+
+  /// Red used for overdue countdowns (matches the palette's "Loss" red).
+  static const Color _overdueColor = Color(0xFFFF383C);
 
   final VendorInquiryRow row;
   final DateTime now;
@@ -945,9 +904,15 @@ class _PrioritySlaCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final deadline = row.slaDeadline;
-    final String label = deadline != null
-        ? VendorInquiryRow.formatSlaCountdownLabel(deadline, now)
-        : row.priorityText;
+    String label;
+    bool isOverdue = false;
+    if (row.isSlaRunning && deadline != null) {
+      label = VendorInquiryRow.formatSlaCountdownLabel(deadline, now);
+      isOverdue = !now.isBefore(deadline);
+    } else {
+      // Timer stopped (status no longer New In) or no SLA — show priority label.
+      label = row.priorityText;
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -963,7 +928,7 @@ class _PrioritySlaCell extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: FontConstant.interNormal(
-                color: Colors.white,
+                color: isOverdue ? _overdueColor : Colors.white,
                 fontSize: 11,
               ),
             ),

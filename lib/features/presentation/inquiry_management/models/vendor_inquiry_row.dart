@@ -65,6 +65,12 @@ class VendorInquiryRow {
   final String assignedToText;
   final String status;
 
+  /// Whether the SLA timer should actively run (and count into "Overdue") for
+  /// this row: only while the inquiry is still **New In** (`IN_PROGRESS`) and it
+  /// has a priority-based SLA deadline. Once the status changes to anything else
+  /// the timer stops and the Priority cell falls back to the priority label.
+  bool get isSlaRunning => slaDeadline != null && status == 'New In';
+
   factory VendorInquiryRow.fromListInquiryItem(ListInquiryItem e) {
     final id = e.id ?? '';
     final inquiryNo = id.length > 8
@@ -285,7 +291,8 @@ class VendorInquiryRow {
 
   static String formatSlaCountdownLabel(DateTime deadline, DateTime now) {
     final remaining = deadline.difference(now);
-    if (remaining.isNegative) return '0 min Left';
+    // Past the deadline: keep counting up as "Overdue" instead of stopping at 0.
+    if (remaining.isNegative) return _formatOverdueLabel(-remaining);
     final secs = remaining.inSeconds;
     if (secs < 3600) {
       final m = secs ~/ 60;
@@ -305,5 +312,30 @@ class VendorInquiryRow {
       }
     }
     return days == 1 ? '1 day Left' : '$days days Left';
+  }
+
+  /// Elapsed time past the SLA deadline, mirroring [formatSlaCountdownLabel]'s
+  /// units but suffixed "Overdue" (e.g. `05:30 min Overdue`, `2h 10m Overdue`,
+  /// `1 day Overdue`). [overdue] must be non-negative.
+  static String _formatOverdueLabel(Duration overdue) {
+    final secs = overdue.inSeconds;
+    if (secs < 3600) {
+      final m = secs ~/ 60;
+      final s = secs % 60;
+      return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')} min Overdue';
+    }
+    if (secs < 24 * 3600) {
+      final h = secs ~/ 3600;
+      final m = (secs % 3600) ~/ 60;
+      return '${h}h ${m}m Overdue';
+    }
+    final days = secs ~/ (24 * 3600);
+    if (days >= 7) {
+      final w = days ~/ 7;
+      if (days % 7 == 0 && w >= 1) {
+        return w == 1 ? '1 Week Overdue' : '$w Weeks Overdue';
+      }
+    }
+    return days == 1 ? '1 day Overdue' : '$days days Overdue';
   }
 }
