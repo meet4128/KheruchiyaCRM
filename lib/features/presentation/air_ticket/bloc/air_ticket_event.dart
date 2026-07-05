@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart' show TimeOfDay;
 import '../../inquiry_form/bloc/inquiry_state.dart';
 import '../models/booking_type.dart';
 import '../models/traveller_breakdown.dart';
@@ -154,6 +155,17 @@ class ChecklistDueDateChanged extends AirTicketEvent {
 
   @override
   List<Object?> get props => [dueDate];
+}
+
+/// Event fired when checklist due time changes.
+/// The time is merged into [AirTicketState.checklistDueDate] (date part preserved).
+class ChecklistDueTimeChanged extends AirTicketEvent {
+  const ChecklistDueTimeChanged(this.dueTime);
+
+  final TimeOfDay? dueTime;
+
+  @override
+  List<Object?> get props => [dueTime];
 }
 
 /// Event fired when checklist priority changes

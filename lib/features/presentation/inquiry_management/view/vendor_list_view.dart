@@ -26,49 +26,8 @@ class _VendorListViewState extends State<VendorListView> {
   final TextEditingController _searchController = TextEditingController();
   final InquiryManagementBloc _bloc = sl<InquiryManagementBloc>();
 
-  final List<_LeadCardData> _leadCards = const [
-    _LeadCardData(
-      name: 'Kirsty Ben',
-      subtitle: 'Hot Prospect',
-      trend: InquiryPriorityTrend.up,
-      updateText: 'Update',
-      updateDateTime: '08 Dec, 16:30 PM',
-      chipText: 'New',
-    ),
-    _LeadCardData(
-      name: 'Joane Dales',
-      subtitle: 'Hot Prospect',
-      trend: InquiryPriorityTrend.up,
-      updateText: 'Update',
-      updateDateTime: '08 Dec, 16:30 PM',
-      chipText: 'New',
-    ),
-    _LeadCardData(
-      name: 'Mickey Wick',
-      subtitle: 'Hot Prospect',
-      trend: InquiryPriorityTrend.down,
-      updateText: 'Update',
-      updateDateTime: '08 Dec, 16:30 PM',
-      chipText: 'New',
-    ),
-    _LeadCardData(
-      name: 'Joane Dales',
-      subtitle: 'Hot Prospect',
-      trend: InquiryPriorityTrend.swap,
-      updateText: 'Update',
-      updateDateTime: '08 Dec, 16:30 PM',
-      chipText: 'New',
-    ),
-    _LeadCardData(
-      name: 'Mickey Wick',
-      subtitle: 'Hot Prospect',
-      trend: InquiryPriorityTrend.up,
-      updateText: 'Update',
-      updateDateTime: '08 Dec, 16:30 PM',
-      chipText: 'New',
-    ),
-  ];
-
+  /// Max high-priority lead cards shown in the "High Priority Leads" row.
+  static const int _kMaxLeadCards = 5;
 
   final List<_TableColumnData> _columns = const [
     _TableColumnData(key: 'expand', title: 'Expand', width: 100),
@@ -188,16 +147,20 @@ class _VendorListViewState extends State<VendorListView> {
   }
 
   Widget _buildMainBoard(InquiryManagementLoaded state) {
+    final leadCards = _highPriorityLeadCards(state);
     return Container(
       color: const Color(0xFF121212),
       padding: const EdgeInsets.all(25),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildTopHeader(),
-          const SizedBox(height: _kGap),
-          _buildLeadCards(),
-          const SizedBox(height: _kGap),
+          // High-priority leads section — hidden entirely when none exist.
+          if (leadCards.isNotEmpty) ...[
+            _buildTopHeader(),
+            const SizedBox(height: _kGap),
+            _buildLeadCards(leadCards),
+            const SizedBox(height: _kGap),
+          ],
           _buildSummaryStatusRow(state),
           const SizedBox(height: _kGap),
           _buildToolbar(state),
@@ -215,7 +178,7 @@ class _VendorListViewState extends State<VendorListView> {
       children: [
         Expanded(
           child: Text(
-            'Recently Added Leads',
+            'High Priority Leads',
             style: FontConstant.interMedium(color: Colors.white, fontSize: 16),
           ),
         ),
@@ -245,15 +208,15 @@ class _VendorListViewState extends State<VendorListView> {
     );
   }
 
-  Widget _buildLeadCards() {
+  Widget _buildLeadCards(List<_LeadCardData> leadCards) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: List.generate(_leadCards.length, (index) {
-          final _LeadCardData card = _leadCards[index];
+        children: List.generate(leadCards.length, (index) {
+          final _LeadCardData card = leadCards[index];
           return Padding(
             padding: EdgeInsets.only(
-              right: index == _leadCards.length - 1 ? 0 : 12,
+              right: index == leadCards.length - 1 ? 0 : 12,
             ),
             child: SizedBox(width: 280, child: _LeadCard(card: card)),
           );
@@ -262,11 +225,65 @@ class _VendorListViewState extends State<VendorListView> {
     );
   }
 
+  /// High-priority leads for the top cards row: inquiries whose first non-empty
+  /// checklist priority is HIGH, newest first (by `createdAt`), capped at
+  /// [_kMaxLeadCards]. Derived from [InquiryManagementLoaded.allItems] so it is
+  /// independent of the table's search/status-chip filters.
+  List<_LeadCardData> _highPriorityLeadCards(InquiryManagementLoaded state) {
+    final highItems = state.allItems
+        .whereType<ListInquiryItem>()
+        .where(_isHighPriorityInquiry)
+        .toList();
+
+    highItems.sort((a, b) {
+      final da = _parseCreatedAt(a.createdAt);
+      final db = _parseCreatedAt(b.createdAt);
+      if (da == null && db == null) return 0;
+      if (da == null) return 1; // nulls last
+      if (db == null) return -1;
+      return db.compareTo(da); // newest first
+    });
+
+    return highItems.take(_kMaxLeadCards).map((e) {
+      final row = VendorInquiryRow.fromListInquiryItem(e);
+      return _LeadCardData(
+        name: row.name,
+        subtitle: row.bookingType,
+        trend: row.priorityTrend,
+        updateText: 'Created',
+        updateDateTime: row.generatedAt,
+        chipText: row.status,
+        row: row,
+      );
+    }).toList();
+  }
+
+  /// True when the inquiry's first non-empty checklist priority is HIGH.
+  /// Mirrors the "first non-empty priority wins" rule used by [VendorInquiryRow].
+  bool _isHighPriorityInquiry(ListInquiryItem e) {
+    for (final c in e.checklist) {
+      final p = c.priority?.trim();
+      if (p == null || p.isEmpty) continue;
+      return p.toUpperCase() == 'HIGH';
+    }
+    return false;
+  }
+
+  DateTime? _parseCreatedAt(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    try {
+      return DateTime.parse(raw);
+    } catch (_) {
+      return null;
+    }
+  }
+
   List<_SummaryChipData> _buildSummaryItems(InquiryManagementLoaded state) {
     final allItems = state.allItems.whereType<ListInquiryItem>().toList();
 
-    int countByStatus(String status) =>
-        allItems.where((e) => (e.status ?? '').toLowerCase() == status.toLowerCase()).length;
+    int countByStatus(String status) => allItems
+        .where((e) => (e.status ?? '').toLowerCase() == status.toLowerCase())
+        .length;
 
     return [
       _SummaryChipData(
@@ -336,8 +353,8 @@ class _VendorListViewState extends State<VendorListView> {
               onTap: item.icon != null
                   ? null
                   : () => _bloc.add(
-                        InquiryManagementStatusChipChanged(chipStatus),
-                      ),
+                      InquiryManagementStatusChipChanged(chipStatus),
+                    ),
               child: _SummaryChip(
                 item: item.copyWith(isActive: isAll ? true : isActive),
                 isFirst: index == 0,
@@ -695,10 +712,7 @@ class _VendorListViewState extends State<VendorListView> {
       case 'booking':
         return _cellText(row.bookingType);
       case 'priority':
-        return _PrioritySlaCell(
-          row: row,
-          now: slaClock ?? DateTime.now(),
-        );
+        return _PrioritySlaCell(row: row, now: slaClock ?? DateTime.now());
       case 'assigned':
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -868,7 +882,6 @@ class _VendorListViewState extends State<VendorListView> {
       const Color(0xFF26193E),
     );
   }
-
 }
 
 /// One [Timer] for all SLA rows — avoids N timers when the table has many entries.
@@ -886,7 +899,8 @@ class _VendorTableRowsWithSlaTicker extends StatefulWidget {
       _VendorTableRowsWithSlaTickerState();
 }
 
-class _VendorTableRowsWithSlaTickerState extends State<_VendorTableRowsWithSlaTicker> {
+class _VendorTableRowsWithSlaTickerState
+    extends State<_VendorTableRowsWithSlaTicker> {
   Timer? _timer;
 
   @override
@@ -965,128 +979,138 @@ class _LeadCard extends StatelessWidget {
 
   final _LeadCardData card;
 
+  void _openDetail(BuildContext context) {
+    final row = card.row;
+    if (row == null) return;
+    context.push(PathConstant.inquiryManagementDetail, extra: row);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 113,
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1B1535),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 17,
-                      backgroundColor: Colors.white.withValues(alpha: 0.15),
-                      child: const Icon(
-                        Icons.person,
-                        size: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                card.name,
-                                style: FontConstant.interNormal(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              _LeadTrendIcon(trend: card.trend),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            card.subtitle,
-                            style: FontConstant.interNormal(
-                              color: Colors.white.withValues(alpha: 0.6),
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                width: 28,
-                height: 28,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.open_in_full_rounded,
-                  size: 16,
-                  color: Color(0xFF1B1535),
-                ),
-              ),
-            ],
+    return InkWell(
+      onTap: card.row != null ? () => _openDetail(context) : null,
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        height: 113,
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1B1535),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.3),
+            width: 1,
           ),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      card.updateText,
-                      style: FontConstant.interNormal(
-                        color: Colors.white,
-                        fontSize: 14,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 17,
+                        backgroundColor: Colors.white.withValues(alpha: 0.15),
+                        child: const Icon(
+                          Icons.person,
+                          size: 16,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      card.updateDateTime,
-                      style: FontConstant.interNormal(
-                        color: Colors.white.withValues(alpha: 0.6),
-                        fontSize: 11,
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  card.name,
+                                  style: FontConstant.interNormal(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                _LeadTrendIcon(trend: card.trend),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              card.subtitle,
+                              style: FontConstant.interNormal(
+                                color: Colors.white.withValues(alpha: 0.6),
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                height: 23,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0088FF),
-                  borderRadius: BorderRadius.circular(32),
-                ),
-                child: Text(
-                  card.chipText,
-                  style: FontConstant.interNormal(
-                    color: const Color(0xFF1B1535),
-                    fontSize: 12,
+                    ],
                   ),
                 ),
-              ),
-            ],
-          ),
-        ],
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.open_in_full_rounded,
+                    size: 16,
+                    color: Color(0xFF1B1535),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        card.updateText,
+                        style: FontConstant.interNormal(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        card.updateDateTime,
+                        style: FontConstant.interNormal(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  height: 23,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0088FF),
+                    borderRadius: BorderRadius.circular(32),
+                  ),
+                  child: Text(
+                    card.chipText,
+                    style: FontConstant.interNormal(
+                      color: const Color(0xFF1B1535),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1247,6 +1271,7 @@ class _LeadCardData {
     required this.updateText,
     required this.updateDateTime,
     required this.chipText,
+    this.row,
   });
 
   final String name;
@@ -1255,6 +1280,9 @@ class _LeadCardData {
   final String updateText;
   final String updateDateTime;
   final String chipText;
+
+  /// Source row for navigation to inquiry detail on tap.
+  final VendorInquiryRow? row;
 }
 
 class _SummaryChipData {
@@ -1294,4 +1322,3 @@ class _TableColumnData {
   final String title;
   final double width;
 }
-

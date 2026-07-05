@@ -250,6 +250,7 @@ class StringConstant {
   static const String classLabel = 'Class';
   static const String selectFollowUpType = 'Select follow-up type';
   static const String selectDate = 'Select date';
+  static const String selectTime = 'Select time';
 
   // ========== Air Ticket Form Validation Messages ==========
   static const String fromLocationRequired = 'From location is required';
@@ -363,6 +364,7 @@ class StringConstant {
   static const String userTypeNamePressEnter = 'Type a name and press Enter';
   static const String done = 'Done';
   static const String dueDate = 'Due Date';
+  static const String dueTime = 'Due Time';
   static const String category = 'Category';
   static const String inLoop = 'In Loop';
   static const String repeat = 'Repeat';

@@ -14,6 +14,7 @@ enum ChecklistPriority {
   /// Value sent in the `checklist[].priority` field.
   final String apiValue;
 
-  /// Due date is only selectable when priority is Low.
-  bool get allowsDueDate => this == ChecklistPriority.low;
+  /// Due date & time are selectable for every priority. When left empty the
+  /// backend applies its own default (High → +15 min, Medium → +8 hours).
+  bool get allowsDueDate => true;
 }

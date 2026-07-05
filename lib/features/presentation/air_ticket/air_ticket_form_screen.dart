@@ -491,6 +491,8 @@ class _ChecklistSectionWidget extends StatelessWidget {
               context.read<AirTicketBloc>().add(ChecklistUserChanged(value)),
           onDueDateChanged: (date) =>
               context.read<AirTicketBloc>().add(ChecklistDueDateChanged(date)),
+          onDueTimeChanged: (time) =>
+              context.read<AirTicketBloc>().add(ChecklistDueTimeChanged(time)),
           onPriorityChanged: (ChecklistPriority priority) => context
               .read<AirTicketBloc>()
               .add(ChecklistPriorityChanged(priority)),

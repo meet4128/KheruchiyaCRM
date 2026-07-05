@@ -45,6 +45,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     on<FollowUpTypeChanged>(_onFollowUpTypeChanged);
     on<ChecklistUserChanged>(_onChecklistUserChanged);
     on<ChecklistDueDateChanged>(_onChecklistDueDateChanged);
+    on<ChecklistDueTimeChanged>(_onChecklistDueTimeChanged);
     on<ChecklistPriorityChanged>(_onChecklistPriorityChanged);
     on<ChecklistCategoryChanged>(_onChecklistCategoryChanged);
     on<ChecklistInLoopChanged>(_onChecklistInLoopChanged);
@@ -255,12 +256,45 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     emit(state.copyWith(checklistUser: event.user));
   }
 
-  /// Handle checklist due date changed event
+  /// Handle checklist due date changed event.
+  /// Preserves any time-of-day already chosen, only replacing the date part.
   void _onChecklistDueDateChanged(
     ChecklistDueDateChanged event,
     Emitter<AirTicketState> emit,
   ) {
-    emit(state.copyWith(checklistDueDate: event.dueDate));
+    final date = event.dueDate;
+    if (date == null) {
+      emit(state.copyWith(checklistDueDate: null));
+      return;
+    }
+    final existing = state.checklistDueDate;
+    final merged = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      existing?.hour ?? 0,
+      existing?.minute ?? 0,
+    );
+    emit(state.copyWith(checklistDueDate: merged));
+  }
+
+  /// Handle checklist due time changed event.
+  /// Merges the time into the existing due date (defaults to today when no date
+  /// has been picked yet). A null time clears only the time back to 00:00.
+  void _onChecklistDueTimeChanged(
+    ChecklistDueTimeChanged event,
+    Emitter<AirTicketState> emit,
+  ) {
+    final time = event.dueTime;
+    final base = state.checklistDueDate ?? DateTime.now();
+    final merged = DateTime(
+      base.year,
+      base.month,
+      base.day,
+      time?.hour ?? 0,
+      time?.minute ?? 0,
+    );
+    emit(state.copyWith(checklistDueDate: merged));
   }
 
   /// Handle checklist priority changed event

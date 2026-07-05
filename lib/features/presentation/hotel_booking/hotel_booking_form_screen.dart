@@ -377,6 +377,7 @@ class _ChecklistSectionWidget extends StatelessWidget {
           repeat: state.checklistRepeat,
           onUserChanged: (value) => bloc.add(ChecklistUserChanged(value)),
           onDueDateChanged: (date) => bloc.add(ChecklistDueDateChanged(date)),
+          onDueTimeChanged: (time) => bloc.add(ChecklistDueTimeChanged(time)),
           onPriorityChanged: (ChecklistPriority priority) =>
               bloc.add(ChecklistPriorityChanged(priority)),
           onCategoryChanged: (category) =>

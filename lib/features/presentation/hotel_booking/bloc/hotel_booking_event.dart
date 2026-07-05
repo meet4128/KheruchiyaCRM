@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart' show TimeOfDay;
 import '../../inquiry_form/bloc/inquiry_state.dart';
 import '../models/amenity.dart';
 import '../models/hotel_category.dart';
@@ -183,6 +184,17 @@ class ChecklistDueDateChanged extends HotelBookingEvent {
 
   @override
   List<Object?> get props => [dueDate];
+}
+
+/// Event fired when checklist due time changes.
+/// The time is merged into the checklist due date (date part preserved).
+class ChecklistDueTimeChanged extends HotelBookingEvent {
+  const ChecklistDueTimeChanged(this.dueTime);
+
+  final TimeOfDay? dueTime;
+
+  @override
+  List<Object?> get props => [dueTime];
 }
 
 /// Event fired when checklist priority changes.

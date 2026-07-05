@@ -6,6 +6,7 @@ import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/theme/app_theme.dart';
 import 'package:travel_crm/core/widgets/app_date_picker.dart';
 import 'package:travel_crm/core/widgets/app_dropdown.dart';
+import 'package:travel_crm/core/widgets/app_time_picker.dart';
 import '../delete_recording_file.dart';
 import '../models/checklist_item.dart';
 import '../models/checklist_priority.dart';
@@ -112,6 +113,7 @@ class ChecklistSection extends StatelessWidget {
     required this.repeat,
     required this.onUserChanged,
     required this.onDueDateChanged,
+    required this.onDueTimeChanged,
     required this.onPriorityChanged,
     required this.onCategoryChanged,
     required this.onInLoopChanged,
@@ -136,6 +138,7 @@ class ChecklistSection extends StatelessWidget {
   final bool repeat;
   final ValueChanged<String> onUserChanged;
   final ValueChanged<DateTime?> onDueDateChanged;
+  final ValueChanged<TimeOfDay?> onDueTimeChanged;
   final ValueChanged<ChecklistPriority> onPriorityChanged;
   final ValueChanged<String> onCategoryChanged;
   final ValueChanged<bool> onInLoopChanged;
@@ -252,6 +255,23 @@ class ChecklistSection extends StatelessWidget {
                         hint: StringConstant.dueDate,
                         value: dueDate,
                         onChanged: (date) => onDueDateChanged(date),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _ChecklistFieldWrap(
+                      decoration: fieldDecoration,
+                      icon: Icons.access_time,
+                      child: AppTimePicker(
+                        hint: StringConstant.dueTime,
+                        value: dueDate != null
+                            ? TimeOfDay(
+                                hour: dueDate!.hour,
+                                minute: dueDate!.minute,
+                              )
+                            : null,
+                        onChanged: (time) => onDueTimeChanged(time),
                       ),
                     ),
                   ),

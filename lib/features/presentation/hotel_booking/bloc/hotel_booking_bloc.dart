@@ -48,6 +48,7 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
     on<RemarkChanged>(_onRemarkChanged);
     on<ChecklistUserChanged>(_onChecklistUserChanged);
     on<ChecklistDueDateChanged>(_onChecklistDueDateChanged);
+    on<ChecklistDueTimeChanged>(_onChecklistDueTimeChanged);
     on<ChecklistPriorityChanged>(_onChecklistPriorityChanged);
     on<ChecklistCategoryChanged>(_onChecklistCategoryChanged);
     on<ChecklistInLoopChanged>(_onChecklistInLoopChanged);
@@ -221,7 +222,38 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
     ChecklistDueDateChanged event,
     Emitter<HotelBookingState> emit,
   ) {
-    emit(state.copyWith(checklistDueDate: event.dueDate));
+    final date = event.dueDate;
+    if (date == null) {
+      emit(state.copyWith(checklistDueDate: null));
+      return;
+    }
+    final existing = state.checklistDueDate;
+    final merged = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      existing?.hour ?? 0,
+      existing?.minute ?? 0,
+    );
+    emit(state.copyWith(checklistDueDate: merged));
+  }
+
+  /// Merges the picked time into the existing due date (defaults to today when
+  /// no date has been picked yet).
+  void _onChecklistDueTimeChanged(
+    ChecklistDueTimeChanged event,
+    Emitter<HotelBookingState> emit,
+  ) {
+    final time = event.dueTime;
+    final base = state.checklistDueDate ?? DateTime.now();
+    final merged = DateTime(
+      base.year,
+      base.month,
+      base.day,
+      time?.hour ?? 0,
+      time?.minute ?? 0,
+    );
+    emit(state.copyWith(checklistDueDate: merged));
   }
 
   void _onChecklistPriorityChanged(
