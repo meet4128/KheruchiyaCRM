@@ -2,18 +2,22 @@ import 'package:equatable/equatable.dart';
 
 enum NavPage {
   dashboard,
+  inquiry,
   inquiryManagement,
+  manageAmendment,
+  calendar,
+  addFollowUp,
+  messages,
+  payments,
+  invoices,
+  team,
+  analysis,
+  settings,
   clientLeads,
   vendorList,
-  inquiry,
-  messages,
   projectJobs,
-  invoices,
-  payments,
   inventory,
-  team,
   reminders,
-  analysis,
 }
 
 abstract class NavigationEvent extends Equatable {

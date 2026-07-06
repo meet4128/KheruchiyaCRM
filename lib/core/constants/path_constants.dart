@@ -96,6 +96,14 @@ String pathForNavPage(NavPage page) {
       return PathConstant.dashboard;
     case NavPage.inquiryManagement:
       return PathConstant.inquiryManagement;
+    case NavPage.manageAmendment:
+      return PathConstant.manageAmendment;
+    case NavPage.calendar:
+      return PathConstant.calendar;
+    case NavPage.addFollowUp:
+      return PathConstant.addFollowUp;
+    case NavPage.settings:
+      return PathConstant.settings;
     case NavPage.clientLeads:
       return PathConstant.clientLeads;
     case NavPage.vendorList:
@@ -132,6 +140,10 @@ NavPage navPageFromPath(String path) {
   final p = normalizeRoutePath(path);
   if (p == PathConstant.dashboard) return NavPage.dashboard;
   if (p.startsWith(PathConstant.inquiryManagement)) return NavPage.inquiryManagement;
+  if (p.startsWith(PathConstant.manageAmendment)) return NavPage.manageAmendment;
+  if (p.startsWith(PathConstant.calendar)) return NavPage.calendar;
+  if (p.startsWith(PathConstant.addFollowUp)) return NavPage.addFollowUp;
+  if (p.startsWith(PathConstant.settings)) return NavPage.settings;
   if (p.startsWith(PathConstant.clientLeads)) return NavPage.clientLeads;
   if (p.startsWith(PathConstant.vendorInquiry)) return NavPage.vendorList;
   if (p.startsWith(PathConstant.inquiryView)) return NavPage.inquiry;
@@ -204,6 +216,26 @@ GoRouter createRouter(NavigationBloc navBloc) {
             pageBuilder: (context, state) => NoTransitionPage(child: InquiryManagementPage()),
           ),
 
+          GoRoute(
+            path: PathConstant.manageAmendment,
+            name: 'manageAmendment',
+            pageBuilder: (context, state) => NoTransitionPage(child: ManageAmendmentPage()),
+          ),
+          GoRoute(
+            path: PathConstant.calendar,
+            name: 'calendar',
+            pageBuilder: (context, state) => NoTransitionPage(child: CalendarPage()),
+          ),
+          GoRoute(
+            path: PathConstant.addFollowUp,
+            name: 'addFollowUp',
+            pageBuilder: (context, state) => NoTransitionPage(child: AddFollowUpPage()),
+          ),
+          GoRoute(
+            path: PathConstant.settings,
+            name: 'settings',
+            pageBuilder: (context, state) => NoTransitionPage(child: SettingsPage()),
+          ),
           GoRoute(
             path: PathConstant.clientLeads,
             name: 'clientLeads',
@@ -436,6 +468,10 @@ class PathConstant {
   static const String messages = '/messages';
   static const String inquiryManagement = '/inquiry-management';
   static const String inquiryManagementDetail = '/inquiry-management/detail';
+  static const String manageAmendment = '/manage-amendment';
+  static const String calendar = '/calendar';
+  static const String addFollowUp = '/add-follow-up';
+  static const String settings = '/settings';
   static const String inquiryView = '/inquiry-view';
   static const String vendorInquiry = '/vendor-inquiry';
   static const String vendorCompanyDetails = '/vendor-inquiry/company-details';
@@ -450,14 +486,19 @@ class PathConstant {
   static const String hotelBooking = '/hotel-booking';
 
   static const String dashboardConstant = "Dashboard";
+  static const String createInquiryConstant = "Create New Inquiry";
+  static const String inquiryManagementConstant = "Inquiry Management";
+  static const String manageAmendmentConstant = "Manage Amendment";
+  static const String calendarConstant = "Calendar";
+  static const String addFollowUpConstant = "Add Follow Up";
+  static const String messagesConstant = "Message";
+  static const String paymentsConstant = "All Payment";
+  static const String invoicesConstant = "Invoices";
+  static const String teamConstant = "Team";
+  static const String analysisConstant = "Analytics";
+  static const String settingsConstant = "Settings";
   static const String clientLeadsConstant = "Follow Up";
   static const String vendorListConstant = "Vendor List";
-  static const String messagesConstant = "Messages";
-  static const String inquiryManagementConstant = "New Inquiry";
-  static const String invoicesConstant = "Invoices";
-  static const String paymentsConstant = "Payments";
   static const String inventoryConstant = "Inventory";
-  static const String teamConstant = "Team";
   static const String remindersConstant = "Reminders";
-  static const String analysisConstant = "Analysis";
 }

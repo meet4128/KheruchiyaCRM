@@ -218,6 +218,34 @@ class AnalysisPage extends StatelessWidget {
   Widget build(BuildContext context) => _page(StringConstant.analysis);
 }
 
+class ManageAmendmentPage extends StatelessWidget {
+  const ManageAmendmentPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => _page(PathConstant.manageAmendmentConstant);
+}
+
+class CalendarPage extends StatelessWidget {
+  const CalendarPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => _page(PathConstant.calendarConstant);
+}
+
+class AddFollowUpPage extends StatelessWidget {
+  const AddFollowUpPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => _page(PathConstant.addFollowUpConstant);
+}
+
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) => _page(PathConstant.settingsConstant);
+}
+
 class AirTicketViewPage extends StatelessWidget {
   const AirTicketViewPage({super.key, this.initialInquiryState});
 

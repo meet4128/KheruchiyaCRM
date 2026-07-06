@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:travel_crm/core/constants/path_constants.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/features/presentation/inquiry_form/inquiry_view.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/view/vendor_list_view.dart';
@@ -40,6 +41,14 @@ class WebContent extends StatelessWidget {
             return _analysis();
           case NavPage.inquiryManagement:
             return _inquiryManagement();
+          case NavPage.manageAmendment:
+            return _page(PathConstant.manageAmendmentConstant);
+          case NavPage.calendar:
+            return _page(PathConstant.calendarConstant);
+          case NavPage.addFollowUp:
+            return _page(PathConstant.addFollowUpConstant);
+          case NavPage.settings:
+            return _page(PathConstant.settingsConstant);
           case NavPage.messages:
             return _page('Messages');
         }
