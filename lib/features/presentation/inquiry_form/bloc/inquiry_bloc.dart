@@ -199,10 +199,40 @@ class InquiryBloc extends Bloc<InquiryEvent, InquiryState> {
         return;
       }
 
-      emit(_applyPhoneMatch(state, items.first));
+      // Multiple inquiries can share the same phone number — auto-fill from the
+      // most recently created one so the freshest client details win.
+      emit(_applyPhoneMatch(state, _latestMatch(items)));
     } catch (_) {
       if (emit.isDone) return;
       emit(state.copyWith(isPhoneLookupLoading: false));
+    }
+  }
+
+  /// Picks the most recently created inquiry from [items] (by `createdAt`), so
+  /// when several inquiries share the same phone number the freshest one is used
+  /// for auto-fill. Items with a missing/unparseable date never beat one with a
+  /// valid date; if none can be parsed it falls back to the first item.
+  InquiryByPhoneItem _latestMatch(List<InquiryByPhoneItem> items) {
+    var best = items.first;
+    var bestDate = _parseCreatedAt(best.createdAt);
+    for (final item in items.skip(1)) {
+      final date = _parseCreatedAt(item.createdAt);
+      if (date == null) continue;
+      if (bestDate == null || date.isAfter(bestDate)) {
+        best = item;
+        bestDate = date;
+      }
+    }
+    return best;
+  }
+
+  /// Parses an ISO-8601 `createdAt` string, or null when absent/invalid.
+  DateTime? _parseCreatedAt(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    try {
+      return DateTime.parse(raw);
+    } catch (_) {
+      return null;
     }
   }
 
