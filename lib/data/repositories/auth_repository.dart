@@ -344,6 +344,13 @@ String? _transportFailure(DioException e) {
     case DioExceptionType.badResponse:
     case DioExceptionType.unknown:
       return null;
+    // Any DioExceptionType added in a newer dio (e.g. 5.10's transformTimeout)
+    // is treated as a non-decodable transport failure. Keeping a catch-all
+    // here means the switch stays exhaustive across dio versions, so the same
+    // source compiles whether CI resolves 5.9.x or 5.10.x.
+    // ignore: unreachable_switch_default
+    default:
+      return null;
   }
 }
 
