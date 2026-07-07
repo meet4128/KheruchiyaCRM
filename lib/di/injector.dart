@@ -3,7 +3,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_crm/core/network/apis.dart';
 import 'package:travel_crm/core/network/dio_client.dart';
 import 'package:travel_crm/core/network/inquiry_api_client.dart';
+import 'package:travel_crm/data/repositories/amendment_repository.dart';
 import 'package:travel_crm/data/repositories/auth_repository.dart';
+import 'package:travel_crm/data/repositories/calendar_repository.dart';
+import 'package:travel_crm/data/repositories/reminder_repository.dart';
 import 'package:travel_crm/data/repositories/inquiry_repository.dart';
 import 'package:travel_crm/data/repositories/members_repository.dart';
 import 'package:travel_crm/data/repositories/purchase_chat_repository.dart';
@@ -41,6 +44,15 @@ Future setup() async {
   );
   sl.registerLazySingleton<PurchaseChatRepository>(
     () => PurchaseChatRepository(sl<InquiryApiClient>()),
+  );
+  sl.registerLazySingleton<AmendmentRepository>(
+    () => AmendmentRepository(sl<InquiryApiClient>()),
+  );
+  sl.registerLazySingleton<CalendarRepository>(
+    () => CalendarRepository(sl<InquiryApiClient>()),
+  );
+  sl.registerLazySingleton<ReminderRepository>(
+    () => ReminderRepository(sl<InquiryApiClient>()),
   );
 
   sl.registerLazySingleton<AuthRepository>(AuthRepository.new);

@@ -23,6 +23,8 @@ import 'package:travel_crm/features/presentation/hotel_booking/hotel_booking_vie
 import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/view/inquiry_management_screen.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/view/vendor_list_view.dart';
+import 'package:travel_crm/features/presentation/calendar/view/calendar_screen.dart';
+import 'package:travel_crm/features/presentation/manage_amendment/view/manage_amendment_screen.dart';
 import 'package:travel_crm/features/presentation/purchase_team/models/messages_route_args.dart';
 import 'package:travel_crm/features/presentation/purchase_team/view/messages_screen.dart';
 
@@ -222,14 +224,18 @@ class ManageAmendmentPage extends StatelessWidget {
   const ManageAmendmentPage({super.key});
 
   @override
-  Widget build(BuildContext context) => _page(PathConstant.manageAmendmentConstant);
+  Widget build(BuildContext context) => const ManageAmendmentScreen();
 }
 
 class CalendarPage extends StatelessWidget {
   const CalendarPage({super.key});
 
   @override
-  Widget build(BuildContext context) => _page(PathConstant.calendarConstant);
+  Widget build(BuildContext context) {
+    final extra = GoRouterState.of(context).extra;
+    final focusDate = extra is DateTime ? extra : null;
+    return CalendarScreen(focusDate: focusDate);
+  }
 }
 
 class AddFollowUpPage extends StatelessWidget {

@@ -9,6 +9,8 @@ import 'package:travel_crm/core/constants/font_constant.dart';
 import 'package:travel_crm/core/constants/path_constants.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/di/injector.dart';
+import 'package:travel_crm/features/presentation/dashboard/bloc/navigation_bloc.dart';
+import 'package:travel_crm/features/presentation/dashboard/bloc/navigation_event.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_detail/inquiry_detail_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_detail/inquiry_detail_event.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_detail/inquiry_detail_state.dart';
@@ -337,7 +339,7 @@ class _QnaNotesState extends State<QnaNotes> {
       return;
     }
 
-    await showPutFollowUpDialog(
+    final focusDate = await showPutFollowUpDialog(
       context,
       inquiryId: widget.inquiryId,
       sessionId: sessionId,
@@ -349,6 +351,13 @@ class _QnaNotesState extends State<QnaNotes> {
           ..add(const InquiryDetailRefreshRequested());
       },
     );
+
+    // On a saved follow-up that produced a calendar event, redirect to the
+    // Calendar focused on the reminder's month (keeps the side-menu in sync).
+    if (focusDate != null && context.mounted) {
+      context.read<NavigationBloc>().add(ChangePageEvent(NavPage.calendar));
+      context.go(PathConstant.calendar, extra: focusDate);
+    }
   }
 
   Future<double?> _promptAmount(BuildContext context) async {

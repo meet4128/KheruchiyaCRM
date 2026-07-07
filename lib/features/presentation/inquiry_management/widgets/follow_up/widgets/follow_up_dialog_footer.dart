@@ -21,7 +21,9 @@ class FollowUpDialogFooter extends StatelessWidget {
         if (state.submitStatus == PutFollowUpSubmitStatus.success) {
           onSaved?.call();
           final messenger = ScaffoldMessenger.maybeOf(context);
-          Navigator.of(context).pop(true);
+          // Pop the created event's date so the caller can redirect the Calendar
+          // to that month (null when no calendar event was created).
+          Navigator.of(context).pop(state.redirectFocusDate);
           messenger?.showSnackBar(
             SnackBar(content: Text(StringConstant.putFollowUpSaveSuccess)),
           );

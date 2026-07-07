@@ -2,6 +2,10 @@ import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:travel_crm/data/models/amendment/amendment_detail_dto.dart';
 import 'package:travel_crm/data/models/amendment/amendment_notes_response.dart';
+import 'package:travel_crm/data/models/amendment/amendment_search_response.dart';
+import 'package:travel_crm/data/models/calendar/calendar_events_response.dart';
+import 'package:travel_crm/data/models/calendar/create_reminder_request.dart';
+import 'package:travel_crm/data/models/calendar/create_reminder_response.dart';
 import 'package:travel_crm/data/models/amendment/finalize_amendment_request.dart';
 import 'package:travel_crm/data/models/amendment/finalize_amendment_response.dart';
 import 'package:travel_crm/data/models/amendment/send_whatsapp_message_request.dart';
@@ -162,6 +166,86 @@ class ListMembersQuery {
   }
 }
 
+/// Query params for `GET /amendments/search` (Manage Amendment screen).
+///
+/// Only these fields are server-side filters today: [amendmentType], [status],
+/// [processedFrom], [processedTo] plus paging/sort. Other visual filters on the
+/// screen (amendment id, journey/fare/channel type, order-type tabs) have no
+/// backend param yet and are intentionally not modelled here.
+class AmendmentSearchQuery {
+  const AmendmentSearchQuery({
+    this.amendmentType,
+    this.status,
+    this.processedFrom,
+    this.processedTo,
+    this.page = 1,
+    this.limit = 10,
+    this.sort = '-createdAt',
+  });
+
+  /// e.g. `re_issue`, `correction`, `full_refund`.
+  final String? amendmentType;
+
+  /// e.g. `pending`, `in_progress`, `success`, `pending_with_supplier`.
+  final String? status;
+
+  /// Inclusive lower bound for `processedAt` — `yyyy-MM-dd`.
+  final String? processedFrom;
+
+  /// Inclusive upper bound for `processedAt` — `yyyy-MM-dd`.
+  final String? processedTo;
+
+  final int page;
+  final int limit;
+  final String? sort;
+
+  Map<String, dynamic> toQuery() {
+    final queries = <String, dynamic>{
+      'amendmentType': amendmentType,
+      'status': status,
+      'processedFrom': processedFrom,
+      'processedTo': processedTo,
+      'page': page,
+      'limit': limit,
+      'sort': sort,
+    };
+    queries.removeWhere((key, value) => value == null);
+    return queries;
+  }
+}
+
+/// Query params for `GET /calendar/events` (Calendar screen). Matches the live
+/// spec: `from`/`to` (date-time, required), optional `agent` and `status`.
+class CalendarEventsQuery {
+  const CalendarEventsQuery({
+    required this.from,
+    required this.to,
+    this.agent,
+    this.status,
+  });
+
+  /// Inclusive window bounds — ISO 8601 date-time.
+  final String from;
+  final String to;
+
+  /// Member id to filter by assigned agent.
+  final String? agent;
+
+  /// `pending` | `completed` | `dismissed` | `snoozed`.
+  final String? status;
+
+  Map<String, dynamic> toQuery() {
+    final queries = <String, dynamic>{
+      'from': from,
+      'to': to,
+      'agent': agent,
+      'status': status,
+    };
+    queries.removeWhere((key, value) => value == null);
+    return queries;
+  }
+}
+
 @RestApi(baseUrl: Apis.inquiryBaseUrl)
 abstract class InquiryApiClient {
   factory InquiryApiClient(Dio dio, {String baseUrl}) = _InquiryApiClient;
@@ -204,6 +288,23 @@ abstract class InquiryApiClient {
 
   @GET('/inquiries/{id}')
   Future<InquiryDetailResponse> getInquiryDetail(@Path('id') String id);
+
+  @GET('/amendments/search')
+  Future<AmendmentSearchResponse> searchAmendments(
+    @Queries() Map<String, dynamic> queries,
+  );
+
+  @GET('/calendar/events')
+  Future<CalendarEventsResponse> listCalendarEvents(
+    @Queries() Map<String, dynamic> queries,
+  );
+
+  @POST('/inquiries/{inquiryId}/amendments/{amendmentId}/reminders')
+  Future<CreateReminderResponse> createAmendmentReminder(
+    @Path('inquiryId') String inquiryId,
+    @Path('amendmentId') String amendmentId,
+    @Body() CreateReminderRequest body,
+  );
 
   @GET('/inquiries/{inquiryId}/amendments/session/{sessionId}/messages')
   Future<SessionMessagesResponse> listSessionMessages(

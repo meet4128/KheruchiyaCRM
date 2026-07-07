@@ -1,8 +1,13 @@
+import 'dart:developer' as developer;
+
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/data/models/amendment/finalize_amendment_request.dart';
+import 'package:travel_crm/data/models/calendar/create_reminder_request.dart';
 import 'package:travel_crm/data/repositories/inquiry_repository.dart';
 import 'package:travel_crm/data/repositories/purchase_chat_repository.dart';
+import 'package:travel_crm/data/repositories/reminder_repository.dart';
 
 import 'put_follow_up_event.dart';
 import 'put_follow_up_state.dart';
@@ -11,8 +16,10 @@ class PutFollowUpBloc extends Bloc<PutFollowUpEvent, PutFollowUpState> {
   PutFollowUpBloc({
     required InquiryRepository inquiryRepository,
     required PurchaseChatRepository purchaseChatRepository,
+    required ReminderRepository reminderRepository,
   })  : _inquiryRepository = inquiryRepository,
         _purchaseChatRepository = purchaseChatRepository,
+        _reminderRepository = reminderRepository,
         super(const PutFollowUpState()) {
     on<PutFollowUpDialogOpened>(_onDialogOpened);
     on<PutFollowUpDialogClosed>(_onDialogClosed);
@@ -32,6 +39,7 @@ class PutFollowUpBloc extends Bloc<PutFollowUpEvent, PutFollowUpState> {
 
   final InquiryRepository _inquiryRepository;
   final PurchaseChatRepository _purchaseChatRepository;
+  final ReminderRepository _reminderRepository;
 
   String? _openedInquiryId;
   String? _openedSessionId;
@@ -269,7 +277,7 @@ class PutFollowUpBloc extends Bloc<PutFollowUpEvent, PutFollowUpState> {
     );
 
     try {
-      await _inquiryRepository.finalizeAmendment(
+      final finalizeResponse = await _inquiryRepository.finalizeAmendment(
         inquiryId: state.inquiryId,
         request: FinalizeAmendmentRequest(
           action: 'put_follow_up',
@@ -277,6 +285,7 @@ class PutFollowUpBloc extends Bloc<PutFollowUpEvent, PutFollowUpState> {
           sessionId: state.sessionId.isNotEmpty ? state.sessionId : null,
         ),
       );
+      final amendmentId = finalizeResponse.data.amendment.amendmentId;
 
       if (note.isNotEmpty && state.sessionId.isNotEmpty) {
         try {
@@ -290,7 +299,45 @@ class PutFollowUpBloc extends Bloc<PutFollowUpEvent, PutFollowUpState> {
         }
       }
 
-      emit(state.copyWith(submitStatus: PutFollowUpSubmitStatus.success));
+      // Persist the reminder against the finalized amendment and, on success,
+      // hand the caller the month to focus. Best-effort: finalize already
+      // succeeded, so a reminder failure (e.g. missing amendmentId) must not
+      // fail the save — it only means no redirect. `agent`/`priority` are
+      // required by the API; agent is form-validated above, priority defaults
+      // to MEDIUM when the user left it unset.
+      final scheduledLocal = _resolveScheduledAt();
+      DateTime? redirectFocusDate;
+      if (agent?.id != null && (amendmentId?.isNotEmpty ?? false)) {
+        try {
+          await _reminderRepository.createReminder(
+            inquiryId: state.inquiryId,
+            amendmentId: amendmentId!,
+            request: CreateReminderRequest(
+              remindAt: scheduledLocal.toUtc().toIso8601String(),
+              agent: agent!.id!,
+              priority: state.checklistPriority?.apiValue ?? 'MEDIUM',
+              note: note.isNotEmpty ? note : null,
+              sessionId: state.sessionId.isNotEmpty ? state.sessionId : null,
+              inLoopUsers:
+                  state.inLoopUsers.isNotEmpty ? state.inLoopUsers : null,
+            ),
+          );
+          redirectFocusDate = scheduledLocal;
+        } catch (e) {
+          developer.log(
+            'Reminder create failed (best-effort): $e',
+            name: 'PutFollowUpBloc._onSavePressed',
+          );
+        }
+      }
+
+      emit(
+        state.copyWith(
+          submitStatus: PutFollowUpSubmitStatus.success,
+          redirectFocusDate: redirectFocusDate,
+          clearRedirectFocusDate: redirectFocusDate == null,
+        ),
+      );
     } catch (e) {
       emit(
         state.copyWith(
@@ -299,6 +346,14 @@ class PutFollowUpBloc extends Bloc<PutFollowUpEvent, PutFollowUpState> {
         ),
       );
     }
+  }
+
+  /// Combines the picked reminder date with the picked time (defaulting to the
+  /// current time-of-day when none was chosen) into a single local timestamp.
+  DateTime _resolveScheduledAt() {
+    final date = state.reminderDate ?? DateTime.now();
+    final time = state.reminderTime ?? TimeOfDay.now();
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
 
   static String _mapError(Object e) {

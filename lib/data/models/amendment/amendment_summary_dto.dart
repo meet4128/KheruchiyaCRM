@@ -6,6 +6,7 @@ part 'amendment_summary_dto.g.dart';
 class AmendmentSummaryDto {
   const AmendmentSummaryDto({
     this.id,
+    this.inquiryId,
     this.amendmentId,
     this.amendmentType,
     this.status,
@@ -24,6 +25,10 @@ class AmendmentSummaryDto {
 
   @JsonKey(name: '_id')
   final String? id;
+
+  /// Parent inquiry id — present on `GET /amendments/search` rows so the table
+  /// can deep-link into the inquiry detail. Absent on inquiry-scoped summaries.
+  final String? inquiryId;
 
   final String? amendmentId;
   final String? amendmentType;

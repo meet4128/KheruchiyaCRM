@@ -28,6 +28,7 @@ class PutFollowUpState extends Equatable {
     this.submitErrorMessage,
     this.noteError,
     this.agentError,
+    this.redirectFocusDate,
   });
 
   final String inquiryId;
@@ -53,6 +54,11 @@ class PutFollowUpState extends Equatable {
   final String? submitErrorMessage;
   final String? noteError;
   final String? agentError;
+
+  /// On a successful save, the local date of the created calendar event. The
+  /// dialog pops this so the caller can redirect the Calendar to that month.
+  /// Null when no calendar event was created (e.g. best-effort create failed).
+  final DateTime? redirectFocusDate;
 
   bool get canSubmit =>
       note.trim().isNotEmpty &&
@@ -88,6 +94,8 @@ class PutFollowUpState extends Equatable {
     bool clearNoteError = false,
     String? agentError,
     bool clearAgentError = false,
+    DateTime? redirectFocusDate,
+    bool clearRedirectFocusDate = false,
   }) {
     return PutFollowUpState(
       inquiryId: inquiryId ?? this.inquiryId,
@@ -116,6 +124,9 @@ class PutFollowUpState extends Equatable {
           : (submitErrorMessage ?? this.submitErrorMessage),
       noteError: clearNoteError ? null : (noteError ?? this.noteError),
       agentError: clearAgentError ? null : (agentError ?? this.agentError),
+      redirectFocusDate: clearRedirectFocusDate
+          ? null
+          : (redirectFocusDate ?? this.redirectFocusDate),
     );
   }
 
@@ -140,5 +151,6 @@ class PutFollowUpState extends Equatable {
         submitErrorMessage,
         noteError,
         agentError,
+        redirectFocusDate,
       ];
 }
