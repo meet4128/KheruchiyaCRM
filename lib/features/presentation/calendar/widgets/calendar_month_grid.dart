@@ -6,6 +6,7 @@ import '../bloc/calendar_bloc.dart';
 import '../bloc/calendar_event.dart';
 import '../bloc/calendar_state.dart';
 import '../utils/calendar_date_utils.dart';
+import '../utils/calendar_event_navigation.dart';
 import 'calendar_event_chip.dart';
 
 /// Month view — Mon-first weekday header + a grid of day cells. Each cell shows
@@ -61,7 +62,9 @@ class CalendarMonthGrid extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     for (final day in week)
-                      Expanded(child: _DayCell(day: day, state: state)),
+                      Expanded(
+                        child: _DayCell(day: day, state: state),
+                      ),
                   ],
                 ),
               ),
@@ -101,7 +104,8 @@ class _DayCell extends StatelessWidget {
     final extra = events.length - visible.length;
 
     return InkWell(
-      onTap: () => context.read<CalendarBloc>().add(CalendarFocusDateChanged(day!)),
+      onTap: () =>
+          context.read<CalendarBloc>().add(CalendarFocusDateChanged(day!)),
       borderRadius: BorderRadius.circular(6),
       child: Container(
         margin: const EdgeInsets.all(2),
@@ -125,12 +129,17 @@ class _DayCell extends StatelessWidget {
                 height: 24,
                 alignment: Alignment.center,
                 decoration: isToday
-                    ? BoxDecoration(color: colors.textPrimary, shape: BoxShape.circle)
+                    ? BoxDecoration(
+                        color: colors.textPrimary,
+                        shape: BoxShape.circle,
+                      )
                     : null,
                 child: Text(
                   day!.day.toString().padLeft(2, '0'),
                   style: TextStyle(
-                    color: isToday ? colors.backgroundDark : colors.textSecondary,
+                    color: isToday
+                        ? colors.backgroundDark
+                        : colors.textSecondary,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -138,7 +147,11 @@ class _DayCell extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            for (final e in visible) CalendarEventChip(event: e),
+            for (final e in visible)
+              CalendarEventChip(
+                event: e,
+                onTap: () => openInquiryForCalendarEvent(context, e),
+              ),
             if (extra > 0)
               Padding(
                 padding: const EdgeInsets.only(top: 2),

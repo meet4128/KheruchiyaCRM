@@ -18,24 +18,34 @@ import 'package:travel_crm/features/presentation/inquiry_management/widget/inqui
 import 'package:travel_crm/features/presentation/inquiry_management/widget/qna_notes.dart';
 
 class InquiryManagementScreen extends StatefulWidget {
-  const InquiryManagementScreen({super.key, this.vendorRow});
+  const InquiryManagementScreen({super.key, this.vendorRow, this.inquiryId});
 
   final VendorInquiryRow? vendorRow;
 
+  /// Inquiry id used to bootstrap the detail when navigated without a full
+  /// [VendorInquiryRow] (e.g. tapping a follow-up reminder on the calendar).
+  /// The [InquiryDetailBloc] loads the inquiry and rebuilds the row from it.
+  final String? inquiryId;
+
   @override
-  State<InquiryManagementScreen> createState() => _InquiryManagementScreenState();
+  State<InquiryManagementScreen> createState() =>
+      _InquiryManagementScreenState();
 }
 
 class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
   late final InquiryDetailBloc _detailBloc;
-  int _selectedStatusIndex = AmendmentStatusTabX.indexOf(AmendmentStatusTab.all);
+  int _selectedStatusIndex = AmendmentStatusTabX.indexOf(
+    AmendmentStatusTab.all,
+  );
 
   @override
   void initState() {
     super.initState();
-    final inquiryId = widget.vendorRow?.bookingId ?? '';
+    final resolvedInquiryId = widget.inquiryId?.trim().isNotEmpty ?? false
+        ? widget.inquiryId!.trim()
+        : (widget.vendorRow?.bookingId ?? '');
     _detailBloc = sl<InquiryDetailBloc>(param1: widget.vendorRow)
-      ..add(InquiryDetailStarted(inquiryId: inquiryId));
+      ..add(InquiryDetailStarted(inquiryId: resolvedInquiryId));
   }
 
   @override
@@ -51,8 +61,12 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
       child: BlocBuilder<InquiryDetailBloc, InquiryDetailState>(
         builder: (context, detailState) {
           final row = detailState.vendorRow ?? widget.vendorRow;
-          final selectedTab = AmendmentStatusTabX.fromIndex(_selectedStatusIndex);
-          final statusBarItems = buildAmendmentStatusBarItems(detailState.amendments);
+          final selectedTab = AmendmentStatusTabX.fromIndex(
+            _selectedStatusIndex,
+          );
+          final statusBarItems = buildAmendmentStatusBarItems(
+            detailState.amendments,
+          );
           final filteredAmendments = filterAmendmentsByTab(
             detailState.amendments,
             selectedTab,
@@ -116,7 +130,9 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
                                     ),
                                   ),
                                   child: Padding(
-                                    padding: const EdgeInsets.all(DimensionConstant.d7),
+                                    padding: const EdgeInsets.all(
+                                      DimensionConstant.d7,
+                                    ),
                                     child: Center(
                                       child: SvgPicture.asset(
                                         AssetConstants.icRepeat,
@@ -147,7 +163,8 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
                         padding: EdgeInsets.all(DimensionConstant.d40),
                         child: Center(child: CircularProgressIndicator()),
                       )
-                    else if (detailState.status == InquiryDetailStatus.failure &&
+                    else if (detailState.status ==
+                            InquiryDetailStatus.failure &&
                         detailState.amendments.isEmpty)
                       Padding(
                         padding: const EdgeInsets.all(DimensionConstant.d24),
@@ -224,12 +241,18 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
           title,
           style: FontConstant.interMedium(
             fontSize: DimensionConstant.d16,
-            color: color ?? ColorConstant.whiteColor.withValues(alpha: DimensionConstant.d0_5),
+            color:
+                color ??
+                ColorConstant.whiteColor.withValues(
+                  alpha: DimensionConstant.d0_5,
+                ),
           ),
         ),
         if (icon != null)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: DimensionConstant.d13),
+            padding: const EdgeInsets.symmetric(
+              horizontal: DimensionConstant.d13,
+            ),
             child: SvgPicture.asset(
               icon,
               height: DimensionConstant.d24,

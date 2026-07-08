@@ -433,7 +433,10 @@ GoRouter createRouter(NavigationBloc navBloc) {
     if (isSyncingFromRouter) return;
 
     final currentPath = normalizeRoutePath(_currentRouterLocation(router));
-    if (isAtNavPageRootPath(currentPath, navState.currentPage)) return;
+    // Already within this section — either at its root or on a nested detail
+    // (e.g. the inquiry detail reached by tapping a calendar follow-up). Don't
+    // bounce back to the section root: that would drop the nested screen.
+    if (navPageFromPath(currentPath) == navState.currentPage) return;
 
     router.go(pathForNavPage(navState.currentPage));
   });

@@ -14,6 +14,7 @@ class CalendarEventUi extends Equatable {
     this.status,
     this.priority,
     this.inquiryId,
+    this.amendmentId,
     this.assignedToName,
     this.timeRangeLabel = '',
   });
@@ -33,6 +34,9 @@ class CalendarEventUi extends Equatable {
   final String? status;
   final String? priority;
   final String? inquiryId;
+
+  /// Set when the reminder is tied to a specific amendment of the inquiry.
+  final String? amendmentId;
   final String? assignedToName;
 
   /// e.g. "9:00 AM - 6:30 PM" (or just the start time if no end).
@@ -56,6 +60,7 @@ class CalendarEventUi extends Equatable {
         status,
         priority,
         inquiryId,
+        amendmentId,
         assignedToName,
         timeRangeLabel,
       ];

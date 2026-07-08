@@ -22,6 +22,7 @@ CalendarEventUi? calendarEventFromDto(CalendarEventDto dto) {
     status: dto.status,
     priority: dto.priority,
     inquiryId: dto.inquiryId,
+    amendmentId: dto.amendmentId,
     assignedToName: dto.agent?.fullName,
     timeRangeLabel: _timeFmt.format(start),
   );

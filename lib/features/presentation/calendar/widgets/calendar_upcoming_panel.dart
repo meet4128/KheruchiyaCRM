@@ -6,6 +6,7 @@ import 'package:travel_crm/core/theme/app_theme.dart';
 import '../bloc/calendar_bloc.dart';
 import '../bloc/calendar_state.dart';
 import '../models/calendar_event_ui.dart';
+import '../utils/calendar_event_navigation.dart';
 
 /// Left-hand "Upcoming Events" list — the next events from now in the loaded
 /// window (category-filtered).
@@ -41,7 +42,9 @@ class CalendarUpcomingPanel extends StatelessWidget {
             else if (events.isEmpty)
               Text(
                 'No upcoming events.',
-                style: textStyles.bodySmall.copyWith(color: colors.textTertiary),
+                style: textStyles.bodySmall.copyWith(
+                  color: colors.textTertiary,
+                ),
               )
             else
               for (final event in events)
@@ -62,53 +65,62 @@ class _UpcomingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = event.isPayment ? colors.warning : colors.success;
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colors.backgroundMedium,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: () => openInquiryForCalendarEvent(context, event),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: colors.borderPrimary),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: colors.backgroundMedium,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: colors.borderPrimary),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 7,
-                height: 7,
-                margin: const EdgeInsets.only(right: 8),
-                decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+              Row(
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: accent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  Text(
+                    event.timeRangeLabel,
+                    style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                  ),
+                ],
               ),
+              const SizedBox(height: 8),
               Text(
-                event.timeRangeLabel,
-                style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                event.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
+              if (event.note.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  event.note,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: colors.textTertiary, fontSize: 12),
+                ),
+              ],
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            event.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: colors.textPrimary,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (event.note.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              event.note,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: colors.textTertiary, fontSize: 12),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }

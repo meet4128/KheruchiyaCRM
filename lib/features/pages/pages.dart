@@ -82,7 +82,8 @@ class SetPasswordPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<SetPasswordBloc>(
-      create: (_) => sl<SetPasswordBloc>()..add(SetPasswordTokenReceived(token)),
+      create: (_) =>
+          sl<SetPasswordBloc>()..add(SetPasswordTokenReceived(token)),
       child: const SetPasswordScreen(),
     );
   }
@@ -100,7 +101,8 @@ class ResetPasswordPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<SetPasswordBloc>(
-      create: (_) => sl<ResetPasswordBloc>()..add(SetPasswordTokenReceived(token)),
+      create: (_) =>
+          sl<ResetPasswordBloc>()..add(SetPasswordTokenReceived(token)),
       child: const ResetPasswordScreen(),
     );
   }
@@ -121,8 +123,11 @@ class InquiryManagementDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final extra = GoRouterState.of(context).extra;
+    // The vendor list passes the full row; the calendar follow-up flow passes
+    // just the inquiry id (String) so the detail bloc bootstraps from the id.
     final row = extra is VendorInquiryRow ? extra : null;
-    return InquiryManagementScreen(vendorRow: row);
+    final inquiryId = extra is String ? extra : null;
+    return InquiryManagementScreen(vendorRow: row, inquiryId: inquiryId);
   }
 }
 
@@ -276,6 +281,9 @@ class HotelBookingViewPage extends StatelessWidget {
 
 Widget _page(String title) {
   return Center(
-    child: Text(title, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+    child: Text(
+      title,
+      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+    ),
   );
 }
