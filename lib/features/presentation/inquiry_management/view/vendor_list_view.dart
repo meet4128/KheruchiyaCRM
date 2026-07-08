@@ -7,9 +7,12 @@ import 'package:travel_crm/core/constants/font_constant.dart';
 import 'package:travel_crm/core/constants/path_constants.dart';
 import 'package:travel_crm/data/models/inquiry/list_inquiry_item.dart';
 import 'package:travel_crm/di/injector.dart';
+import 'package:travel_crm/features/presentation/dashboard/bloc/navigation_bloc.dart';
+import 'package:travel_crm/features/presentation/dashboard/bloc/navigation_event.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_management_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/inquiry_priority_trend.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/widgets/follow_up/show_put_follow_up_dialog.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widgets/inquiry_priority_trend_icon.dart';
 
 class VendorListView extends StatefulWidget {
@@ -24,6 +27,11 @@ class _VendorListViewState extends State<VendorListView> {
   static const double _kGap = 25;
 
   final TextEditingController _searchController = TextEditingController();
+
+  /// Drives the persistent horizontal scrollbar under the board so the wide
+  /// table can be scrolled by dragging the thumb (desktop mouse wheels only
+  /// scroll vertically).
+  final ScrollController _horizontalScrollController = ScrollController();
   final InquiryManagementBloc _bloc = sl<InquiryManagementBloc>();
 
   final List<_TableColumnData> _columns = const [
@@ -48,6 +56,7 @@ class _VendorListViewState extends State<VendorListView> {
   void dispose() {
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    _horizontalScrollController.dispose();
     super.dispose();
   }
 
@@ -67,8 +76,49 @@ class _VendorListViewState extends State<VendorListView> {
     _bloc.add(InquiryManagementSearchChanged(search: _searchController.text));
   }
 
+  /// Opens the Put Follow-up dialog seeded with the latest created inquiry.
+  /// Mirrors the QnA-notes flow (same dialog + BLoC); on a saved reminder it
+  /// jumps to the Calendar focused on that month and refreshes the list.
+  Future<void> _onNewFollowUp(InquiryManagementLoaded state) async {
+    final inquiryId = state.latestCreatedInquiry?.id?.trim() ?? '';
+    if (inquiryId.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No inquiry available to set a follow-up.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final focusDate = await showPutFollowUpDialog(
+      context,
+      inquiryId: inquiryId,
+      sessionId: '',
+      amendmentTypeApi: _newFollowUpAmendmentType,
+      onSaved: () {
+        if (!mounted) return;
+        _bloc.add(InquiryManagementRefreshed());
+      },
+    );
+
+    if (focusDate != null && mounted) {
+      context.read<NavigationBloc>().add(ChangePageEvent(NavPage.calendar));
+      context.go(PathConstant.calendar, extra: focusDate);
+    }
+  }
+
   static const String _sessionExpiredMessage =
       'Session expired or invalid. Please log in again.';
+
+  /// Summary-chip labels that open the follow-up dialog for the latest inquiry.
+  static const String _newFollowUpChipLabel = 'New Follow Up';
+  static const String _setFollowUpChipLabel = 'Set Follow Up';
+
+  /// Amendment type used when creating a follow-up straight from the list (no
+  /// chat session/amendment context) — the base `booking` amendment.
+  static const String _newFollowUpAmendmentType = 'booking';
 
   @override
   Widget build(BuildContext context) {
@@ -115,18 +165,30 @@ class _VendorListViewState extends State<VendorListView> {
                             ? _kDesktopMinWidth
                             : constraints.maxWidth;
 
-                        return SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: SizedBox(
-                            width: contentWidth,
-                            child: SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildMainBoard(s),
-                                  const SizedBox(height: _kGap),
-                                  _buildCollapsedSection(),
-                                ],
+                        return Scrollbar(
+                          controller: _horizontalScrollController,
+                          thumbVisibility: true,
+                          child: SingleChildScrollView(
+                            controller: _horizontalScrollController,
+                            scrollDirection: Axis.horizontal,
+                            // Stop hard at both edges instead of the macOS
+                            // rubber-band bounce ("back press") seen when the
+                            // narrow-window table is scrolled to its ends.
+                            physics: const ClampingScrollPhysics(),
+                            child: SizedBox(
+                              width: contentWidth,
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildMainBoard(s),
+                                    const SizedBox(height: _kGap),
+                                    _buildCollapsedSection(),
+                                    // Clears the pinned horizontal scrollbar so it
+                                    // never overlaps the bottom section.
+                                    const SizedBox(height: 14),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -299,17 +361,23 @@ class _VendorListViewState extends State<VendorListView> {
         final isActive = item.icon != null
             ? false
             : (isAll ? true : chipStatus == state.status);
+        final VoidCallback? onTap;
+        if (item.label == _newFollowUpChipLabel ||
+            item.label == _setFollowUpChipLabel) {
+          onTap = () => _onNewFollowUp(state);
+        } else if (item.icon != null) {
+          onTap = null;
+        } else {
+          onTap = () =>
+              _bloc.add(InquiryManagementStatusChipChanged(chipStatus));
+        }
         return Expanded(
           child: Padding(
             padding: EdgeInsets.only(
               right: index == summaryItems.length - 1 ? 0 : 0.5,
             ),
             child: InkWell(
-              onTap: item.icon != null
-                  ? null
-                  : () => _bloc.add(
-                      InquiryManagementStatusChipChanged(chipStatus),
-                    ),
+              onTap: onTap,
               child: _SummaryChip(
                 item: item.copyWith(isActive: isAll ? true : isActive),
                 isFirst: index == 0,
@@ -857,12 +925,9 @@ class _VendorTableRowsWithSlaTicker extends StatefulWidget {
 
 class _VendorTableRowsWithSlaTickerState
     extends State<_VendorTableRowsWithSlaTicker> {
-
-
   @override
   void initState() {
     super.initState();
-
   }
 
   @override

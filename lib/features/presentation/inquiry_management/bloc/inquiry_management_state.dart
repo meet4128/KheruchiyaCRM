@@ -79,6 +79,24 @@ final class InquiryManagementLoaded extends InquiryManagementState {
     return high.take(maxHighPriorityLeads).toList();
   }
 
+  /// The most recently created inquiry across all loaded items (newest by
+  /// `createdAt`, nulls last), or null when none are loaded. Drives the
+  /// "New Follow Up" quick action on the vendor list.
+  ListInquiryItem? get latestCreatedInquiry {
+    final list = inquiries;
+    if (list.isEmpty) return null;
+    final sorted = [...list]
+      ..sort((a, b) {
+        final da = _parseCreatedAt(a.createdAt);
+        final db = _parseCreatedAt(b.createdAt);
+        if (da == null && db == null) return 0;
+        if (da == null) return 1; // nulls last
+        if (db == null) return -1;
+        return db.compareTo(da); // newest first
+      });
+    return sorted.first;
+  }
+
   /// True when the inquiry's first non-empty checklist priority is HIGH.
   /// Mirrors the "first non-empty priority wins" rule used by VendorInquiryRow.
   static bool _isHighPriorityInquiry(ListInquiryItem e) {
