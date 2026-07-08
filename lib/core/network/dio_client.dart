@@ -74,6 +74,15 @@ class DioClient {
         onError: (DioException e, handler) async {
           final requestUri = e.requestOptions.uri.toString();
           if (e.response?.statusCode == 401 && _needsAuth(requestUri)) {
+            // Backend enforces an absolute session deadline. Once it lapses,
+            // protected endpoints answer 401 `{ code: 'SESSION_EXPIRED' }` and
+            // the refresh token is dead too — so refreshing is futile. Drop the
+            // session immediately and let the router bounce to /login.
+            if (_isSessionExpired(e.response)) {
+              await _clearSession();
+              sessionExpiredNotifier.value++;
+              return handler.next(e);
+            }
             final refreshed = await _refreshTokenAndStoreAccessToken();
             if (refreshed) {
               final token =
@@ -120,6 +129,19 @@ class DioClient {
       requestBody: true,
       logPrint: (object) => log(object.toString()),
     ));
+  }
+
+  /// True when a 401 response carries the backend's absolute-timeout marker
+  /// (`{ code: 'SESSION_EXPIRED' }`). Defensive about the body shape: a
+  /// non-JSON / non-map body simply reads as "not expired" and falls through
+  /// to the normal refresh attempt (which then fails and clears the session).
+  static bool _isSessionExpired(Response<dynamic>? response) {
+    final data = response?.data;
+    if (data is Map) {
+      final code = data['code'];
+      return code is String && code.toUpperCase() == 'SESSION_EXPIRED';
+    }
+    return false;
   }
 
   /// Wipes locally cached auth state on a confirmed session-expiry signal.
