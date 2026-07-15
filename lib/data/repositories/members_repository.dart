@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:travel_crm/core/network/inquiry_api_client.dart';
 import 'package:travel_crm/data/models/members/create_member_request.dart';
 import 'package:travel_crm/data/models/members/create_member_response.dart';
+import 'package:travel_crm/data/models/members/list_members_item.dart';
 import 'package:travel_crm/data/models/members/list_members_response.dart';
 import 'package:travel_crm/data/models/members/delete_member_response.dart';
 import 'package:travel_crm/data/models/members/get_member_response.dart';
@@ -88,6 +89,28 @@ class MembersRepository {
       );
     } on DioException catch (e) {
       _handleDio(e, 'MembersRepository.listMembers');
+      rethrow;
+    }
+  }
+
+  /// Identity-only member lookup for the checklist "add users" picker
+  /// (`GET /members/name-search`). Returns the matched members (may be empty).
+  Future<List<ListMembersItem>> searchMembers(
+    String search, {
+    int limit = 10,
+    String? employmentStatus = 'active',
+  }) async {
+    try {
+      final response = await _apiClient.searchMembersByName(
+        MemberNameSearchQuery(
+          search: search,
+          limit: limit,
+          employmentStatus: employmentStatus,
+        ).toQuery(),
+      );
+      return response.data.items;
+    } on DioException catch (e) {
+      _handleDio(e, 'MembersRepository.searchMembers');
       rethrow;
     }
   }

@@ -362,6 +362,9 @@ class StringConstant {
   static const String user = 'User';
   static const String addUsersTitle = 'Add users';
   static const String userTypeNamePressEnter = 'Type a name and press Enter';
+  static const String searchMembersHint = 'Search members by name';
+  static const String noMembersFound = 'No members found';
+  static const String searchMembersPrompt = 'Type a name to search members';
   static const String done = 'Done';
   static const String dueDate = 'Due Date';
   static const String dueTime = 'Due Time';

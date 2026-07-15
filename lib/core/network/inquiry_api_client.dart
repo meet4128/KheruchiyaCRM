@@ -166,6 +166,30 @@ class ListMembersQuery {
   }
 }
 
+/// Query params for `GET /members/name-search` (checklist "add users" picker).
+/// Only [search], [limit], [employmentStatus] are sent — no paging/sort.
+class MemberNameSearchQuery {
+  const MemberNameSearchQuery({
+    required this.search,
+    this.limit = 10,
+    this.employmentStatus = 'active',
+  });
+
+  final String search;
+  final int limit;
+  final String? employmentStatus;
+
+  Map<String, dynamic> toQuery() {
+    final queries = <String, dynamic>{
+      'search': search,
+      'limit': limit,
+      'employmentStatus': employmentStatus,
+    };
+    queries.removeWhere((key, value) => value == null);
+    return queries;
+  }
+}
+
 /// Query params for `GET /amendments/search` (Manage Amendment screen).
 ///
 /// Only these fields are server-side filters today: [amendmentType], [status],
@@ -283,6 +307,15 @@ abstract class InquiryApiClient {
 
   @GET('/members')
   Future<ListMembersResponse> listMembers(
+    @Queries() Map<String, dynamic> queries,
+  );
+
+  /// Lightweight member lookup for pickers (checklist "add users").
+  /// Returns identity fields only (`_id`, `fullName`, `firstName`, `lastName`,
+  /// `employeeId`) — no PII/phone/email. Reuses [ListMembersResponse] since the
+  /// `data.items[]` shape matches (extra fields simply decode as null).
+  @GET('/members/name-search')
+  Future<ListMembersResponse> searchMembersByName(
     @Queries() Map<String, dynamic> queries,
   );
 

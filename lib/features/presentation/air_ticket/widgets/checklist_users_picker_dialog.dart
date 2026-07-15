@@ -2,9 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/theme/app_theme.dart';
+import 'package:travel_crm/core/widgets/member_picker/bloc/member_search_bloc.dart';
+import 'package:travel_crm/core/widgets/member_picker/bloc/member_search_event.dart';
+import 'package:travel_crm/core/widgets/member_picker/bloc/member_search_state.dart';
+import 'package:travel_crm/data/models/members/list_members_item.dart';
+import 'package:travel_crm/data/repositories/members_repository.dart';
+import 'package:travel_crm/di/injector.dart';
 import 'package:travel_crm/features/presentation/air_ticket/bloc/checklist_users_picker_cubit.dart';
 
-/// Shows the themed "Add users" dialog. State is driven by [ChecklistUsersPickerCubit].
+/// Display label for a searched member (fullName, falling back to
+/// firstName+lastName, then employeeId).
+String _memberDisplayName(ListMembersItem m) {
+  final full = m.fullName?.trim();
+  if (full != null && full.isNotEmpty) return full;
+  final parts = [m.firstName, m.lastName]
+      .where((s) => s != null && s.trim().isNotEmpty)
+      .map((s) => s!.trim())
+      .toList();
+  if (parts.isNotEmpty) return parts.join(' ');
+  return m.employeeId?.trim() ?? '';
+}
+
+/// Shows the themed "Add users" dialog. Selected members are held by
+/// [ChecklistUsersPickerCubit]; the searchable member list is driven by
+/// [MemberSearchBloc] (debounce + throttle against `/members/name-search`).
 Future<void> showChecklistUsersPickerDialog(
   BuildContext context, {
   required String initialUser,
@@ -12,8 +33,17 @@ Future<void> showChecklistUsersPickerDialog(
 }) {
   return showDialog<void>(
     context: context,
-    builder: (dialogContext) => BlocProvider(
-      create: (_) => ChecklistUsersPickerCubit(parseChecklistUserList(initialUser)),
+    builder: (dialogContext) => MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) =>
+              ChecklistUsersPickerCubit(parseChecklistUserList(initialUser)),
+        ),
+        BlocProvider(
+          create: (_) =>
+              MemberSearchBloc(repository: sl<MembersRepository>()),
+        ),
+      ],
       child: _ChecklistUsersPickerDialog(onDone: onDone),
     ),
   );
@@ -26,10 +56,12 @@ class _ChecklistUsersPickerDialog extends StatefulWidget {
   final ValueChanged<String> onDone;
 
   @override
-  State<_ChecklistUsersPickerDialog> createState() => _ChecklistUsersPickerDialogState();
+  State<_ChecklistUsersPickerDialog> createState() =>
+      _ChecklistUsersPickerDialogState();
 }
 
-class _ChecklistUsersPickerDialogState extends State<_ChecklistUsersPickerDialog> {
+class _ChecklistUsersPickerDialogState
+    extends State<_ChecklistUsersPickerDialog> {
   late final TextEditingController _controller;
   late final FocusNode _fieldFocusNode;
 
@@ -53,9 +85,18 @@ class _ChecklistUsersPickerDialogState extends State<_ChecklistUsersPickerDialog
     });
   }
 
-  void _submitDraft(BuildContext context) {
-    context.read<ChecklistUsersPickerCubit>().addName(_controller.text);
+  void _onSearchChanged(BuildContext context, String value) {
+    context.read<MemberSearchBloc>().add(MemberSearchQueryChanged(value));
+  }
+
+  void _onMemberSelected(BuildContext context, ListMembersItem member) {
+    final name = _memberDisplayName(member);
+    if (name.isEmpty) return;
+    context
+        .read<ChecklistUsersPickerCubit>()
+        .addMember(name: name, id: member.id);
     _controller.clear();
+    context.read<MemberSearchBloc>().add(const MemberSearchQueryChanged(''));
     _refocusField();
   }
 
@@ -78,7 +119,7 @@ class _ChecklistUsersPickerDialogState extends State<_ChecklistUsersPickerDialog
         side: BorderSide(color: borderColor, width: 1),
       ),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 440, maxHeight: 520),
+        constraints: const BoxConstraints(maxWidth: 440, maxHeight: 560),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -93,8 +134,9 @@ class _ChecklistUsersPickerDialogState extends State<_ChecklistUsersPickerDialog
                 ),
               ),
               const SizedBox(height: 16),
+              // Selected members (chips).
               SizedBox(
-                height: 200,
+                height: 120,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
@@ -103,10 +145,11 @@ class _ChecklistUsersPickerDialogState extends State<_ChecklistUsersPickerDialog
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: borderColor, width: 1),
                   ),
-                  child: BlocBuilder<ChecklistUsersPickerCubit, ChecklistUsersPickerState>(
-                    buildWhen: (prev, curr) => prev.names != curr.names,
+                  child: BlocBuilder<ChecklistUsersPickerCubit,
+                      ChecklistUsersPickerState>(
+                    buildWhen: (prev, curr) => prev.users != curr.users,
                     builder: (context, state) {
-                      if (state.names.isEmpty) {
+                      if (state.users.isEmpty) {
                         return Center(
                           child: Icon(
                             Icons.group_outlined,
@@ -120,10 +163,10 @@ class _ChecklistUsersPickerDialogState extends State<_ChecklistUsersPickerDialog
                           spacing: 8,
                           runSpacing: 8,
                           alignment: WrapAlignment.start,
-                          children: List.generate(state.names.length, (i) {
+                          children: List.generate(state.users.length, (i) {
                             return InputChip(
                               label: Text(
-                                state.names[i],
+                                state.users[i].name,
                                 style: textStyles.bodyMedium.copyWith(
                                   color: colors.textPrimary,
                                 ),
@@ -133,11 +176,13 @@ class _ChecklistUsersPickerDialogState extends State<_ChecklistUsersPickerDialog
                                 size: 18,
                                 color: colors.textSecondary,
                               ),
-                              onDeleted: () =>
-                                  context.read<ChecklistUsersPickerCubit>().removeAt(i),
+                              onDeleted: () => context
+                                  .read<ChecklistUsersPickerCubit>()
+                                  .removeAt(i),
                               backgroundColor: colors.backgroundMedium,
                               side: BorderSide(
-                                color: colors.borderSecondary.withValues(alpha: 0.5),
+                                color: colors.borderSecondary
+                                    .withValues(alpha: 0.5),
                               ),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 4,
@@ -152,17 +197,18 @@ class _ChecklistUsersPickerDialogState extends State<_ChecklistUsersPickerDialog
                 ),
               ),
               const SizedBox(height: 12),
+              // Search field.
               TextField(
                 controller: _controller,
                 focusNode: _fieldFocusNode,
                 style: textStyles.formInput.copyWith(color: colors.textPrimary),
                 cursorColor: colors.inputBorderFocused,
                 autofocus: true,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _submitDraft(context),
+                onChanged: (value) => _onSearchChanged(context, value),
                 decoration: InputDecoration(
-                  hintText: StringConstant.userTypeNamePressEnter,
+                  hintText: StringConstant.searchMembersHint,
                   hintStyle: textStyles.formHint,
+                  prefixIcon: Icon(Icons.search, color: colors.textSecondary),
                   filled: true,
                   fillColor: colors.inputBackground,
                   contentPadding: const EdgeInsets.symmetric(
@@ -186,7 +232,14 @@ class _ChecklistUsersPickerDialogState extends State<_ChecklistUsersPickerDialog
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
+              // Search results.
+              Expanded(
+                child: _MemberSearchResults(
+                  onSelected: (member) => _onMemberSelected(context, member),
+                ),
+              ),
+              const SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerRight,
                 child: Material(
@@ -226,6 +279,100 @@ class _ChecklistUsersPickerDialogState extends State<_ChecklistUsersPickerDialog
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Result area under the search field: loading spinner, error, empty state,
+/// prompt (no query yet), or the tappable member list.
+class _MemberSearchResults extends StatelessWidget {
+  const _MemberSearchResults({required this.onSelected});
+
+  final ValueChanged<ListMembersItem> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
+    final textStyles = AppTheme.textStyles(context);
+
+    return BlocBuilder<MemberSearchBloc, MemberSearchState>(
+      builder: (context, state) {
+        final hasQuery = state.query.trim().isNotEmpty;
+
+        if (state.isLoading) {
+          return Center(
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(colors.secondary),
+              ),
+            ),
+          );
+        }
+
+        if (state.errorMessage != null) {
+          return Center(
+            child: Text(
+              state.errorMessage!,
+              textAlign: TextAlign.center,
+              style: textStyles.bodySmall.copyWith(color: colors.error),
+            ),
+          );
+        }
+
+        if (!hasQuery) {
+          return Center(
+            child: Text(
+              StringConstant.searchMembersPrompt,
+              style: textStyles.bodySmall.copyWith(
+                color: colors.textSecondary.withValues(alpha: 0.7),
+              ),
+            ),
+          );
+        }
+
+        if (state.members.isEmpty) {
+          return Center(
+            child: Text(
+              StringConstant.noMembersFound,
+              style: textStyles.bodySmall.copyWith(color: colors.textSecondary),
+            ),
+          );
+        }
+
+        return ListView.separated(
+          padding: EdgeInsets.zero,
+          itemCount: state.members.length,
+          separatorBuilder: (_, __) => Divider(
+            height: 1,
+            color: colors.borderSecondary.withValues(alpha: 0.3),
+          ),
+          itemBuilder: (context, index) {
+            final member = state.members[index];
+            final name = _memberDisplayName(member);
+            final employeeId = member.employeeId?.trim();
+            return ListTile(
+              dense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              leading: Icon(Icons.person_outline, color: colors.textSecondary),
+              title: Text(
+                name,
+                style: textStyles.bodyMedium.copyWith(color: colors.textPrimary),
+              ),
+              subtitle: (employeeId != null && employeeId.isNotEmpty)
+                  ? Text(
+                      employeeId,
+                      style: textStyles.bodySmall
+                          .copyWith(color: colors.textSecondary),
+                    )
+                  : null,
+              onTap: () => onSelected(member),
+            );
+          },
+        );
+      },
     );
   }
 }
