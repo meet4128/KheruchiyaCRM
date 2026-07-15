@@ -1,6 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
 import 'inquiry_checklist_item.dart';
+import 'inquiry_user_dto.dart';
 import 'phone_number_dto.dart';
 
 part 'list_inquiry_item.g.dart';
@@ -42,8 +43,10 @@ class ListInquiryItem {
   /// Inquiry assignee(s) from GET — may be comma-separated or `"A & B"` style.
   final String? user;
 
-  /// Alternative key some APIs use for assignee display string.
-  final String? assignedTo;
+  /// Root inquiry assignee set via `PATCH /inquiries/{id}/assign`. Single member
+  /// snapshot (`{_id, fullName, firstName, lastName, employeeId}`) or null when
+  /// unassigned. Separate from `checklist[].user` (per-task).
+  final InquiryUserDto? assignedTo;
 
   /// Structured phone (`{countryCode, number}`) returned per list item.
   /// Used for phone-number search in the vendor list.

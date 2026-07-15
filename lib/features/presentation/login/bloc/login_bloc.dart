@@ -145,5 +145,11 @@ void _persistLoginSession({
     SharedPrefUtilsKeys.userRole,
     data.user.role.trim().toLowerCase(),
   );
+  final userId = data.user.id.trim();
+  if (userId.isNotEmpty) {
+    SharedPrefUtils.setValue(SharedPrefUtilsKeys.userId, userId);
+  } else {
+    SharedPrefUtils.removeValue(SharedPrefUtilsKeys.userId);
+  }
   SharedPrefUtils.setValue(SharedPrefUtilsKeys.tokenVersion, data.user.tokenVersion);
 }

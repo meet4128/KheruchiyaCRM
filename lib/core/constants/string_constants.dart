@@ -365,6 +365,7 @@ class StringConstant {
   static const String searchMembersHint = 'Search members by name';
   static const String noMembersFound = 'No members found';
   static const String searchMembersPrompt = 'Type a name to search members';
+  static const String assignInquiryTitle = 'Assign inquiry';
   static const String done = 'Done';
   static const String dueDate = 'Due Date';
   static const String dueTime = 'Due Time';

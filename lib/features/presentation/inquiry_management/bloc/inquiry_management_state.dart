@@ -22,6 +22,8 @@ final class InquiryManagementLoaded extends InquiryManagementState {
     required this.requestStatus,
     this.errorMessage,
     this.isLoadingMore = false,
+    this.assignMessage,
+    this.assignIsError = false,
   });
 
   final int page;
@@ -45,6 +47,12 @@ final class InquiryManagementLoaded extends InquiryManagementState {
   final InquiryManagementStatus requestStatus;
   final String? errorMessage;
   final bool isLoadingMore;
+
+  /// One-shot feedback for the last assign action (snackbar copy). Not carried
+  /// forward by [copyWith] — it is set only on the emit that produced it and
+  /// nulled on the next emit, so the snackbar shows exactly once.
+  final String? assignMessage;
+  final bool assignIsError;
 
   /// Max cards shown in the "High Priority Leads" row.
   static const int maxHighPriorityLeads = 5;
@@ -133,6 +141,8 @@ final class InquiryManagementLoaded extends InquiryManagementState {
     String? errorMessage,
     bool clearErrorMessage = false,
     bool? isLoadingMore,
+    String? assignMessage,
+    bool assignIsError = false,
   }) {
     return InquiryManagementLoaded(
       page: page ?? this.page,
@@ -150,6 +160,9 @@ final class InquiryManagementLoaded extends InquiryManagementState {
           ? null
           : (errorMessage ?? this.errorMessage),
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      // One-shot: intentionally NOT carried forward from `this`.
+      assignMessage: assignMessage,
+      assignIsError: assignIsError,
     );
   }
 }

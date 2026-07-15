@@ -22,11 +22,41 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
     on<InquiryManagementSearchChanged>(_onSearchChanged);
     on<InquiryManagementSortChanged>(_onSortChanged);
     on<InquiryManagementLoadMoreRequested>(_onLoadMoreRequested);
+    on<InquiryAssigned>(_onAssigned);
   }
 
   final InquiryRepository inquiryRepository;
 
   InquiryManagementLoaded get _s => state as InquiryManagementLoaded;
+
+  /// Assigns the inquiry, then refreshes the list so the server re-scopes it
+  /// (assigning to rep-A drops it off everyone else's list). Feedback is a
+  /// one-shot [InquiryManagementLoaded.assignMessage] for the view's snackbar.
+  Future<void> _onAssigned(
+    InquiryAssigned event,
+    Emitter<InquiryManagementState> emit,
+  ) async {
+    final inquiryId = event.inquiryId.trim();
+    final userId = event.userId.trim();
+    if (inquiryId.isEmpty || userId.isEmpty) return;
+    try {
+      await inquiryRepository.assignInquiry(inquiryId, userId);
+      final name = event.memberName.trim();
+      emit(_s.copyWith(
+        assignMessage:
+            name.isEmpty ? 'Inquiry assigned.' : 'Inquiry assigned to $name.',
+        assignIsError: false,
+      ));
+      add(InquiryManagementRefreshed());
+    } catch (e) {
+      final message =
+          e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '').trim();
+      emit(_s.copyWith(
+        assignMessage: message.isEmpty ? 'Could not assign inquiry.' : message,
+        assignIsError: true,
+      ));
+    }
+  }
 
   Future<void> _onInitialized(
     InquiryManagementInitialized event,
@@ -167,7 +197,7 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
           (e.status?.toLowerCase().contains(term) ?? false) ||
           (e.typeOfBooking?.toLowerCase().contains(term) ?? false) ||
           (e.user?.toLowerCase().contains(term) ?? false) ||
-          (e.assignedTo?.toLowerCase().contains(term) ?? false) ||
+          (e.assignedTo?.displayName.toLowerCase().contains(term) ?? false) ||
           id.toLowerCase().contains(term) ||
           inquiryNo.toLowerCase().contains(term) ||
           _matchesPhone(e.phoneNumber, termDigits);

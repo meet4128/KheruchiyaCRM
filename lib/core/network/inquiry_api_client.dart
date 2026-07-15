@@ -12,6 +12,7 @@ import 'package:travel_crm/data/models/amendment/send_whatsapp_message_request.d
 import 'package:travel_crm/data/models/amendment/session_messages_response.dart';
 import 'package:travel_crm/data/models/amendment/session_note_request.dart';
 import 'package:travel_crm/data/models/amendment/upload_session_file_data.dart';
+import 'package:travel_crm/data/models/inquiry/assign_inquiry_request.dart';
 import 'package:travel_crm/data/models/inquiry/inquiry_by_phone_response.dart';
 import 'package:travel_crm/data/models/inquiry/inquiry_detail_response.dart';
 import 'package:travel_crm/data/models/inquiry/list_inquiries_response.dart';
@@ -285,6 +286,14 @@ abstract class InquiryApiClient {
   @GET('/inquiries/by-phone')
   Future<InquiryByPhoneResponse> getInquiriesByPhone(
     @Queries() Map<String, dynamic> queries,
+  );
+
+  /// Assigns an inquiry to a member (admin/sales only). Returns the updated
+  /// inquiry with its new `assignedTo` snapshot.
+  @PATCH('/inquiries/{id}/assign')
+  Future<InquiryDetailResponse> assignInquiry(
+    @Path('id') String id,
+    @Body() AssignInquiryRequest body,
   );
 
   @POST('/members')

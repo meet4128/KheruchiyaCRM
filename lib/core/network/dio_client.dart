@@ -151,6 +151,7 @@ class DioClient {
     SharedPrefUtils.removeValue(SharedPrefUtilsKeys.userToken);
     SharedPrefUtils.removeValue(SharedPrefUtilsKeys.refreshToken);
     SharedPrefUtils.removeValue(SharedPrefUtilsKeys.userRole);
+    SharedPrefUtils.removeValue(SharedPrefUtilsKeys.userId);
     SharedPrefUtils.removeValue(SharedPrefUtilsKeys.tokenVersion);
     SharedPrefUtils.removeValue(SharedPrefUtilsKeys.isLoggedIn);
   }

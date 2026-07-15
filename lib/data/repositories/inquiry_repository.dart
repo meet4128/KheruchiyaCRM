@@ -11,6 +11,7 @@ import 'package:travel_crm/data/models/amendment/send_whatsapp_message_request.d
 import 'package:travel_crm/data/models/amendment/session_messages_response.dart';
 import 'package:travel_crm/data/models/amendment/session_note_request.dart';
 import 'package:travel_crm/data/models/amendment/upload_session_file_data.dart';
+import 'package:travel_crm/data/models/inquiry/assign_inquiry_request.dart';
 import 'package:travel_crm/data/models/inquiry/inquiry_by_phone_response.dart';
 import 'package:travel_crm/data/models/inquiry/inquiry_detail_response.dart';
 import 'package:travel_crm/data/models/inquiry/list_inquiries_response.dart';
@@ -40,6 +41,23 @@ class InquiryRepository {
       return await apiClient.listInquiries(query.toQuery());
     } on DioException catch (e) {
       throw _mapDioException(e, logTag: 'ListInquiries');
+    }
+  }
+
+  /// Assigns [inquiryId] to member [userId] (`PATCH /inquiries/{id}/assign`).
+  /// Admin/sales only — a `403` maps to [InquiryForbiddenException], `422` to
+  /// [InquiryValidationException]. Returns the updated inquiry.
+  Future<InquiryDetailResponse> assignInquiry(
+    String inquiryId,
+    String userId,
+  ) async {
+    try {
+      return await apiClient.assignInquiry(
+        inquiryId,
+        AssignInquiryRequest(userId: userId),
+      );
+    } on DioException catch (e) {
+      throw _mapDioException(e, logTag: 'AssignInquiry');
     }
   }
 

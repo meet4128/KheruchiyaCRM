@@ -138,11 +138,17 @@ class VendorInquiryRow {
     return t;
   }
 
-  /// `user` / `assignedTo` on inquiry, else unique `checklist[].user` values.
+  /// Root `assignedTo` member (from `PATCH /assign`) first, then legacy `user`
+  /// string, else unique `checklist[].user` values.
   static ({List<String> names, String text}) _assignedFromInquiry(
     ListInquiryItem e,
   ) {
-    final root = _firstNonEmpty([e.user, e.assignedTo]);
+    final assignedName = e.assignedTo?.displayName.trim() ?? '';
+    if (assignedName.isNotEmpty) {
+      return (names: [assignedName], text: assignedName);
+    }
+
+    final root = _firstNonEmpty([e.user]);
     if (root != null) {
       final names = _parseAssigneeNames(root);
       if (names.isNotEmpty) {

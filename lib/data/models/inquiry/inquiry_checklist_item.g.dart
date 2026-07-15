@@ -9,7 +9,7 @@ part of 'inquiry_checklist_item.dart';
 InquiryChecklistItem _$InquiryChecklistItemFromJson(
   Map<String, dynamic> json,
 ) => InquiryChecklistItem(
-  user: json['user'] as String?,
+  user: json['user'] == null ? const [] : _usersFromJson(json['user']),
   dueDate: json['dueDate'] as String?,
   priority: json['priority'] as String?,
   category: json['category'] as String?,
@@ -18,7 +18,7 @@ InquiryChecklistItem _$InquiryChecklistItemFromJson(
 Map<String, dynamic> _$InquiryChecklistItemToJson(
   InquiryChecklistItem instance,
 ) => <String, dynamic>{
-  'user': instance.user,
+  'user': _usersToJson(instance.user),
   'dueDate': instance.dueDate,
   'priority': instance.priority,
   'category': instance.category,

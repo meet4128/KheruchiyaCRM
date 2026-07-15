@@ -5,8 +5,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:travel_crm/core/constants/font_constant.dart';
 import 'package:travel_crm/core/constants/path_constants.dart';
+import 'package:travel_crm/core/utils/session_utils.dart';
 import 'package:travel_crm/data/models/inquiry/list_inquiry_item.dart';
+import 'package:travel_crm/data/models/members/list_members_item.dart';
 import 'package:travel_crm/di/injector.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/widgets/assign_inquiry_dialog.dart';
 import 'package:travel_crm/features/presentation/dashboard/bloc/navigation_bloc.dart';
 import 'package:travel_crm/features/presentation/dashboard/bloc/navigation_event.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_management_bloc.dart';
@@ -33,6 +36,10 @@ class _VendorListViewState extends State<VendorListView> {
   /// scroll vertically).
   final ScrollController _horizontalScrollController = ScrollController();
   final InquiryManagementBloc _bloc = sl<InquiryManagementBloc>();
+
+  /// Only admin/sales may assign inquiries (matches the assign endpoint's auth);
+  /// the "Assign to" control is hidden for everyone else.
+  final bool _canAssign = SessionUtils.canAssignInquiries();
 
   final List<_TableColumnData> _columns = const [
     _TableColumnData(key: 'expand', title: 'Expand', width: 100),
@@ -109,6 +116,45 @@ class _VendorListViewState extends State<VendorListView> {
     }
   }
 
+  /// Opens the searchable single-select member picker; on pick, dispatches the
+  /// assign event (the bloc PATCHes then refreshes so scoping updates).
+  void _openAssignDialog(VendorInquiryRow row) {
+    final inquiryId = row.bookingId.trim();
+    if (inquiryId.isEmpty || inquiryId == '—') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This inquiry has no id to assign.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    showAssignInquiryDialog(
+      context,
+      onMemberSelected: (member) {
+        final userId = member.id?.trim() ?? '';
+        if (userId.isEmpty) return;
+        _bloc.add(InquiryAssigned(
+          inquiryId: inquiryId,
+          userId: userId,
+          memberName: _memberName(member),
+        ));
+      },
+    );
+  }
+
+  /// Display name for the assigned member (fullName → first+last → employeeId).
+  static String _memberName(ListMembersItem m) {
+    final full = m.fullName?.trim();
+    if (full != null && full.isNotEmpty) return full;
+    final parts = [m.firstName, m.lastName]
+        .where((s) => s != null && s.trim().isNotEmpty)
+        .map((s) => s!.trim())
+        .toList();
+    if (parts.isNotEmpty) return parts.join(' ');
+    return m.employeeId?.trim() ?? '';
+  }
+
   static const String _sessionExpiredMessage =
       'Session expired or invalid. Please log in again.';
 
@@ -128,6 +174,18 @@ class _VendorListViewState extends State<VendorListView> {
         listener: (context, state) {
           if (state is! InquiryManagementLoaded) return;
           final s = state;
+          // One-shot assign feedback (success or error).
+          final assignMessage = s.assignMessage;
+          if (assignMessage != null && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(assignMessage),
+                behavior: SnackBarBehavior.floating,
+                backgroundColor:
+                    s.assignIsError ? Colors.red.shade700 : Colors.green.shade700,
+              ),
+            );
+          }
           if (s.requestStatus != InquiryManagementStatus.failure) return;
           final msg = s.errorMessage ?? '';
           final isAuthError =
@@ -760,15 +818,12 @@ class _VendorListViewState extends State<VendorListView> {
           child: Icon(Icons.add, color: Colors.white, size: 16),
         );
       case 'assign':
+        // Hidden for roles that can't assign (backend allows admin/sales only).
+        if (!_canAssign) return const SizedBox.shrink();
         return Center(
-          child: PopupMenuButton<String>(
-            tooltip: 'Assign',
-            offset: const Offset(0, 36),
-            color: const Color(0xFF2A1F3D),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
-            ),
+          child: InkWell(
+            onTap: () => _openAssignDialog(row),
+            borderRadius: BorderRadius.circular(4),
             child: Container(
               width: 77,
               height: 30,
@@ -789,47 +844,11 @@ class _VendorListViewState extends State<VendorListView> {
                 ),
               ),
             ),
-            itemBuilder: (context) => _assignToMenuItems(row),
-            onSelected: (_) {},
           ),
         );
       default:
         return const SizedBox.shrink();
     }
-  }
-
-  /// Names from the same row as **Assigned to** (comma/`&`-parsed [VendorInquiryRow.assignedToNames]).
-  List<PopupMenuEntry<String>> _assignToMenuItems(VendorInquiryRow row) {
-    if (row.assignedToNames.isEmpty) {
-      return [
-        PopupMenuItem<String>(
-          enabled: false,
-          child: Text(
-            'Yet to assign',
-            style: FontConstant.interNormal(
-              color: Colors.white70,
-              fontSize: 12,
-            ),
-          ),
-        ),
-      ];
-    }
-    return row.assignedToNames
-        .map(
-          (name) => PopupMenuItem<String>(
-            value: name,
-            child: Text(
-              name,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: FontConstant.interNormal(
-                color: Colors.white,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        )
-        .toList();
   }
 
   Widget _buildTableCell({

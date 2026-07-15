@@ -52,3 +52,20 @@ final class InquiryManagementSortChanged extends InquiryManagementEvent {
 
   final String sort;
 }
+
+/// Assign an inquiry to a member via `PATCH /inquiries/{id}/assign`, then
+/// refresh so the server re-scopes the list (the inquiry drops off other reps'
+/// lists once assigned).
+final class InquiryAssigned extends InquiryManagementEvent {
+  InquiryAssigned({
+    required this.inquiryId,
+    required this.userId,
+    required this.memberName,
+  });
+
+  final String inquiryId;
+  final String userId;
+
+  /// Display name used only for the success snackbar copy.
+  final String memberName;
+}
