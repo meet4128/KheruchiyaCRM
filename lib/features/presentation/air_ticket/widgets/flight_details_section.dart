@@ -89,23 +89,45 @@ class FlightDetailsSection extends StatelessWidget {
     ValueChanged<DateTime>? onSelected,
     ValueChanged<DateTime?>? onSelectedNullable,
   }) async {
-    final picked = await showDatePicker(
+    final colors = AppTheme.colors(context);
+    // Custom dialog with CalendarDatePicker so tapping a day selects it
+    // immediately (no OK/Cancel confirmation step).
+    final picked = await showDialog<DateTime>(
       context: context,
-      initialDate: initialDate,
-      firstDate: firstDate,
-      lastDate: DateTime(firstDate.year + 2, 12, 31),
-      builder: (context, child) {
+      builder: (dialogContext) {
         return Theme(
-          data: Theme.of(context).copyWith(
+          data: Theme.of(dialogContext).copyWith(
             colorScheme: ColorScheme.dark(
-              primary: AppTheme.colors(context).secondary,
-              onPrimary: AppTheme.colors(context).textOnPrimary,
-              surface: AppTheme.colors(context).surface,
-              onSurface: AppTheme.colors(context).textPrimary,
+              primary: colors.secondary,
+              onPrimary: colors.textOnPrimary,
+              surface: colors.surface,
+              onSurface: colors.textPrimary,
             ),
-            dialogBackgroundColor: AppTheme.colors(context).backgroundMedium,
+            dialogBackgroundColor: colors.backgroundMedium,
           ),
-          child: child!,
+          child: Dialog(
+            backgroundColor: colors.backgroundMedium,
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 40,
+              vertical: 24,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 360),
+              child: SizedBox(
+                width: 360,
+                height: 400,
+                child: CalendarDatePicker(
+                  initialDate: initialDate,
+                  firstDate: firstDate,
+                  lastDate: DateTime(firstDate.year + 2, 12, 31),
+                  onDateChanged: (date) => Navigator.pop(dialogContext, date),
+                ),
+              ),
+            ),
+          ),
         );
       },
     );

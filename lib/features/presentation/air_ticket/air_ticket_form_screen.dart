@@ -369,7 +369,7 @@ class _AirTicketFormCard extends StatelessWidget {
               // Remark Field
               FormFieldWrapper(
                 label: StringConstant.remark,
-                isRequired: true,
+                isRequired: false,
                 child: AppTextField(
                   hint: StringConstant.enterRemark,
                   value: state.remark,

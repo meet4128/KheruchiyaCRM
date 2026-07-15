@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/features/presentation/air_ticket/utils/flight_travel_scope.dart';
 import '../models/booking_type.dart';
 import '../models/checklist_priority.dart';
@@ -19,7 +20,7 @@ enum AirTicketSubmissionStatus {
 /// State class for Air Ticket form
 class AirTicketState extends Equatable {
   const AirTicketState({
-    this.bookingType,
+    this.bookingType = AirTicketBookingType.oneWay,
     this.from = '',
     this.to = '',
     this.departureDate,
@@ -27,7 +28,7 @@ class AirTicketState extends Equatable {
     this.adultCount = 1,
     this.childCount = 0,
     this.infantCount = 0,
-    this.classType = '',
+    this.classType = StringConstant.economy,
     this.visaType,
     this.remark = '',
     this.priority,

@@ -1055,11 +1055,15 @@ class _LeadCard extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Text(
-                                  card.name,
-                                  style: FontConstant.interNormal(
-                                    color: Colors.white,
-                                    fontSize: 14,
+                                Flexible(
+                                  child: Text(
+                                    card.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: FontConstant.interNormal(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 4),
