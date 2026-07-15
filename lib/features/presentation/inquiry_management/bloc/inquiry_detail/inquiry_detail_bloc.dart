@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:travel_crm/core/utils/phone_utils.dart' show formatPeerPhoneDisplay, normalizePeerPhoneE164;
 import 'package:travel_crm/data/models/amendment/finalize_amendment_request.dart';
@@ -21,6 +23,7 @@ class InquiryDetailBloc extends Bloc<InquiryDetailEvent, InquiryDetailState> {
         ) {
     on<InquiryDetailStarted>(_onStarted);
     on<InquiryDetailRefreshRequested>(_onRefresh);
+    on<InquiryDetailStatusUpdateRequested>(_onStatusUpdate);
     on<InquiryDetailSessionIdAssigned>(_onSessionAssigned);
     on<InquiryDetailSessionCleared>(_onSessionCleared);
     on<InquiryDetailFinalizeRequested>(_onFinalize);
@@ -133,6 +136,36 @@ class InquiryDetailBloc extends Bloc<InquiryDetailEvent, InquiryDetailState> {
           errorMessage: e.toString(),
         ),
       );
+    }
+  }
+
+  /// Updates the inquiry status via `PATCH /inquiries/{id}/status` and reflects
+  /// the new status on the loaded [VendorInquiryRow]. Runs for the flow's
+  /// automatic transitions (New In → Pending on open, first Q&A message →
+  /// Followup); errors are logged and swallowed so an automatic bump never
+  /// disrupts the detail screen (e.g. a non admin/sales user hitting 403).
+  Future<void> _onStatusUpdate(
+    InquiryDetailStatusUpdateRequested event,
+    Emitter<InquiryDetailState> emit,
+  ) async {
+    final inquiryId = state.inquiryId;
+    final target = event.status.trim();
+    if (inquiryId.isEmpty || target.isEmpty) return;
+
+    try {
+      final response = await _repository.updateInquiryStatus(inquiryId, target);
+      final inquiry = response.data.inquiry;
+      final row = state.vendorRow;
+      if (row == null) return;
+      emit(
+        state.copyWith(
+          vendorRow: row.copyWith(
+            status: VendorInquiryRow.statusDisplayLabel(inquiry.status),
+          ),
+        ),
+      );
+    } catch (e) {
+      developer.log('Update inquiry status failed: $e', name: 'InquiryDetailBloc');
     }
   }
 

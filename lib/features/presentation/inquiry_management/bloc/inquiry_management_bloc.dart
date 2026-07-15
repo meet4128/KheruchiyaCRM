@@ -23,6 +23,7 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
     on<InquiryManagementSortChanged>(_onSortChanged);
     on<InquiryManagementLoadMoreRequested>(_onLoadMoreRequested);
     on<InquiryAssigned>(_onAssigned);
+    on<InquiryStatusUpdated>(_onStatusUpdated);
   }
 
   final InquiryRepository inquiryRepository;
@@ -53,6 +54,30 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
           e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '').trim();
       emit(_s.copyWith(
         assignMessage: message.isEmpty ? 'Could not assign inquiry.' : message,
+        assignIsError: true,
+      ));
+    }
+  }
+
+  /// Updates an inquiry's status (`PATCH /inquiries/{id}/status`) then refreshes
+  /// the list so the row reflects it. Used by the expand action (New In →
+  /// Pending). Failures surface via the one-shot [InquiryManagementLoaded.assignMessage]
+  /// snackbar (the endpoint is admin/sales only, so a 403 is visible, not silent).
+  Future<void> _onStatusUpdated(
+    InquiryStatusUpdated event,
+    Emitter<InquiryManagementState> emit,
+  ) async {
+    final inquiryId = event.inquiryId.trim();
+    final status = event.status.trim();
+    if (inquiryId.isEmpty || status.isEmpty) return;
+    try {
+      await inquiryRepository.updateInquiryStatus(inquiryId, status);
+      add(InquiryManagementRefreshed());
+    } catch (e) {
+      final message =
+          e.toString().replaceFirst(RegExp(r'^Exception:\s*'), '').trim();
+      emit(_s.copyWith(
+        assignMessage: message.isEmpty ? 'Could not update status.' : message,
         assignIsError: true,
       ));
     }

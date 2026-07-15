@@ -17,6 +17,7 @@ import 'package:travel_crm/data/models/inquiry/inquiry_detail_response.dart';
 import 'package:travel_crm/data/models/inquiry/list_inquiries_response.dart';
 import 'package:travel_crm/data/models/inquiry/payment_plan_response.dart';
 import 'package:travel_crm/data/models/inquiry/payment_proof_upload_response.dart';
+import 'package:travel_crm/data/models/inquiry/update_inquiry_status_request.dart';
 import 'package:travel_crm/data/models/inquiry/update_payment_plan_request.dart';
 import 'package:travel_crm/data/repositories/inquiry_repository_exceptions.dart';
 
@@ -58,6 +59,24 @@ class InquiryRepository {
       );
     } on DioException catch (e) {
       throw _mapDioException(e, logTag: 'AssignInquiry');
+    }
+  }
+
+  /// Updates the inquiry's `status` (`PATCH /inquiries/{id}/status`). Admin/sales
+  /// only. [status] must be a valid enum value (`PENDING`, `IN_PROGRESS`,
+  /// `COMPLETED`, `CANCELLED`) — an unknown value maps to
+  /// [InquiryValidationException] (422). Returns the updated inquiry.
+  Future<InquiryDetailResponse> updateInquiryStatus(
+    String inquiryId,
+    String status,
+  ) async {
+    try {
+      return await apiClient.updateInquiryStatus(
+        inquiryId,
+        UpdateInquiryStatusRequest(status: status),
+      );
+    } on DioException catch (e) {
+      throw _mapDioException(e, logTag: 'UpdateInquiryStatus');
     }
   }
 

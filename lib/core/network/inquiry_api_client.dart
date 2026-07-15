@@ -18,6 +18,7 @@ import 'package:travel_crm/data/models/inquiry/inquiry_detail_response.dart';
 import 'package:travel_crm/data/models/inquiry/list_inquiries_response.dart';
 import 'package:travel_crm/data/models/inquiry/payment_plan_response.dart';
 import 'package:travel_crm/data/models/inquiry/payment_proof_upload_response.dart';
+import 'package:travel_crm/data/models/inquiry/update_inquiry_status_request.dart';
 import 'package:travel_crm/data/models/inquiry/update_payment_plan_request.dart';
 import 'package:travel_crm/data/models/members/create_member_request.dart';
 import 'package:travel_crm/data/models/members/create_member_response.dart';
@@ -294,6 +295,14 @@ abstract class InquiryApiClient {
   Future<InquiryDetailResponse> assignInquiry(
     @Path('id') String id,
     @Body() AssignInquiryRequest body,
+  );
+
+  /// Updates a single inquiry's `status` field (admin/sales only). Returns the
+  /// full updated inquiry document. Invalid/unknown status → 422.
+  @PATCH('/inquiries/{id}/status')
+  Future<InquiryDetailResponse> updateInquiryStatus(
+    @Path('id') String id,
+    @Body() UpdateInquiryStatusRequest body,
   );
 
   @POST('/members')

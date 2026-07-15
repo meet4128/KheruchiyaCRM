@@ -116,6 +116,23 @@ class _VendorListViewState extends State<VendorListView> {
     }
   }
 
+  /// Opens the inquiry detail (the "expand" action). A New In (`IN_PROGRESS`)
+  /// inquiry is moved to Pending via `PATCH /inquiries/{id}/status` as it's
+  /// expanded (the bloc PATCHes then refreshes the list). On return the list is
+  /// refreshed again so any status change made inside the detail flow (e.g.
+  /// first message → Followup) is reflected too.
+  Future<void> _openDetail(VendorInquiryRow row) async {
+    if (row.status == 'New In') {
+      _bloc.add(InquiryStatusUpdated(
+        inquiryId: row.bookingId,
+        status: 'PENDING',
+      ));
+    }
+    await context.push(PathConstant.inquiryManagementDetail, extra: row);
+    if (!mounted) return;
+    _bloc.add(InquiryManagementRefreshed());
+  }
+
   /// Opens the searchable single-select member picker; on pick, dispatches the
   /// assign event (the bloc PATCHes then refreshes so scoping updates).
   void _openAssignDialog(VendorInquiryRow row) {
@@ -775,9 +792,7 @@ class _VendorListViewState extends State<VendorListView> {
       case 'expand':
         return Center(
           child: InkWell(
-            onTap: () {
-              context.push(PathConstant.inquiryManagementDetail, extra: row);
-            },
+            onTap: () => _openDetail(row),
             child: const Icon(
               Icons.keyboard_arrow_down_rounded,
               color: Colors.white,
@@ -1028,10 +1043,14 @@ class _LeadCard extends StatelessWidget {
 
   final _LeadCardData card;
 
-  void _openDetail(BuildContext context) {
+  Future<void> _openDetail(BuildContext context) async {
     final row = card.row;
     if (row == null) return;
-    context.push(PathConstant.inquiryManagementDetail, extra: row);
+    // Captured before the await so the list refreshes even if this card is
+    // rebuilt while the detail screen is open.
+    final bloc = context.read<InquiryManagementBloc>();
+    await context.push(PathConstant.inquiryManagementDetail, extra: row);
+    bloc.add(InquiryManagementRefreshed());
   }
 
   @override

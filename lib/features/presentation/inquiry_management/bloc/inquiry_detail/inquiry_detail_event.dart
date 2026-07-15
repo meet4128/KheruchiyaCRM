@@ -20,6 +20,20 @@ final class InquiryDetailRefreshRequested extends InquiryDetailEvent {
   const InquiryDetailRefreshRequested();
 }
 
+/// Requests a status change for the loaded inquiry via `PATCH /inquiries/{id}/status`.
+/// [status] is the backend enum value (e.g. `PENDING`, `IN_PROGRESS`,
+/// `FOLLOWUP`). Fired automatically by the detail flow (New In → Pending on open,
+/// first Q&A message → Followup); failures are swallowed so they never disrupt
+/// the screen.
+final class InquiryDetailStatusUpdateRequested extends InquiryDetailEvent {
+  const InquiryDetailStatusUpdateRequested(this.status);
+
+  final String status;
+
+  @override
+  List<Object?> get props => [status];
+}
+
 final class InquiryDetailSessionIdAssigned extends InquiryDetailEvent {
   const InquiryDetailSessionIdAssigned(this.sessionId);
 

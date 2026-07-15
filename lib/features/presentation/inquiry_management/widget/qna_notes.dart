@@ -49,6 +49,10 @@ class _QnaNotesState extends State<QnaNotes> {
   late final QnaChatBloc _chatBloc;
   bool _navigateToMessagesOnFinalize = false;
 
+  /// Guards the "first Q&A message → Followup" transition so the status PATCH
+  /// fires only once (on the first successful outbound send), not on every send.
+  bool _followUpApplied = false;
+
   @override
   void initState() {
     super.initState();
@@ -129,6 +133,21 @@ class _QnaNotesState extends State<QnaNotes> {
             listenWhen: (p, c) => p.sendErrorMessage != c.sendErrorMessage && c.sendErrorMessage != null,
             listener: (context, state) {
               _showSnack(context, state.sendErrorMessage!);
+            },
+          ),
+          // Flow: the first successful outbound message moves the inquiry to
+          // Followup (sendStatus: sending → idle marks a completed send). Guarded
+          // so it fires once; the PATCH failure (if any) is swallowed by the bloc.
+          BlocListener<QnaChatBloc, QnaChatState>(
+            listenWhen: (p, c) =>
+                p.sendStatus == QnaChatSendStatus.sending &&
+                c.sendStatus == QnaChatSendStatus.idle,
+            listener: (context, state) {
+              if (_followUpApplied) return;
+              _followUpApplied = true;
+              context.read<InquiryDetailBloc>().add(
+                    const InquiryDetailStatusUpdateRequested('FOLLOWUP'),
+                  );
             },
           ),
           BlocListener<InquiryDetailBloc, InquiryDetailState>(

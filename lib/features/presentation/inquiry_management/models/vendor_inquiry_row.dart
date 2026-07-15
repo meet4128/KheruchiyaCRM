@@ -121,6 +121,8 @@ class VendorInquiryRow {
         return 'New In';
       case 'PENDING':
         return 'Pending';
+      case 'FOLLOWUP':
+        return 'Follow Up';
       case 'COMPLETED':
         return 'Won';
       case 'CANCELLED':

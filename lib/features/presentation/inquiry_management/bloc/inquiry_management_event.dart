@@ -53,6 +53,21 @@ final class InquiryManagementSortChanged extends InquiryManagementEvent {
   final String sort;
 }
 
+/// Updates an inquiry's status via `PATCH /inquiries/{id}/status`, then refreshes
+/// the list so the new status is reflected. Used by the "expand" action to move a
+/// New In (`IN_PROGRESS`) inquiry to `PENDING`.
+final class InquiryStatusUpdated extends InquiryManagementEvent {
+  InquiryStatusUpdated({
+    required this.inquiryId,
+    required this.status,
+  });
+
+  final String inquiryId;
+
+  /// Target enum value, e.g. `PENDING`.
+  final String status;
+}
+
 /// Assign an inquiry to a member via `PATCH /inquiries/{id}/assign`, then
 /// refresh so the server re-scopes the list (the inquiry drops off other reps'
 /// lists once assigned).
