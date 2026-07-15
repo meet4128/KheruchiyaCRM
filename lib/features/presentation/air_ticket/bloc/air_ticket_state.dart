@@ -3,6 +3,7 @@ import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/features/presentation/air_ticket/utils/flight_travel_scope.dart';
 import '../models/booking_type.dart';
 import '../models/checklist_priority.dart';
+import '../models/checklist_user.dart';
 import '../models/priority.dart';
 import '../models/visa_type.dart';
 import '../models/checklist_item.dart';
@@ -33,7 +34,7 @@ class AirTicketState extends Equatable {
     this.remark = '',
     this.priority,
     this.followUpType = '',
-    this.checklistUser = '',
+    this.checklistUsers = const [],
     this.checklistDueDate,
     this.checklistPriority,
     this.checklistCategory = '',
@@ -82,7 +83,7 @@ class AirTicketState extends Equatable {
   final String followUpType;
 
   // Checklist current values (for adding new items)
-  final String checklistUser;
+  final List<ChecklistUser> checklistUsers;
   final DateTime? checklistDueDate;
   final ChecklistPriority? checklistPriority;
   final String checklistCategory;
@@ -174,7 +175,7 @@ class AirTicketState extends Equatable {
     String? remark,
     Priority? priority,
     String? followUpType,
-    String? checklistUser,
+    List<ChecklistUser>? checklistUsers,
     DateTime? checklistDueDate,
     ChecklistPriority? checklistPriority,
     String? checklistCategory,
@@ -216,7 +217,7 @@ class AirTicketState extends Equatable {
       remark: remark ?? this.remark,
       priority: priority ?? this.priority,
       followUpType: followUpType ?? this.followUpType,
-      checklistUser: checklistUser ?? this.checklistUser,
+      checklistUsers: checklistUsers ?? this.checklistUsers,
       checklistDueDate: checklistDueDate ?? this.checklistDueDate,
       checklistPriority: checklistPriority ?? this.checklistPriority,
       checklistCategory: checklistCategory ?? this.checklistCategory,
@@ -274,7 +275,7 @@ class AirTicketState extends Equatable {
         remark,
         priority,
         followUpType,
-        checklistUser,
+        checklistUsers,
         checklistDueDate,
         checklistPriority,
         checklistCategory,

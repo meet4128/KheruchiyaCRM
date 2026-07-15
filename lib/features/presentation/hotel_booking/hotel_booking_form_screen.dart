@@ -369,13 +369,13 @@ class _ChecklistSectionWidget extends StatelessWidget {
         final bloc = context.read<HotelBookingBloc>();
         return ChecklistSection(
           items: state.checklistItems,
-          user: state.checklistUser,
+          users: state.checklistUsers,
           dueDate: state.checklistDueDate,
           priority: state.checklistPriority,
           category: state.checklistCategory,
           inLoop: state.checklistInLoop,
           repeat: state.checklistRepeat,
-          onUserChanged: (value) => bloc.add(ChecklistUserChanged(value)),
+          onUsersChanged: (users) => bloc.add(ChecklistUserChanged(users)),
           onDueDateChanged: (date) => bloc.add(ChecklistDueDateChanged(date)),
           onDueTimeChanged: (time) => bloc.add(ChecklistDueTimeChanged(time)),
           onPriorityChanged: (ChecklistPriority priority) =>

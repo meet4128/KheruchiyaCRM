@@ -1,10 +1,11 @@
 import 'package:equatable/equatable.dart';
 import 'checklist_priority.dart';
+import 'checklist_user.dart';
 
 /// Checklist item data model
 class ChecklistItem extends Equatable {
   const ChecklistItem({
-    this.user = '',
+    this.users = const [],
     this.dueDate,
     this.priority,
     this.category = '',
@@ -12,7 +13,9 @@ class ChecklistItem extends Equatable {
     this.repeat = false,
   });
 
-  final String user;
+  /// Members assigned to this checklist row. Each carries its database identity
+  /// so the create-inquiry payload can send the full `user` object.
+  final List<ChecklistUser> users;
   final DateTime? dueDate;
   final ChecklistPriority? priority;
   final String category;
@@ -23,7 +26,7 @@ class ChecklistItem extends Equatable {
   String? get priorityApiValue => priority?.apiValue;
 
   ChecklistItem copyWith({
-    String? user,
+    List<ChecklistUser>? users,
     DateTime? dueDate,
     ChecklistPriority? priority,
     String? category,
@@ -31,7 +34,7 @@ class ChecklistItem extends Equatable {
     bool? repeat,
   }) {
     return ChecklistItem(
-      user: user ?? this.user,
+      users: users ?? this.users,
       dueDate: dueDate ?? this.dueDate,
       priority: priority ?? this.priority,
       category: category ?? this.category,
@@ -41,11 +44,5 @@ class ChecklistItem extends Equatable {
   }
 
   @override
-  List<Object?> get props => [user, dueDate, priority, category, inLoop, repeat];
+  List<Object?> get props => [users, dueDate, priority, category, inLoop, repeat];
 }
-
-
-
-
-
-

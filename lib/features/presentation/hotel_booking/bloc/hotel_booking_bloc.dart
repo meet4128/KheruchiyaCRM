@@ -215,7 +215,7 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
     ChecklistUserChanged event,
     Emitter<HotelBookingState> emit,
   ) {
-    emit(state.copyWith(checklistUser: event.user));
+    emit(state.copyWith(checklistUsers: event.users));
   }
 
   void _onChecklistDueDateChanged(
@@ -289,7 +289,7 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
     Emitter<HotelBookingState> emit,
   ) {
     final newItem = ChecklistItem(
-      user: state.checklistUser,
+      users: state.checklistUsers,
       dueDate: state.checklistDueDate,
       priority: state.checklistPriority,
       category: state.checklistCategory,
@@ -301,7 +301,7 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
 
     emit(state.copyWith(
       checklistItems: updatedItems,
-      checklistUser: '',
+      checklistUsers: const [],
       checklistDueDate: null,
       checklistPriority: null,
       checklistCategory: '',
@@ -520,7 +520,9 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
     );
   }
 
-  /// POST body `checklist`: each `{ user, dueDate, priority, category }`.
+  /// POST body `checklist`: each row is `{ user, dueDate, priority, category }`
+  /// where `user` is a list of the assigned member objects. Empty fields are
+  /// omitted; rows with nothing meaningful are dropped.
   List<dynamic> _buildChecklistPayload(HotelBookingState state) {
     final out = <Map<String, dynamic>>[];
     for (final item in state.checklistItems) {
@@ -529,7 +531,7 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
     }
     if (_hasDraftChecklist(state)) {
       final draft = ChecklistItem(
-        user: state.checklistUser,
+        users: state.checklistUsers,
         dueDate: state.checklistDueDate,
         priority: state.checklistPriority,
         category: state.checklistCategory,
@@ -543,7 +545,7 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
   }
 
   bool _hasDraftChecklist(HotelBookingState state) {
-    if (state.checklistUser.trim().isNotEmpty) return true;
+    if (state.checklistUsers.isNotEmpty) return true;
     if (state.checklistDueDate != null) return true;
     if (state.checklistPriority != null) return true;
     if (state.checklistCategory.trim().isNotEmpty) return true;
@@ -551,20 +553,22 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
   }
 
   /// One checklist row for the API, or null if nothing meaningful was filled.
+  /// `user` is emitted as a list of member objects.
   Map<String, dynamic>? _checklistItemToJson(ChecklistItem item) {
-    final user = item.user.trim();
     final due = item.dueDate;
     final priority = item.priorityApiValue ?? '';
     final category = checklistCategoryToApi(item.category);
-    if (user.isEmpty && due == null && priority.isEmpty && category.isEmpty) {
-      return null;
-    }
-    return <String, dynamic>{
-      'user': user,
-      'dueDate': due != null ? _toIso8601(due) : '',
-      'priority': priority,
-      'category': category,
-    };
+    final users = item.users
+        .map((u) => u.toJson())
+        .whereType<Map<String, dynamic>>()
+        .toList();
+
+    final row = <String, dynamic>{};
+    if (users.isNotEmpty) row['user'] = users;
+    if (due != null) row['dueDate'] = _toIso8601(due);
+    if (priority.isNotEmpty) row['priority'] = priority;
+    if (category.isNotEmpty) row['category'] = category;
+    return row.isEmpty ? null : row;
   }
 
   // ========== Inquiry Field Mapping Helpers ==========

@@ -8,6 +8,7 @@ import '../models/property_type.dart';
 import '../models/room_view.dart';
 import '../models/transfer_option.dart';
 import '../../air_ticket/models/checklist_priority.dart';
+import '../../air_ticket/models/checklist_user.dart';
 
 /// Base class for all Hotel Booking events.
 abstract class HotelBookingEvent extends Equatable {
@@ -166,14 +167,14 @@ class RemarkChanged extends HotelBookingEvent {
 
 // ========== Checklist Events ==========
 
-/// Event fired when checklist user changes.
+/// Event fired when checklist users change (members picked from the database).
 class ChecklistUserChanged extends HotelBookingEvent {
-  const ChecklistUserChanged(this.user);
+  const ChecklistUserChanged(this.users);
 
-  final String user;
+  final List<ChecklistUser> users;
 
   @override
-  List<Object> get props => [user];
+  List<Object> get props => [users];
 }
 
 /// Event fired when checklist due date changes.

@@ -4,6 +4,7 @@ import '../../inquiry_form/bloc/inquiry_state.dart';
 import '../models/booking_type.dart';
 import '../models/traveller_breakdown.dart';
 import '../models/checklist_priority.dart';
+import '../models/checklist_user.dart';
 import '../models/priority.dart';
 import '../models/visa_type.dart';
 
@@ -137,14 +138,14 @@ class FollowUpTypeChanged extends AirTicketEvent {
 
 // ========== Checklist Events ==========
 
-/// Event fired when checklist user changes
+/// Event fired when checklist users change (members picked from the database).
 class ChecklistUserChanged extends AirTicketEvent {
-  const ChecklistUserChanged(this.user);
+  const ChecklistUserChanged(this.users);
 
-  final String user;
+  final List<ChecklistUser> users;
 
   @override
-  List<Object> get props => [user];
+  List<Object> get props => [users];
 }
 
 /// Event fired when checklist due date changes

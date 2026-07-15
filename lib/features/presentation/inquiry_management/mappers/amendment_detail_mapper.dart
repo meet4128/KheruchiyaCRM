@@ -25,8 +25,8 @@ String _checklistLabel(InquiryChecklistItem item) {
   if (category != null && category.isNotEmpty) {
     return checklistCategoryLabel(category);
   }
-  final user = item.user?.trim();
-  if (user != null && user.isNotEmpty) return user;
+  final userNames = item.userNames;
+  if (userNames.isNotEmpty) return userNames.join(', ');
   return 'Item';
 }
 

@@ -10,6 +10,7 @@ import 'package:travel_crm/core/widgets/app_time_picker.dart';
 import '../delete_recording_file.dart';
 import '../models/checklist_item.dart';
 import '../models/checklist_priority.dart';
+import '../models/checklist_user.dart';
 import 'checklist_users_picker_dialog.dart';
 import 'checklist_voice_record_dialog.dart';
 
@@ -105,13 +106,13 @@ class ChecklistSection extends StatelessWidget {
   const ChecklistSection({
     super.key,
     required this.items,
-    required this.user,
+    required this.users,
     this.dueDate,
     this.priority,
     required this.category,
     required this.inLoop,
     required this.repeat,
-    required this.onUserChanged,
+    required this.onUsersChanged,
     required this.onDueDateChanged,
     required this.onDueTimeChanged,
     required this.onPriorityChanged,
@@ -130,13 +131,13 @@ class ChecklistSection extends StatelessWidget {
   final void Function(PlatformFile file)? onAttachmentPicked;
 
   final List<ChecklistItem> items;
-  final String user;
+  final List<ChecklistUser> users;
   final DateTime? dueDate;
   final ChecklistPriority? priority;
   final String category;
   final bool inLoop;
   final bool repeat;
-  final ValueChanged<String> onUserChanged;
+  final ValueChanged<List<ChecklistUser>> onUsersChanged;
   final ValueChanged<DateTime?> onDueDateChanged;
   final ValueChanged<TimeOfDay?> onDueTimeChanged;
   final ValueChanged<ChecklistPriority> onPriorityChanged;
@@ -212,9 +213,11 @@ class ChecklistSection extends StatelessWidget {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 6),
                             child: Text(
-                              user.trim().isEmpty ? StringConstant.user : user,
+                              users.isEmpty
+                                  ? StringConstant.user
+                                  : users.map((u) => u.displayName).join(', '),
                               style: textStyles.bodyMedium.copyWith(
-                                color: user.trim().isEmpty
+                                color: users.isEmpty
                                     ? colors.textSecondary.withValues(
                                         alpha: 0.75,
                                       )
@@ -479,8 +482,8 @@ class ChecklistSection extends StatelessWidget {
   void _openUsersDialog(BuildContext context) {
     showChecklistUsersPickerDialog(
       context,
-      initialUser: user,
-      onDone: onUserChanged,
+      initialUsers: users,
+      onDone: onUsersChanged,
     );
   }
 

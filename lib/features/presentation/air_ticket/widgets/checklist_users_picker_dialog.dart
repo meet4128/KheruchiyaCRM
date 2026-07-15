@@ -9,35 +9,30 @@ import 'package:travel_crm/data/models/members/list_members_item.dart';
 import 'package:travel_crm/data/repositories/members_repository.dart';
 import 'package:travel_crm/di/injector.dart';
 import 'package:travel_crm/features/presentation/air_ticket/bloc/checklist_users_picker_cubit.dart';
+import 'package:travel_crm/features/presentation/air_ticket/models/checklist_user.dart';
 
 /// Display label for a searched member (fullName, falling back to
 /// firstName+lastName, then employeeId).
-String _memberDisplayName(ListMembersItem m) {
-  final full = m.fullName?.trim();
-  if (full != null && full.isNotEmpty) return full;
-  final parts = [m.firstName, m.lastName]
-      .where((s) => s != null && s.trim().isNotEmpty)
-      .map((s) => s!.trim())
-      .toList();
-  if (parts.isNotEmpty) return parts.join(' ');
-  return m.employeeId?.trim() ?? '';
-}
+String _memberDisplayName(ListMembersItem m) =>
+    ChecklistUser.fromMember(m).displayName;
 
 /// Shows the themed "Add users" dialog. Selected members are held by
 /// [ChecklistUsersPickerCubit]; the searchable member list is driven by
 /// [MemberSearchBloc] (debounce + throttle against `/members/name-search`).
+///
+/// Returns the selected members (with their database identity) via [onDone] so
+/// callers can send the full `user` object in the create-inquiry payload.
 Future<void> showChecklistUsersPickerDialog(
   BuildContext context, {
-  required String initialUser,
-  required ValueChanged<String> onDone,
+  required List<ChecklistUser> initialUsers,
+  required ValueChanged<List<ChecklistUser>> onDone,
 }) {
   return showDialog<void>(
     context: context,
     builder: (dialogContext) => MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (_) =>
-              ChecklistUsersPickerCubit(parseChecklistUserList(initialUser)),
+          create: (_) => ChecklistUsersPickerCubit(initialUsers),
         ),
         BlocProvider(
           create: (_) =>
@@ -53,7 +48,7 @@ Future<void> showChecklistUsersPickerDialog(
 class _ChecklistUsersPickerDialog extends StatefulWidget {
   const _ChecklistUsersPickerDialog({required this.onDone});
 
-  final ValueChanged<String> onDone;
+  final ValueChanged<List<ChecklistUser>> onDone;
 
   @override
   State<_ChecklistUsersPickerDialog> createState() =>
@@ -90,19 +85,17 @@ class _ChecklistUsersPickerDialogState
   }
 
   void _onMemberSelected(BuildContext context, ListMembersItem member) {
-    final name = _memberDisplayName(member);
-    if (name.isEmpty) return;
-    context
-        .read<ChecklistUsersPickerCubit>()
-        .addMember(name: name, id: member.id);
+    final user = ChecklistUser.fromMember(member);
+    if (user.displayName.isEmpty) return;
+    context.read<ChecklistUsersPickerCubit>().addUser(user);
     _controller.clear();
     context.read<MemberSearchBloc>().add(const MemberSearchQueryChanged(''));
     _refocusField();
   }
 
   void _onDonePressed(BuildContext context) {
-    final joined = context.read<ChecklistUsersPickerCubit>().joinedForField();
-    widget.onDone(joined);
+    final users = context.read<ChecklistUsersPickerCubit>().state.users;
+    widget.onDone(users);
     Navigator.of(context).pop();
   }
 
@@ -166,7 +159,7 @@ class _ChecklistUsersPickerDialogState
                           children: List.generate(state.users.length, (i) {
                             return InputChip(
                               label: Text(
-                                state.users[i].name,
+                                state.users[i].displayName,
                                 style: textStyles.bodyMedium.copyWith(
                                   color: colors.textPrimary,
                                 ),

@@ -7,6 +7,7 @@ import '../models/room_view.dart';
 import '../models/transfer_option.dart';
 import '../../air_ticket/models/checklist_item.dart';
 import '../../air_ticket/models/checklist_priority.dart';
+import '../../air_ticket/models/checklist_user.dart';
 
 /// Submission status enum for hotel booking form.
 enum HotelBookingSubmissionStatus {
@@ -33,7 +34,7 @@ class HotelBookingState extends Equatable {
     this.budgetMin = '',
     this.budgetMax = '',
     this.remark = '',
-    this.checklistUser = '',
+    this.checklistUsers = const [],
     this.checklistDueDate,
     this.checklistPriority,
     this.checklistCategory = '',
@@ -74,7 +75,7 @@ class HotelBookingState extends Equatable {
   final String remark;
 
   // Checklist current values (for adding new items)
-  final String checklistUser;
+  final List<ChecklistUser> checklistUsers;
   final DateTime? checklistDueDate;
   final ChecklistPriority? checklistPriority;
   final String checklistCategory;
@@ -155,7 +156,7 @@ class HotelBookingState extends Equatable {
     String? budgetMin,
     String? budgetMax,
     String? remark,
-    String? checklistUser,
+    List<ChecklistUser>? checklistUsers,
     DateTime? checklistDueDate,
     ChecklistPriority? checklistPriority,
     String? checklistCategory,
@@ -198,7 +199,7 @@ class HotelBookingState extends Equatable {
       budgetMin: budgetMin ?? this.budgetMin,
       budgetMax: budgetMax ?? this.budgetMax,
       remark: remark ?? this.remark,
-      checklistUser: checklistUser ?? this.checklistUser,
+      checklistUsers: checklistUsers ?? this.checklistUsers,
       checklistDueDate: checklistDueDate ?? this.checklistDueDate,
       checklistPriority: checklistPriority ?? this.checklistPriority,
       checklistCategory: checklistCategory ?? this.checklistCategory,
@@ -261,7 +262,7 @@ class HotelBookingState extends Equatable {
         budgetMin,
         budgetMax,
         remark,
-        checklistUser,
+        checklistUsers,
         checklistDueDate,
         checklistPriority,
         checklistCategory,

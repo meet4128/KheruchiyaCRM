@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/theme/app_colors.dart';
-import 'package:travel_crm/features/presentation/air_ticket/bloc/checklist_users_picker_cubit.dart';
 import 'package:travel_crm/features/presentation/air_ticket/models/checklist_priority.dart';
+import 'package:travel_crm/features/presentation/air_ticket/models/checklist_user.dart';
 import 'package:travel_crm/features/presentation/air_ticket/widgets/checklist_users_picker_dialog.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/put_follow_up/put_follow_up_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/put_follow_up/put_follow_up_event.dart';
@@ -58,11 +58,11 @@ class FollowUpChecklistBar extends StatelessWidget {
                       isActive: state.checklistUsers.isNotEmpty,
                       onTap: () => _openUsersPicker(
                         context,
-                        initial: state.checklistUsers.join(', '),
-                        onDone: (value) {
+                        initial: state.checklistUsers,
+                        onDone: (users) {
                           context.read<PutFollowUpBloc>().add(
                                 PutFollowUpChecklistUsersChanged(
-                                  parseChecklistUserList(value),
+                                  users.map((u) => u.displayName).toList(),
                                 ),
                               );
                         },
@@ -89,11 +89,11 @@ class FollowUpChecklistBar extends StatelessWidget {
                       isActive: state.inLoopUsers.isNotEmpty,
                       onTap: () => _openUsersPicker(
                         context,
-                        initial: state.inLoopUsers.join(', '),
-                        onDone: (value) {
+                        initial: state.inLoopUsers,
+                        onDone: (users) {
                           context.read<PutFollowUpBloc>().add(
                                 PutFollowUpInLoopUsersChanged(
-                                  parseChecklistUserList(value),
+                                  users.map((u) => u.displayName).toList(),
                                 ),
                               );
                         },
@@ -119,12 +119,12 @@ class FollowUpChecklistBar extends StatelessWidget {
 
   Future<void> _openUsersPicker(
     BuildContext context, {
-    required String initial,
-    required ValueChanged<String> onDone,
+    required List<String> initial,
+    required ValueChanged<List<ChecklistUser>> onDone,
   }) {
     return showChecklistUsersPickerDialog(
       context,
-      initialUser: initial,
+      initialUsers: initial.map(ChecklistUser.fromName).toList(),
       onDone: onDone,
     );
   }

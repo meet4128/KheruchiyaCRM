@@ -481,14 +481,14 @@ class _ChecklistSectionWidget extends StatelessWidget {
       builder: (context, state) {
         return ChecklistSection(
           items: state.checklistItems,
-          user: state.checklistUser,
+          users: state.checklistUsers,
           dueDate: state.checklistDueDate,
           priority: state.checklistPriority,
           category: state.checklistCategory,
           inLoop: state.checklistInLoop,
           repeat: state.checklistRepeat,
-          onUserChanged: (value) =>
-              context.read<AirTicketBloc>().add(ChecklistUserChanged(value)),
+          onUsersChanged: (users) =>
+              context.read<AirTicketBloc>().add(ChecklistUserChanged(users)),
           onDueDateChanged: (date) =>
               context.read<AirTicketBloc>().add(ChecklistDueDateChanged(date)),
           onDueTimeChanged: (time) =>

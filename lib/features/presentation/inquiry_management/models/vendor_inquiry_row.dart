@@ -152,10 +152,7 @@ class VendorInquiryRow {
 
     final fromChecklist = <String>[];
     for (final c in e.checklist) {
-      final u = c.user?.trim();
-      if (u != null && u.isNotEmpty) {
-        fromChecklist.addAll(_parseAssigneeNames(u));
-      }
+      fromChecklist.addAll(c.userNames);
     }
     final unique = _dedupeAssignees(fromChecklist);
     if (unique.isEmpty) {
