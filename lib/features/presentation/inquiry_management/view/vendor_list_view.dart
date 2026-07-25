@@ -14,6 +14,7 @@ import 'package:travel_crm/features/presentation/dashboard/bloc/navigation_bloc.
 import 'package:travel_crm/features/presentation/dashboard/bloc/navigation_event.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_management_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/inquiry_priority_trend.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/models/inquiry_status_chip.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widgets/follow_up/show_put_follow_up_dialog.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widgets/inquiry_priority_trend_icon.dart';
@@ -174,10 +175,6 @@ class _VendorListViewState extends State<VendorListView> {
 
   static const String _sessionExpiredMessage =
       'Session expired or invalid. Please log in again.';
-
-  /// Summary-chip labels that open the follow-up dialog for the latest inquiry.
-  static const String _newFollowUpChipLabel = 'New Follow Up';
-  static const String _setFollowUpChipLabel = 'Set Follow Up';
 
   /// Amendment type used when creating a follow-up straight from the list (no
   /// chat session/amendment context) — the base `booking` amendment.
@@ -376,87 +373,51 @@ class _VendorListViewState extends State<VendorListView> {
     }).toList();
   }
 
-  List<_SummaryChipData> _buildSummaryItems(InquiryManagementLoaded state) {
-    return [
-      _SummaryChipData(
-        label: 'All',
-        value: '${state.totalInquiryCount}',
-        valueBg: Colors.white,
-      ),
-      _SummaryChipData(
-        label: 'New In',
-        value: '${state.inquiryCountByStatus('IN_PROGRESS')}',
-        valueBg: const Color(0xFF0088FF),
-      ),
-      _SummaryChipData(
-        label: 'Pending',
-        value: '${state.inquiryCountByStatus('PENDING')}',
-        valueBg: const Color(0xFFFF8D28),
-      ),
-      const _SummaryChipData(label: 'New Follow Up', icon: Icons.send_rounded),
-      const _SummaryChipData(label: 'Set Follow Up', icon: Icons.send_rounded),
-      _SummaryChipData(
-        label: 'Loss',
-        value: '${state.inquiryCountByStatus('CANCELLED')}',
-        valueBg: const Color(0xFFFF383C),
-      ),
-      _SummaryChipData(
-        label: 'Won',
-        value: '${state.inquiryCountByStatus('COMPLETED')}',
-        valueBg: const Color(0xFF34C759),
-      ),
-    ];
-  }
-
-  String? _statusFromChip(String label) {
-    switch (label.toLowerCase()) {
-      case 'all':
-        return null;
-      case 'new in':
-        return 'IN_PROGRESS';
-      case 'pending':
-        return 'PENDING';
-      case 'loss':
-        return 'CANCELLED';
-      case 'won':
-        return 'COMPLETED';
-      default:
-        return null;
-    }
+  /// Count text for a summary chip, sourced per-screen from the inquiry list
+  /// state. Follow-up actions have no count (they render a send icon instead).
+  String? _chipValue(InquiryStatusChip chip, InquiryManagementLoaded state) {
+    if (chip.isFollowUpAction) return null;
+    if (chip == InquiryStatusChip.all) return '${state.totalInquiryCount}';
+    final api = chip.apiStatus;
+    return api == null ? null : '${state.inquiryCountByStatus(api)}';
   }
 
   Widget _buildSummaryStatusRow(InquiryManagementLoaded state) {
-    final summaryItems = _buildSummaryItems(state);
+    const chips = InquiryStatusChip.values;
 
     return Row(
-      children: List.generate(summaryItems.length, (index) {
-        final _SummaryChipData item = summaryItems[index];
-        final chipStatus = _statusFromChip(item.label);
-        final isAll = chipStatus == null && state.status == null;
-        final isActive = item.icon != null
+      children: List.generate(chips.length, (index) {
+        final InquiryStatusChip chip = chips[index];
+        final apiStatus = chip.apiStatus;
+        // "All" is active when no status filter is set; a status chip is active
+        // when its API status matches the filter; follow-up actions never are.
+        final bool isActive = chip.isFollowUpAction
             ? false
-            : (isAll ? true : chipStatus == state.status);
-        final VoidCallback? onTap;
-        if (item.label == _newFollowUpChipLabel ||
-            item.label == _setFollowUpChipLabel) {
-          onTap = () => _onNewFollowUp(state);
-        } else if (item.icon != null) {
-          onTap = null;
-        } else {
-          onTap = () =>
-              _bloc.add(InquiryManagementStatusChipChanged(chipStatus));
-        }
+            : (chip == InquiryStatusChip.all
+                  ? state.status == null
+                  : apiStatus == state.status);
+        // Follow-up chips open the follow-up dialog; the rest apply the filter.
+        final VoidCallback onTap = chip.isFollowUpAction
+            ? () => _onNewFollowUp(state)
+            : () => _bloc.add(InquiryManagementStatusChipChanged(apiStatus));
+        final item = _SummaryChipData(
+          label: chip.label,
+          value: _chipValue(chip, state),
+          valueBg: chip.circleColor,
+          icon: chip.isFollowUpAction ? Icons.send_rounded : null,
+          isActive: isActive,
+        );
         return Expanded(
           child: Padding(
             padding: EdgeInsets.only(
-              right: index == summaryItems.length - 1 ? 0 : 0.5,
+              right: index == chips.length - 1 ? 0 : 0.5,
             ),
             child: InkWell(
               onTap: onTap,
               child: _SummaryChip(
-                item: item.copyWith(isActive: isAll ? true : isActive),
+                item: item,
                 isFirst: index == 0,
-                isLast: index == summaryItems.length - 1,
+                isLast: index == chips.length - 1,
               ),
             ),
           ),
@@ -1371,16 +1332,6 @@ class _SummaryChipData {
   final Color valueBg;
   final IconData? icon;
   final bool isActive;
-
-  _SummaryChipData copyWith({bool? isActive}) {
-    return _SummaryChipData(
-      label: label,
-      value: value,
-      valueBg: valueBg,
-      icon: icon,
-      isActive: isActive ?? this.isActive,
-    );
-  }
 }
 
 class _TableColumnData {

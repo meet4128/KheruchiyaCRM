@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/constants/whatsapp_constants.dart';
@@ -367,7 +368,7 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
       final response = await inquiryRepository.createInquiry(request);
 
       // Best-effort: greet the customer and reference on WhatsApp with the
-      // approved `kheruchiya_greeting` template. A failure here must not fail the
+      // approved `hotel_inquiry` template. A failure here must not fail the
       // inquiry creation, so it's handled internally per recipient.
       await _sendGreetingTemplates(
         inquiryId: response.data.inquiry.id,
@@ -423,7 +424,7 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
     );
   }
 
-  /// Sends a single `kheruchiya_greeting` template to one recipient.
+  /// Sends a single `hotel_inquiry` template to one recipient.
   /// Best-effort: any failure is logged and swallowed.
   Future<void> _sendGreeting({
     required String inquiryId,
@@ -445,7 +446,7 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
         return;
       }
 
-      final trimmedName = name.trim();
+      final trimmedName = _sanitizeTemplateParam(name);
       final displayName = trimmedName.isEmpty ? 'there' : trimmedName;
 
       await inquiryRepository.sendWhatsappMessage(
@@ -454,11 +455,7 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
           sessionId: _uuid.v4(),
           inquiryId: inquiryId,
           type: 'template',
-          template: WhatsappTemplatePayload(
-            name: WhatsappConstants.templateName,
-            language: WhatsappConstants.templateLanguage,
-            bodyParams: [displayName],
-          ),
+          template: _buildHotelInquiryTemplate(displayName),
         ),
       );
     } catch (e) {
@@ -467,6 +464,52 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
         name: 'HotelBookingBloc',
       );
     }
+  }
+
+  /// Builds the approved `hotel_inquiry` template for the current form [state].
+  ///   {{1}} name  {{2}} destination  {{3}} check-in  {{4}} check-out
+  ///   {{5}} rooms  {{6}} guests  {{7}} notes
+  WhatsappTemplatePayload _buildHotelInquiryTemplate(String displayName) {
+    final destination = _sanitizeTemplateParam(state.city);
+    final rooms = '${state.rooms} ${state.rooms == 1 ? 'Room' : 'Rooms'}';
+    final guests = '${state.adults} ${state.adults == 1 ? 'Adult' : 'Adults'}';
+    final notes = _hotelNotesParam(state);
+
+    return WhatsappTemplatePayload(
+      name: WhatsappConstants.hotelInquiryTemplateName,
+      language: WhatsappConstants.templateLanguage,
+      bodyParams: [
+        displayName,
+        destination.isEmpty ? 'To be confirmed' : destination,
+        _formatHotelDate(state.checkInDate),
+        _formatHotelDate(state.checkOutDate),
+        rooms,
+        guests,
+        notes,
+      ],
+    );
+  }
+
+  /// Formats a date as e.g. "12 August 2026" for the WhatsApp template.
+  String _formatHotelDate(DateTime? date) {
+    if (date == null) return 'To be confirmed';
+    return DateFormat('d MMMM yyyy').format(date);
+  }
+
+  /// The notes body param, falling back to "-" when empty (Meta rejects empty
+  /// template params).
+  String _hotelNotesParam(HotelBookingState state) {
+    final sanitized = _sanitizeTemplateParam(state.remark);
+    return sanitized.isEmpty ? '-' : sanitized;
+  }
+
+  /// Strips characters Meta forbids in template body params (newlines, tabs,
+  /// and runs of consecutive spaces).
+  String _sanitizeTemplateParam(String value) {
+    return value
+        .replaceAll(RegExp(r'[\r\n\t]+'), ' ')
+        .replaceAll(RegExp(r' {2,}'), ' ')
+        .trim();
   }
 
   // ========== Payload Builders ==========
@@ -657,8 +700,8 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
     return null;
   }
 
+  /// Remark is optional — no validation constraints.
   String? _validateRemark(String remark) {
-    if (remark.trim().isEmpty) return StringConstant.remarkRequired;
     return null;
   }
 }

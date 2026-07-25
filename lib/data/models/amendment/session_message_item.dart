@@ -101,9 +101,17 @@ Map<String, dynamic> _normalizeSessionMessageJson(Map<String, dynamic> json) {
     final existingText = map['text']?.toString().trim();
     if (existingText == null || existingText.isEmpty) {
       final bodyParams = map['templateBodyParams'];
-      if (bodyParams is List && bodyParams.isNotEmpty) {
-        map['text'] = WhatsappConstants.templatePreview(bodyParams.first.toString());
-      } else if (map['templateName'] == WhatsappConstants.templateName) {
+      final paramList = bodyParams is List
+          ? bodyParams.map((e) => e.toString()).toList()
+          : const <String>[];
+      final templateName = map['templateName'] as String?;
+      final preview =
+          WhatsappConstants.previewFromParams(templateName, paramList);
+      if (preview != null) {
+        map['text'] = preview;
+      } else if (paramList.isNotEmpty) {
+        map['text'] = WhatsappConstants.templatePreview(paramList.first);
+      } else if (templateName == WhatsappConstants.templateName) {
         map['text'] = WhatsappConstants.templatePreview('');
       }
     }

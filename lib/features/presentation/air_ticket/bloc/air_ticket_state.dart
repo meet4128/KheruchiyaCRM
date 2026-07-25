@@ -154,7 +154,7 @@ class AirTicketState extends Equatable {
     if (travellerCount < 1) return false;
     if (classType.trim().isEmpty) return false;
     if (requiresVisaSelection && visaType == null) return false;
-    if (remark.trim().isEmpty) return false;
+    // Remark is optional.
 
     // All checks passed - form is valid
     return true;

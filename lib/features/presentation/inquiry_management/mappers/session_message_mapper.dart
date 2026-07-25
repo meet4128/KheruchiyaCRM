@@ -281,15 +281,17 @@ String? _normalizedDirection(SessionMessageItem item) {
 
 bool _isTemplateMessage(SessionMessageItem item) {
   return item.type?.toLowerCase().trim() == 'template' ||
-      item.templateName == WhatsappConstants.templateName;
+      WhatsappConstants.isKnownTemplate(item.templateName);
 }
 
 String _templateDisplayBody(SessionMessageItem item) {
-  final params = item.templateBodyParams;
-  if (params != null && params.isNotEmpty) {
-    return WhatsappConstants.templatePreview(params.first);
-  }
-  return WhatsappConstants.templatePreview('');
+  final params = item.templateBodyParams ?? const <String>[];
+  final preview = WhatsappConstants.previewFromParams(item.templateName, params);
+  if (preview != null) return preview;
+  // Fallback for unknown/legacy templates: treat the first param as the name.
+  return WhatsappConstants.templatePreview(
+    params.isNotEmpty ? params.first : '',
+  );
 }
 
 bool _isSessionDocument(SessionMessageItem item) {

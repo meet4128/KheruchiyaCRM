@@ -135,7 +135,7 @@ class HotelBookingState extends Equatable {
     if (rooms < 1 || adults < 1) return false;
     if (propertyType.isEmpty) return false;
     if (hotelCategory.isEmpty) return false;
-    if (remark.trim().isEmpty) return false;
+    // Remark is optional.
 
     return true;
   }

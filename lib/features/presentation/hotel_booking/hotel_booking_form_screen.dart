@@ -343,8 +343,6 @@ class _HotelBookingFormCard extends StatelessWidget {
                 child: AppTextField(
                   hint: StringConstant.enterRemark,
                   value: state.remark,
-                  errorText: state.remarkError,
-                  onChanged: (value) => bloc.add(RemarkChanged(value)),
                   maxLines: 1,
                 ),
               ),

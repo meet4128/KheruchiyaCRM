@@ -11,6 +11,7 @@ import 'package:travel_crm/di/injector.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_detail/inquiry_detail_bloc.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_detail/inquiry_detail_event.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/bloc/inquiry_detail/inquiry_detail_state.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/models/inquiry_status_chip.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/utils/amendment_status_filter.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/widget/amendment_info_card.dart';
@@ -34,8 +35,8 @@ class InquiryManagementScreen extends StatefulWidget {
 
 class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
   late final InquiryDetailBloc _detailBloc;
-  int _selectedStatusIndex = AmendmentStatusTabX.indexOf(
-    AmendmentStatusTab.all,
+  int _selectedStatusIndex = InquiryStatusChipX.indexOf(
+    InquiryStatusChip.all,
   );
 
   @override
@@ -61,7 +62,7 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
       child: BlocBuilder<InquiryDetailBloc, InquiryDetailState>(
         builder: (context, detailState) {
           final row = detailState.vendorRow ?? widget.vendorRow;
-          final selectedTab = AmendmentStatusTabX.fromIndex(
+          final selectedTab = InquiryStatusChipX.fromIndex(
             _selectedStatusIndex,
           );
           final statusBarItems = buildAmendmentStatusBarItems(

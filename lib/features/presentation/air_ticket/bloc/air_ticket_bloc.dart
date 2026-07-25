@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/constants/whatsapp_constants.dart';
@@ -540,9 +541,9 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
       final response = await inquiryRepository.createInquiry(request);
 
       // Best-effort: greet the customer and reference on WhatsApp with the
-      // approved `kheruchiya_greeting` template (same one the Q&A chat uses). A
-      // failure here must not fail the inquiry creation, so it's handled
-      // internally per recipient.
+      // approved flight-inquiry template (round-trip vs one-way based on the
+      // booking type). A failure here must not fail the inquiry creation, so
+      // it's handled internally per recipient.
       await _sendGreetingTemplates(
         inquiryId: response.data.inquiry.id,
         inquiryState: event.inquiryState,
@@ -561,9 +562,9 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
   }
 
   /// Greets both the customer and the reference contact on WhatsApp with the
-  /// approved `kheruchiya_greeting` template. Each send is independent and
-  /// best-effort, so one failing (or one number being absent) never affects the
-  /// other or the inquiry submission result.
+  /// approved flight-inquiry template. Each send is independent and best-effort,
+  /// so one failing (or one number being absent) never affects the other or the
+  /// inquiry submission result.
   Future<void> _sendGreetingTemplates({
     required String? inquiryId,
     required dynamic inquiryState,
@@ -593,7 +594,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     );
   }
 
-  /// Sends a single `kheruchiya_greeting` template to one recipient.
+  /// Sends a single flight-inquiry template to one recipient.
   /// Best-effort: any failure is logged and swallowed.
   Future<void> _sendGreeting({
     required String inquiryId,
@@ -615,7 +616,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
         return;
       }
 
-      final trimmedName = name.trim();
+      final trimmedName = _sanitizeTemplateParam(name);
       final displayName = trimmedName.isEmpty ? 'there' : trimmedName;
 
       await inquiryRepository.sendWhatsappMessage(
@@ -624,11 +625,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
           sessionId: _uuid.v4(),
           inquiryId: inquiryId,
           type: 'template',
-          template: WhatsappTemplatePayload(
-            name: WhatsappConstants.templateName,
-            language: WhatsappConstants.templateLanguage,
-            bodyParams: [displayName],
-          ),
+          template: _buildFlightInquiryTemplate(displayName),
         ),
       );
     } catch (e) {
@@ -637,6 +634,118 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
         name: 'AirTicketBloc',
       );
     }
+  }
+
+  /// Builds the approved flight-inquiry template for the current form [state].
+  ///
+  /// - **One way:** `flight_inquiry_oneway` (single journey block).
+  /// - **Round trip:** `flight_inquiry_roundtrip` with the return leg as
+  ///   to → from on the return date.
+  /// - **Multi city:** reuses the round-trip template, mapping the final
+  ///   configured leg into the "Return Journey" slot.
+  WhatsappTemplatePayload _buildFlightInquiryTemplate(String displayName) {
+    final passengers = _formatPassengers(state);
+    final notes = _flightNotesParam(state);
+    final onwardFrom = _formatAirportForMessage(state.from);
+    final onwardTo = _formatAirportForMessage(state.to);
+    final onwardDate = _formatFlightDate(state.departureDate);
+
+    final bookingType = state.bookingType;
+    if (bookingType == null || bookingType == AirTicketBookingType.oneWay) {
+      return WhatsappTemplatePayload(
+        name: WhatsappConstants.flightOneWayTemplateName,
+        language: WhatsappConstants.templateLanguage,
+        bodyParams: [
+          displayName,
+          onwardFrom,
+          onwardTo,
+          onwardDate,
+          passengers,
+          notes,
+        ],
+      );
+    }
+
+    // Round trip and multi-city both use the round-trip template.
+    String returnFrom;
+    String returnTo;
+    String returnDate;
+    if (bookingType == AirTicketBookingType.multiCity &&
+        state.flightSegments.isNotEmpty) {
+      final last = state.flightSegments.last;
+      returnFrom = _formatAirportForMessage(last.from);
+      returnTo = _formatAirportForMessage(last.to);
+      returnDate = _formatFlightDate(last.departureDate);
+    } else {
+      returnFrom = onwardTo;
+      returnTo = onwardFrom;
+      returnDate = _formatFlightDate(state.returnDate);
+    }
+
+    return WhatsappTemplatePayload(
+      name: WhatsappConstants.flightRoundTripTemplateName,
+      language: WhatsappConstants.templateLanguage,
+      bodyParams: [
+        displayName,
+        onwardFrom,
+        onwardTo,
+        onwardDate,
+        returnFrom,
+        returnTo,
+        returnDate,
+        passengers,
+        notes,
+      ],
+    );
+  }
+
+  /// Formats a stored airport string into a single-line "City (CODE)" value.
+  String _formatAirportForMessage(String raw) {
+    if (raw.trim().isEmpty) return 'To be confirmed';
+    final parsed = _parseAirport(raw);
+    final city = parsed.city.trim();
+    final code = parsed.code.trim();
+    if (code.isEmpty) return city.isEmpty ? 'To be confirmed' : city;
+    if (city.isEmpty || city == code) return code;
+    return '$city ($code)';
+  }
+
+  /// Formats a date as e.g. "12 August 2026" for the WhatsApp template.
+  String _formatFlightDate(DateTime? date) {
+    if (date == null) return 'To be confirmed';
+    return DateFormat('d MMMM yyyy').format(date);
+  }
+
+  /// Builds a single-line passenger summary, omitting zero counts, e.g.
+  /// "2 Adults, 1 Child".
+  String _formatPassengers(AirTicketState state) {
+    final parts = <String>[];
+    if (state.adultCount > 0) {
+      parts.add('${state.adultCount} ${state.adultCount == 1 ? 'Adult' : 'Adults'}');
+    }
+    if (state.childCount > 0) {
+      parts.add('${state.childCount} ${state.childCount == 1 ? 'Child' : 'Children'}');
+    }
+    if (state.infantCount > 0) {
+      parts.add('${state.infantCount} ${state.infantCount == 1 ? 'Infant' : 'Infants'}');
+    }
+    return parts.isEmpty ? '1 Adult' : parts.join(', ');
+  }
+
+  /// The notes body param, falling back to "-" when empty (Meta rejects empty
+  /// template params).
+  String _flightNotesParam(AirTicketState state) {
+    final sanitized = _sanitizeTemplateParam(state.remark);
+    return sanitized.isEmpty ? '-' : sanitized;
+  }
+
+  /// Strips characters Meta forbids in template body params (newlines, tabs,
+  /// and runs of consecutive spaces).
+  String _sanitizeTemplateParam(String value) {
+    return value
+        .replaceAll(RegExp(r'[\r\n\t]+'), ' ')
+        .replaceAll(RegExp(r' {2,}'), ' ')
+        .trim();
   }
 
   /// Parses stored airport string "CODE - City|Airport Name|Country" to (code, city).
@@ -934,10 +1043,6 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
       if (departureDate == null) {
         return StringConstant.departureDateMustBeSet;
       }
-      if (returnDate.isBefore(departureDate) ||
-          returnDate.isAtSameMomentAs(departureDate)) {
-        return StringConstant.returnDateAfterDeparture;
-      }
     }
     // For One Way and Multi City, return date is optional
     return null;
@@ -960,12 +1065,12 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     return null;
   }
 
-  /// Validate remark
+  /// Validate remark. Optional: empty is allowed, but if the user types
+  /// something it must be at least 3 characters.
   String? _validateRemark(String remark) {
-    if (remark.trim().isEmpty) {
-      return StringConstant.remarkRequired;
-    }
-    if (remark.trim().length < 3) {
+    final trimmed = remark.trim();
+    if (trimmed.isEmpty) return null;
+    if (trimmed.length < 3) {
       return StringConstant.remarkMinLength;
     }
     return null;
