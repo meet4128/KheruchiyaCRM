@@ -339,7 +339,7 @@ class _HotelBookingFormCard extends StatelessWidget {
 
               FormFieldWrapper(
                 label: StringConstant.remark,
-                isRequired: true,
+                isRequired: false,
                 child: AppTextField(
                   hint: StringConstant.enterRemark,
                   value: state.remark,

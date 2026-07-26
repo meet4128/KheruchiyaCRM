@@ -55,11 +55,10 @@ class HotelSearchBar extends StatelessWidget {
 
   Future<void> _pickCheckIn(BuildContext context) async {
     final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await _showCalendarPicker(
+      context,
       initialDate: checkInDate ?? now,
       firstDate: DateTime(now.year, now.month, now.day),
-      lastDate: DateTime(now.year + 5, 12, 31),
     );
     if (picked != null) onCheckInChanged(picked);
   }
@@ -71,13 +70,62 @@ class HotelSearchBar extends StatelessWidget {
         : DateTime(now.year, now.month, now.day);
     final initial =
         (checkOutDate != null && !checkOutDate!.isBefore(first)) ? checkOutDate! : first;
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await _showCalendarPicker(
+      context,
       initialDate: initial,
       firstDate: first,
-      lastDate: DateTime(now.year + 5, 12, 31),
     );
     if (picked != null) onCheckOutChanged(picked);
+  }
+
+  /// Custom calendar dialog with [CalendarDatePicker] so tapping a day selects
+  /// it immediately (no OK/Cancel confirmation step), matching the Air Ticket
+  /// departure/return date selection.
+  static Future<DateTime?> _showCalendarPicker(
+    BuildContext context, {
+    required DateTime initialDate,
+    required DateTime firstDate,
+  }) {
+    final colors = AppTheme.colors(context);
+    return showDialog<DateTime>(
+      context: context,
+      builder: (dialogContext) {
+        return Theme(
+          data: Theme.of(dialogContext).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: colors.secondary,
+              onPrimary: colors.textOnPrimary,
+              surface: colors.surface,
+              onSurface: colors.textPrimary,
+            ),
+            dialogBackgroundColor: colors.backgroundMedium,
+          ),
+          child: Dialog(
+            backgroundColor: colors.backgroundMedium,
+            insetPadding: const EdgeInsets.symmetric(
+              horizontal: 40,
+              vertical: 24,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 360),
+              child: SizedBox(
+                width: 360,
+                height: 400,
+                child: CalendarDatePicker(
+                  initialDate: initialDate,
+                  firstDate: firstDate,
+                  lastDate: DateTime(firstDate.year + 5, 12, 31),
+                  onDateChanged: (date) => Navigator.pop(dialogContext, date),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _editRoomGuests(BuildContext context) async {
