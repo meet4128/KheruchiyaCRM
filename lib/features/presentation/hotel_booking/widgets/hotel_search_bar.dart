@@ -65,9 +65,8 @@ class HotelSearchBar extends StatelessWidget {
 
   Future<void> _pickCheckOut(BuildContext context) async {
     final now = DateTime.now();
-    final first = checkInDate != null
-        ? checkInDate!.add(const Duration(days: 1))
-        : DateTime(now.year, now.month, now.day);
+    // Check-out may be the same day as check-in (same-date stays allowed).
+    final first = checkInDate ?? DateTime(now.year, now.month, now.day);
     final initial =
         (checkOutDate != null && !checkOutDate!.isBefore(first)) ? checkOutDate! : first;
     final picked = await _showCalendarPicker(

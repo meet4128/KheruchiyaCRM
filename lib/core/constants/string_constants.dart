@@ -312,7 +312,7 @@ class StringConstant {
   static const String cityRequired = 'City or location is required';
   static const String checkInRequired = 'Check-in date is required';
   static const String checkOutRequired = 'Check-out date is required';
-  static const String checkOutAfterCheckIn = 'Check-out date must be after check-in date';
+  static const String checkOutAfterCheckIn = 'Check-out date cannot be before check-in date';
   static const String roomGuestsRequired = 'At least 1 room and 1 adult are required';
   static const String propertyTypeRequired = 'Property type is required';
   static const String hotelCategoryRequired = 'Hotel category is required';

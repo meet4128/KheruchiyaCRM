@@ -84,10 +84,11 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
     CheckInDateChanged event,
     Emitter<HotelBookingState> emit,
   ) {
-    // Clear check-out if it is no longer after the new check-in.
+    // Clear check-out only if it falls before the new check-in
+    // (same-date check-out is allowed).
     final checkOut = state.checkOutDate;
     final clearCheckOut =
-        checkOut != null && !checkOut.isAfter(event.checkInDate);
+        checkOut != null && checkOut.isBefore(event.checkInDate);
     emit(state.copyWith(
       checkInDate: event.checkInDate,
       checkOutDate: clearCheckOut ? null : checkOut,
@@ -677,7 +678,8 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
 
   String? _validateCheckOut(DateTime? checkOut, DateTime? checkIn) {
     if (checkOut == null) return StringConstant.checkOutRequired;
-    if (checkIn != null && !checkOut.isAfter(checkIn)) {
+    // Same-date check-out is allowed; only reject dates before check-in.
+    if (checkIn != null && checkOut.isBefore(checkIn)) {
       return StringConstant.checkOutAfterCheckIn;
     }
     return null;
