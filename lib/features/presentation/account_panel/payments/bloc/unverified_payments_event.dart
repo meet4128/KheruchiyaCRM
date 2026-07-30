@@ -47,3 +47,19 @@ class UnverifiedPaymentExpansionToggled extends UnverifiedPaymentsEvent {
   @override
   List<Object?> get props => [paymentPlanId];
 }
+
+/// Verifies a single installment (`PATCH .../installments/{id}/verify`). On
+/// success the list refreshes; a plan leaves the queue once all its
+/// installments are verified.
+class UnverifiedInstallmentVerifyRequested extends UnverifiedPaymentsEvent {
+  const UnverifiedInstallmentVerifyRequested({
+    required this.inquiryId,
+    required this.installmentId,
+  });
+
+  final String inquiryId;
+  final String installmentId;
+
+  @override
+  List<Object?> get props => [inquiryId, installmentId];
+}

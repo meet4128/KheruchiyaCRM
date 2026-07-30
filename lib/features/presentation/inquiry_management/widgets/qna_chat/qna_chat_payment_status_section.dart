@@ -479,15 +479,18 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
                 ],
               ),
               const SizedBox(height: DimensionConstant.d20),
-              _installmentTable(context, state.installmentRows),
-              const SizedBox(height: DimensionConstant.d20),
-              if (widget.locked)
-                _lockedNotice()
-              else
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: _saveButton(context, isSaving: state.isPaymentSaving),
-                ),
+              _installmentTable(
+                context,
+                state.installmentRows,
+                isSaving: state.isPaymentSaving,
+              ),
+              // Verification now happens per installment (via each row's
+              // Actions cell), so there is no global Save button. Once every
+              // installment is verified the whole plan is locked.
+              if (widget.locked) ...[
+                const SizedBox(height: DimensionConstant.d20),
+                _lockedNotice(),
+              ],
             ],
           ),
         ));
@@ -495,49 +498,7 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
     );
   }
 
-  Widget _saveButton(BuildContext context, {required bool isSaving}) {
-    return InkWell(
-      onTap: isSaving
-          ? null
-          : () => context.read<QnaChatBloc>().add(const QnaChatPaymentTermsSaveRequested()),
-      borderRadius: BorderRadius.circular(DimensionConstant.d4),
-      child: Opacity(
-        opacity: isSaving ? 0.7 : 1,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: DimensionConstant.d40,
-            vertical: DimensionConstant.d12,
-          ),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [ColorConstant.purple, ColorConstant.indigo],
-            ),
-            borderRadius: BorderRadius.circular(DimensionConstant.d4),
-          ),
-          child: isSaving
-              ? const SizedBox(
-                  height: DimensionConstant.d16,
-                  width: DimensionConstant.d16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation(ColorConstant.whiteColor),
-                  ),
-                )
-              : Text(
-                  StringConstant.qnaChatSave,
-                  style: FontConstant.interMedium(
-                    color: ColorConstant.whiteColor,
-                    fontSize: DimensionConstant.d14,
-                  ),
-                ),
-        ),
-      ),
-    );
-  }
-
-  /// Shown in place of the Save button once the plan is verified.
+  /// Shown once every installment in the plan is verified.
   Widget _lockedNotice() {
     return Container(
       width: double.infinity,
@@ -716,7 +677,11 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
     );
   }
 
-  Widget _installmentTable(BuildContext context, List<QnaChatInstallmentRow> rows) {
+  Widget _installmentTable(
+    BuildContext context,
+    List<QnaChatInstallmentRow> rows, {
+    required bool isSaving,
+  }) {
     final count = rows.length;
     final label = count == 1
         ? StringConstant.qnaChatInstallmentSingular
@@ -742,7 +707,7 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
           ),
           _tableHeaderRow(),
           for (var i = 0; i < rows.length; i++)
-            _tableDataRow(context, rows[i], isEven: i.isEven),
+            _tableDataRow(context, rows[i], isEven: i.isEven, isSaving: isSaving),
         ],
       ),
     );
@@ -763,6 +728,7 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
           _headerCell(StringConstant.qnaChatColumnMode, flex: 1),
           _headerCell(StringConstant.qnaChatColumnStatus, flex: 1),
           _headerCell(StringConstant.qnaChatColumnPaymentProof, flex: 2),
+          _headerCell(StringConstant.qnaChatColumnActions, flex: 2),
         ],
       ),
     );
@@ -782,7 +748,12 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
     );
   }
 
-  Widget _tableDataRow(BuildContext context, QnaChatInstallmentRow row, {required bool isEven}) {
+  Widget _tableDataRow(
+    BuildContext context,
+    QnaChatInstallmentRow row, {
+    required bool isEven,
+    required bool isSaving,
+  }) {
     final isLate = row.isLate;
     final status = _statusFor(row);
     final statusColor = status == StringConstant.qnaChatOnTime
@@ -790,6 +761,9 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
         : status == StringConstant.qnaChatLate
             ? ColorConstant.orangeColor
             : ColorConstant.whiteColor.withValues(alpha: 0.5);
+    // A verified installment is signed off by accounts — its inputs lock while
+    // the rest of the plan stays editable.
+    final locked = row.isVerified;
 
     return Container(
       color: isEven ? ColorConstant.cardBgColor : ColorConstant.blackColor,
@@ -797,78 +771,178 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
         horizontal: DimensionConstant.d15,
         vertical: DimensionConstant.d12,
       ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 1,
-            child: Center(
-              child: SizedBox(
-                width: DimensionConstant.d60,
-                child: row.isAuto
-                    ? Text(
-                        row.amountText.isEmpty ? '-' : row.amountText,
-                        textAlign: TextAlign.center,
-                        style: FontConstant.interMedium(
-                          color: ColorConstant.whiteColor.withValues(alpha: 0.6),
-                          fontSize: DimensionConstant.d13,
-                        ),
-                      )
-                    : TextField(
-                        controller: _controllerFor(row),
-                        textAlign: TextAlign.center,
-                        keyboardType: TextInputType.number,
-                        onChanged: (text) => context.read<QnaChatBloc>().add(
-                              QnaChatInstallmentRowAmountChanged(rowId: row.id, text: text),
+      child: Opacity(
+        opacity: locked ? 0.55 : 1,
+        child: Row(
+          children: [
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: SizedBox(
+                  width: DimensionConstant.d60,
+                  child: row.isAuto
+                      ? Text(
+                          row.amountText.isEmpty ? '-' : row.amountText,
+                          textAlign: TextAlign.center,
+                          style: FontConstant.interMedium(
+                            color: ColorConstant.whiteColor.withValues(alpha: 0.6),
+                            fontSize: DimensionConstant.d13,
+                          ),
+                        )
+                      : _lockable(
+                          locked,
+                          TextField(
+                            controller: _controllerFor(row),
+                            textAlign: TextAlign.center,
+                            keyboardType: TextInputType.number,
+                            onChanged: (text) => context.read<QnaChatBloc>().add(
+                                  QnaChatInstallmentRowAmountChanged(rowId: row.id, text: text),
+                                ),
+                            style: FontConstant.interNormal(
+                              color: ColorConstant.whiteColor,
+                              fontSize: DimensionConstant.d13,
                             ),
-                        style: FontConstant.interNormal(
-                          color: ColorConstant.whiteColor,
-                          fontSize: DimensionConstant.d13,
+                            decoration:
+                                const InputDecoration(border: InputBorder.none, isDense: true),
+                          ),
                         ),
-                        decoration:
-                            const InputDecoration(border: InputBorder.none, isDense: true),
-                      ),
+                ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Center(
-              child: _rowDateCell(
-                row.dueDate != null ? _formatDate(row.dueDate!) : null,
-                onTap: () => _pickRowDate(context: context, row: row, isDueDate: true),
+            Expanded(
+              flex: 2,
+              child: Center(
+                child: _lockable(
+                  locked,
+                  _rowDateCell(
+                    row.dueDate != null ? _formatDate(row.dueDate!) : null,
+                    onTap: () => _pickRowDate(context: context, row: row, isDueDate: true),
+                  ),
+                ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Center(
-              child: _rowDateCell(
-                row.receivedDate != null ? _formatDate(row.receivedDate!) : null,
-                placeholder: StringConstant.qnaChatNotReceivedYet,
-                onTap: () => _pickRowDate(context: context, row: row, isDueDate: false),
-                showLateIndicator: isLate,
+            Expanded(
+              flex: 2,
+              child: Center(
+                child: _lockable(
+                  locked,
+                  _rowDateCell(
+                    row.receivedDate != null ? _formatDate(row.receivedDate!) : null,
+                    placeholder: StringConstant.qnaChatNotReceivedYet,
+                    onTap: () => _pickRowDate(context: context, row: row, isDueDate: false),
+                    showLateIndicator: isLate,
+                  ),
+                ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Center(child: _modeDropdown(context, row)),
-          ),
-          Expanded(
-            flex: 1,
-            child: Center(
-              child: Text(
-                status,
-                style: FontConstant.interMedium(color: statusColor, fontSize: DimensionConstant.d13),
+            Expanded(
+              flex: 1,
+              child: Center(child: _lockable(locked, _modeDropdown(context, row))),
+            ),
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: Text(
+                  status,
+                  style: FontConstant.interMedium(color: statusColor, fontSize: DimensionConstant.d13),
+                ),
               ),
             ),
+            Expanded(
+              flex: 2,
+              child: Center(
+                child: _lockable(locked, _paymentProofCell(context, row, isLate: isLate)),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Center(child: _actionsCell(context, row, isSaving: isSaving)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Wraps an editable cell so it stops responding to input once the row is
+  /// verified (the surrounding [Opacity] already dims it).
+  Widget _lockable(bool locked, Widget child) =>
+      locked ? IgnorePointer(child: child) : child;
+
+  /// Per-installment Actions cell:
+  ///  - VERIFIED → green "Verified" (row is locked).
+  ///  - PENDING  → "Pending" tag + a "Log Payment" button to re-submit.
+  ///  - new/edited → "Log Payment" button, enabled once the row is complete.
+  Widget _actionsCell(
+    BuildContext context,
+    QnaChatInstallmentRow row, {
+    required bool isSaving,
+  }) {
+    if (row.isVerified) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.check_circle,
+            color: ColorConstant.subTitleGreenColor,
+            size: DimensionConstant.d16,
           ),
-          Expanded(
-            flex: 2,
-            child: Center(child: _paymentProofCell(context, row, isLate: isLate)),
+          const SizedBox(width: DimensionConstant.d6),
+          Text(
+            StringConstant.qnaChatVerified,
+            style: FontConstant.interMedium(
+              color: ColorConstant.subTitleGreenColor,
+              fontSize: DimensionConstant.d13,
+            ),
           ),
         ],
-      ),
+      );
+    }
+
+    final canLog = row.isComplete && !isSaving;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (row.isPending) ...[
+          Text(
+            StringConstant.qnaChatPending,
+            style: FontConstant.interMedium(
+              color: ColorConstant.orangeColor,
+              fontSize: DimensionConstant.d12,
+            ),
+          ),
+          const SizedBox(height: DimensionConstant.d6),
+        ],
+        InkWell(
+          onTap: canLog
+              ? () => context
+                  .read<QnaChatBloc>()
+                  .add(QnaChatInstallmentLogPaymentRequested(row.id))
+              : null,
+          borderRadius: BorderRadius.circular(DimensionConstant.d4),
+          child: Opacity(
+            opacity: canLog ? 1 : 0.5,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: DimensionConstant.d15,
+                vertical: DimensionConstant.d8,
+              ),
+              decoration: BoxDecoration(
+                color: ColorConstant.cardBgColor,
+                borderRadius: BorderRadius.circular(DimensionConstant.d4),
+                border: Border.all(color: ColorConstant.borderColorWhite30),
+              ),
+              child: Text(
+                StringConstant.qnaChatLogPayment,
+                style: FontConstant.interMedium(
+                  color: ColorConstant.whiteColor,
+                  fontSize: DimensionConstant.d13,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

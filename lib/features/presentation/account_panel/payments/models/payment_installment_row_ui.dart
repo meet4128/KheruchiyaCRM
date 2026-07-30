@@ -7,16 +7,21 @@ import 'package:equatable/equatable.dart';
 class PaymentInstallmentRowUi extends Equatable {
   const PaymentInstallmentRowUi({
     required this.label,
+    required this.paymentId,
     required this.amount,
     required this.mode,
     required this.receivedOn,
     required this.dueOn,
     required this.status,
     required this.paymentProofUrl,
+    required this.verificationStatus,
   });
 
   /// e.g. `Installment 1`.
   final String label;
+
+  /// Backend installment id (`_id`), used to verify this single installment.
+  final String paymentId;
 
   /// Formatted amount for this installment — e.g. `₹ 7,500`.
   final String amount;
@@ -36,19 +41,29 @@ class PaymentInstallmentRowUi extends Equatable {
   /// Absolute URL to this installment's proof image, or empty when none.
   final String paymentProofUrl;
 
+  /// Verification state from the API: `PENDING` or `VERIFIED`.
+  final String verificationStatus;
+
   bool get hasProof => paymentProofUrl.isNotEmpty;
+
+  bool get isVerified => verificationStatus == 'VERIFIED';
 
   /// Received installments are the ones an accountant can actually verify.
   bool get isReceived => receivedOn != '—';
 
+  /// A row is verifiable when it has been received and isn't already verified.
+  bool get canVerify => isReceived && !isVerified && paymentId.isNotEmpty;
+
   @override
   List<Object?> get props => [
         label,
+        paymentId,
         amount,
         mode,
         receivedOn,
         dueOn,
         status,
         paymentProofUrl,
+        verificationStatus,
       ];
 }

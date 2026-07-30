@@ -53,6 +53,7 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
     on<QnaChatInstallmentRowModeChanged>(_onInstallmentRowModeChanged);
     on<QnaChatPaymentPlanLoadRequested>(_onPaymentPlanLoadRequested);
     on<QnaChatPaymentTermsSaveRequested>(_onPaymentTermsSaveRequested);
+    on<QnaChatInstallmentLogPaymentRequested>(_onInstallmentLogPaymentRequested);
     on<QnaChatInstallmentProofUploadRequested>(_onInstallmentProofUploadRequested);
   }
 
@@ -829,12 +830,14 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
       for (final dto in plan.installments)
         QnaChatInstallmentRow(
           id: _uuid.v4(),
+          paymentId: dto.id,
           amountText: dto.amount == null ? '' : _amountToText(dto.amount!),
           dueDate: dto.dueDate,
           receivedDate: dto.receivedDate,
           mode: dto.mode,
           status: dto.status,
           paymentProofUrl: dto.paymentProofUrl,
+          verificationStatus: dto.verificationStatus,
         ),
     ];
     emit(
@@ -860,6 +863,39 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
     QnaChatPaymentTermsSaveRequested event,
     Emitter<QnaChatState> emit,
   ) async {
+    await _savePaymentPlan(emit);
+  }
+
+  /// Logs one installment for verification. Guards that the specific row is
+  /// complete, then persists the whole plan (merge PUT) so that row lands as
+  /// PENDING server-side.
+  Future<void> _onInstallmentLogPaymentRequested(
+    QnaChatInstallmentLogPaymentRequested event,
+    Emitter<QnaChatState> emit,
+  ) async {
+    QnaChatInstallmentRow? target;
+    for (final row in state.installmentRows) {
+      if (row.id == event.rowId) {
+        target = row;
+        break;
+      }
+    }
+    if (target == null || target.isVerified) return;
+    if (!target.isComplete) {
+      emit(
+        state.copyWith(
+          paymentSaveStatus: QnaChatPaymentSaveStatus.failure,
+          paymentSaveError:
+              'Add amount, received date, mode and proof before logging this installment.',
+          paymentSaveResultToken: state.paymentSaveResultToken + 1,
+        ),
+      );
+      return;
+    }
+    await _savePaymentPlan(emit);
+  }
+
+  Future<void> _savePaymentPlan(Emitter<QnaChatState> emit) async {
     if (state.isPaymentSaving) return;
     // A verified plan is locked — accounts have signed off, so block any save
     // even if a stale button somehow dispatches this.
@@ -900,6 +936,7 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
       installments: [
         for (final row in state.installmentRows)
           PaymentPlanInstallmentDto(
+            id: row.paymentId,
             amount: num.tryParse(row.amountText.trim()),
             dueDate: row.dueDate,
             receivedDate: row.receivedDate,

@@ -52,12 +52,14 @@ List<PaymentInstallmentRowUi> _installmentRows(
     rows.add(
       PaymentInstallmentRowUi(
         label: 'Installment ${i + 1}',
+        paymentId: dto.id ?? '',
         amount: _formatAmount(dto.amount),
         mode: _orDash(dto.mode),
         receivedOn: _formatDateOrDash(dto.receivedDate),
         dueOn: _formatDateOrDash(dto.dueDate),
         status: _installmentStatus(dto),
         paymentProofUrl: _proofUrl(dto.paymentProofUrl),
+        verificationStatus: dto.verificationStatus ?? '',
       ),
     );
   }

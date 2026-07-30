@@ -289,7 +289,10 @@ class _InstallmentPanel extends StatelessWidget {
             for (final installment in row.installments)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: _InstallmentTile(installment: installment),
+                child: _InstallmentTile(
+                  installment: installment,
+                  inquiryId: row.inquiryId,
+                ),
               ),
         ],
       ),
@@ -298,9 +301,10 @@ class _InstallmentPanel extends StatelessWidget {
 }
 
 class _InstallmentTile extends StatelessWidget {
-  const _InstallmentTile({required this.installment});
+  const _InstallmentTile({required this.installment, required this.inquiryId});
 
   final PaymentInstallmentRowUi installment;
+  final String inquiryId;
 
   @override
   Widget build(BuildContext context) {
@@ -340,8 +344,77 @@ class _InstallmentTile extends StatelessWidget {
           _StatusChip(status: installment.status),
           if (installment.hasProof)
             _ProofLink(url: installment.paymentProofUrl),
+          _InstallmentVerifyAction(installment: installment, inquiryId: inquiryId),
         ],
       ),
+    );
+  }
+}
+
+/// Per-installment verify control shown at the end of each installment tile:
+///  - already VERIFIED → a green "Verified" pill.
+///  - received & not verified → a "Verify" button (spinner while in flight).
+///  - not yet received → nothing (no payment to verify).
+class _InstallmentVerifyAction extends StatelessWidget {
+  const _InstallmentVerifyAction({
+    required this.installment,
+    required this.inquiryId,
+  });
+
+  final PaymentInstallmentRowUi installment;
+  final String inquiryId;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppTheme.colors(context);
+    final textStyles = AppTheme.textStyles(context);
+
+    if (installment.isVerified) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.verified, color: colors.success, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            'Verified',
+            style: textStyles.bodySmall.copyWith(
+              color: colors.success,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (!installment.canVerify) return const SizedBox.shrink();
+
+    final verifying = context.select<UnverifiedPaymentsBloc, bool>(
+      (b) => b.state.isInstallmentVerifying(installment.paymentId),
+    );
+
+    if (verifying) {
+      return const SizedBox(
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+
+    return OutlinedButton.icon(
+      onPressed: () => context.read<UnverifiedPaymentsBloc>().add(
+            UnverifiedInstallmentVerifyRequested(
+              inquiryId: inquiryId,
+              installmentId: installment.paymentId,
+            ),
+          ),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: colors.secondary,
+        side: BorderSide(color: colors.secondary),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      icon: const Icon(Icons.check_circle_outline, size: 16),
+      label: const Text('Verify'),
     );
   }
 }

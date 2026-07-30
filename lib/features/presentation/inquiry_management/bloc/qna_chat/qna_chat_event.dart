@@ -222,6 +222,18 @@ final class QnaChatPaymentTermsSaveRequested extends QnaChatEvent {
   const QnaChatPaymentTermsSaveRequested();
 }
 
+/// Logs (submits for verification) a single installment [rowId]. Persists the
+/// whole plan via the merge PUT — the edited row becomes PENDING server-side.
+/// Only valid once that row is complete (amount + received date + mode + proof).
+final class QnaChatInstallmentLogPaymentRequested extends QnaChatEvent {
+  const QnaChatInstallmentLogPaymentRequested(this.rowId);
+
+  final String rowId;
+
+  @override
+  List<Object?> get props => [rowId];
+}
+
 /// Uploads a payment proof file for the installment [rowId].
 final class QnaChatInstallmentProofUploadRequested extends QnaChatEvent {
   const QnaChatInstallmentProofUploadRequested({

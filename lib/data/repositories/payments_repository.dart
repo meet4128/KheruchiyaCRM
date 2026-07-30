@@ -54,6 +54,26 @@ class PaymentsRepository {
     }
   }
 
+  /// Verifies (or un-verifies) a single installment via
+  /// `PATCH /payments/{inquiryId}/installments/{installmentId}/verify`.
+  /// The plan only flips to fully verified once every installment is verified.
+  Future<PaymentPlanResponse> verifyInstallment({
+    required String inquiryId,
+    required String installmentId,
+    bool verified = true,
+  }) async {
+    try {
+      return await _apiClient.verifyInstallment(
+        inquiryId,
+        installmentId,
+        VerifyPaymentRequest(verified: verified),
+      );
+    } on DioException catch (e) {
+      _handleDio(e, 'PaymentsRepository.verifyInstallment');
+      rethrow;
+    }
+  }
+
   void _handleDio(DioException e, String logName) {
     final status = e.response?.statusCode;
     final body = e.response?.data;

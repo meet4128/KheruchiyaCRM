@@ -503,6 +503,13 @@ abstract class InquiryApiClient {
     @Body() VerifyPaymentRequest body,
   );
 
+  @PATCH('/payments/{inquiryId}/installments/{installmentId}/verify')
+  Future<PaymentPlanResponse> verifyInstallment(
+    @Path('inquiryId') String inquiryId,
+    @Path('installmentId') String installmentId,
+    @Body() VerifyPaymentRequest body,
+  );
+
   @POST('/inquiries/{inquiryId}/payment-plan/uploads')
   @MultiPart()
   Future<PaymentProofUploadResponse> uploadPaymentProof(

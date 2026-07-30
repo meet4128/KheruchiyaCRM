@@ -499,6 +499,10 @@ class StringConstant {
   static const String qnaChatColumnMode = 'Mode';
   static const String qnaChatColumnStatus = 'Status';
   static const String qnaChatColumnPaymentProof = 'Payment Proof';
+  static const String qnaChatColumnActions = 'Actions';
+  static const String qnaChatLogPayment = 'Log Payment';
+  static const String qnaChatVerified = 'Verified';
+  static const String qnaChatPending = 'Pending';
   static const String qnaChatNotReceivedYet = 'Not Recieved Yet';
   static const String qnaChatOnTime = 'On-Time';
   static const String qnaChatLate = 'Late';

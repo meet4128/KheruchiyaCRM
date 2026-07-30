@@ -19,6 +19,7 @@ class UnverifiedPaymentsBloc
     on<UnverifiedPaymentsPageRequested>(_onPageRequested);
     on<UnverifiedPaymentsSearchChanged>(_onSearchChanged);
     on<UnverifiedPaymentExpansionToggled>(_onExpansionToggled);
+    on<UnverifiedInstallmentVerifyRequested>(_onInstallmentVerifyRequested);
   }
 
   final PaymentsRepository _repository;
@@ -61,9 +62,39 @@ class UnverifiedPaymentsBloc
     emit(state.copyWith(expandedIds: expanded));
   }
 
+  /// Verifies one installment, then refreshes the list (keeping the row
+  /// expanded) so its new state — and whether the plan left the queue — shows.
+  Future<void> _onInstallmentVerifyRequested(
+    UnverifiedInstallmentVerifyRequested event,
+    Emitter<UnverifiedPaymentsState> emit,
+  ) async {
+    final id = event.installmentId;
+    if (id.isEmpty || state.isInstallmentVerifying(id)) return;
+
+    emit(state.copyWith(
+      verifyingInstallmentIds: {...state.verifyingInstallmentIds, id},
+    ));
+
+    try {
+      await _repository.verifyInstallment(
+        inquiryId: event.inquiryId,
+        installmentId: id,
+        verified: true,
+      );
+      await _fetch(emit, page: state.page, preserveExpansion: true);
+    } catch (_) {
+      // Keep the list intact on a single-row failure; just drop the spinner.
+    } finally {
+      emit(state.copyWith(
+        verifyingInstallmentIds: {...state.verifyingInstallmentIds}..remove(id),
+      ));
+    }
+  }
+
   Future<void> _fetch(
     Emitter<UnverifiedPaymentsState> emit, {
     required int page,
+    bool preserveExpansion = false,
   }) async {
     emit(state.copyWith(
       status: UnverifiedPaymentsStatus.loading,
@@ -81,8 +112,9 @@ class UnverifiedPaymentsBloc
           totalPages: data.totalPages < 1 ? 1 : data.totalPages,
           totalItems: data.totalItems,
           clearError: true,
-          // Fresh page of rows — drop any stale expansion state.
-          expandedIds: const {},
+          // Fresh page of rows — drop stale expansion state unless a
+          // per-installment refresh asked to keep the row open.
+          expandedIds: preserveExpansion ? state.expandedIds : const {},
         ),
       );
     } catch (e) {
