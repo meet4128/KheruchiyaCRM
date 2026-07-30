@@ -490,9 +490,10 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
       Object? lastError;
 
       // Inbound customer replies are stored on the WhatsApp conversation feed,
-      // which is keyed only by phone. Scope the request to this inquiry and
-      // drop any item explicitly tagged to a different inquiry so a customer's
-      // earlier inquiry never leaks its conversation into a newer one.
+      // which is keyed only by phone. We send `inquiryId` so the server scopes
+      // the thread to this inquiry, and [_itemsForCurrentInquiry] strictly keeps
+      // only this inquiry's messages as a guard, so a customer's other inquiries
+      // on the same number never leak their conversation here.
       if (state.hasValidPeerPhone) {
         try {
           final response = await _repository.listWhatsappMessages(
@@ -1045,20 +1046,33 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
   String _amountToText(num amount) =>
       amount == amount.roundToDouble() ? amount.toInt().toString() : amount.toString();
 
-  /// Defensive per-inquiry isolation for the phone-keyed WhatsApp feed.
+  /// Per-inquiry isolation for the phone-keyed WhatsApp feed.
   ///
-  /// The backend scopes the request by `inquiryId`, but as a safety net we also
-  /// drop any item explicitly stamped with a *different* inquiry. Items with no
-  /// `inquiryId` (optimistic/legacy rows) are kept and rely on the server scope.
+  /// The backend now scopes the response by the `inquiryId` query param and
+  /// stamps every message with its `inquiryId`/`sessionId` (whatsapp_chat.md
+  /// §2.3 + §2.6 / backend_whatsapp_change.md). The server response is therefore
+  /// already limited to this inquiry; this client filter is a strict guard on
+  /// top of it so a shared phone number can never leak another inquiry's thread:
+  ///  - keep an item stamped with this inquiry's `inquiryId`;
+  ///  - drop an item stamped with a *different* inquiry;
+  ///  - for an untagged legacy/edge item (no `inquiryId`), keep it only when it
+  ///    carries this inquiry's active `sessionId` — a session maps to exactly
+  ///    one inquiry — otherwise drop it.
   List<SessionMessageItem> _itemsForCurrentInquiry(List<SessionMessageItem> items) {
     final inquiryId = state.inquiryId;
     if (inquiryId.isEmpty) return items;
-    return items
-        .where((item) =>
-            item.inquiryId == null ||
-            item.inquiryId!.isEmpty ||
-            item.inquiryId == inquiryId)
-        .toList();
+    final sessionId = state.sessionId;
+    return items.where((item) {
+      final itemInquiryId = item.inquiryId;
+      if (itemInquiryId != null && itemInquiryId.isNotEmpty) {
+        return itemInquiryId == inquiryId;
+      }
+      final itemSessionId = item.sessionId;
+      return sessionId != null &&
+          sessionId.isNotEmpty &&
+          itemSessionId != null &&
+          itemSessionId == sessionId;
+    }).toList();
   }
 
   void _logMessageFeed({
