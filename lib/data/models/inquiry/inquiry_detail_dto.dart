@@ -10,6 +10,7 @@ part 'inquiry_detail_dto.g.dart';
 class InquiryDetailDto {
   const InquiryDetailDto({
     this.id,
+    this.inquiryNumber,
     this.title,
     this.fullName,
     this.phoneNumber,
@@ -34,6 +35,10 @@ class InquiryDetailDto {
 
   @JsonKey(name: '_id')
   final String? id;
+
+  /// Backend-generated business number, e.g. `FT/2627/001`. Null on legacy
+  /// inquiries (callers fall back to an `_id`-derived number).
+  final String? inquiryNumber;
 
   final String? title;
   final String? fullName;

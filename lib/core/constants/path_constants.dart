@@ -12,6 +12,8 @@ import '../../features/presentation/admin_panel/bloc/admin_navigation_bloc.dart'
 import '../../features/presentation/dashboard/bloc/navigation_bloc.dart';
 import '../../features/presentation/dashboard/bloc/navigation_event.dart';
 import '../../features/presentation/admin_panel/view/admin_panel_shell.dart';
+import '../../features/presentation/account_panel/bloc/account_navigation_bloc.dart';
+import '../../features/presentation/account_panel/view/account_panel_shell.dart';
 import '../../features/presentation/dashboard/view/dashboard_shell.dart';
 
 /// Paths anyone (logged-out OR logged-in) is allowed to visit. Critically,
@@ -24,10 +26,18 @@ const Set<String> _kPublicAuthPaths = <String>{
   PathConstant.resetPassword,
 };
 
+/// Role-scoped shells that own their whole surface: a user with one of these
+/// landing paths is kept inside that panel and can't reach the dashboard
+/// routes (and vice-versa).
+const Set<String> _kRoleScopedPanels = <String>{
+  PathConstant.adminPanel,
+  PathConstant.accountPanel,
+};
+
 FutureOr<String?> globalRedirect(BuildContext context, GoRouterState state) async {
   final path = state.uri.path.isEmpty ? PathConstant.dashboard : state.uri.path;
   final hasToken = _sessionHasAccessToken();
-  final isAdmin = _sessionIsAdmin();
+  final landing = landingPathForRole(_sessionRole());
 
   // Public surface: never redirect away from these. (Logged-in users may still
   // click an invite link in their own browser — let them through. The page
@@ -36,7 +46,7 @@ FutureOr<String?> globalRedirect(BuildContext context, GoRouterState state) asyn
     // One exception: a logged-in user hitting /login directly gets bounced to
     // their landing path so they don't see the login form for no reason.
     if (path == PathConstant.login && hasToken) {
-      return isAdmin ? PathConstant.adminPanel : PathConstant.dashboard;
+      return landing;
     }
     return null;
   }
@@ -45,11 +55,13 @@ FutureOr<String?> globalRedirect(BuildContext context, GoRouterState state) asyn
     return PathConstant.login;
   }
 
-  if (hasToken && isAdmin && path != PathConstant.adminPanel) {
-    return PathConstant.adminPanel;
+  // Roles that live in a dedicated panel (admin/account) are pinned to it.
+  if (_kRoleScopedPanels.contains(landing)) {
+    return path == landing ? null : landing;
   }
 
-  if (hasToken && !isAdmin && path == PathConstant.adminPanel) {
+  // Dashboard roles must never reach a role-scoped panel.
+  if (_kRoleScopedPanels.contains(path)) {
     return PathConstant.dashboard;
   }
 
@@ -62,26 +74,29 @@ bool _sessionHasAccessToken() {
   return token.toString().trim().isNotEmpty;
 }
 
-bool _sessionIsAdmin() {
+/// Raw persisted role string (lowercase wire value). Empty when unknown.
+String _sessionRole() {
   final role = SharedPrefUtils.getValue(SharedPrefUtilsKeys.userRole, '');
-  return role.toString().trim().toLowerCase() == 'admin';
+  return role.toString().trim().toLowerCase();
 }
 
 /// Decides where a freshly-authenticated user should land based on the role
 /// returned by `POST /auth/login` → `response.data.user.role`.
 ///
 /// Contract (confirmed with backend):
-///   - `admin`  → [PathConstant.adminPanel]
-///   - `sales` / `purchase` / `account` / `user` → [PathConstant.dashboard]
+///   - `admin`   → [PathConstant.adminPanel]
+///   - `account` → [PathConstant.accountPanel]
+///   - `sales` / `purchase` / `user` → [PathConstant.dashboard]
 ///   - anything else → [PathConstant.dashboard] (defensive — never brick the
 ///     app if the backend introduces a new role).
 String landingPathForRole(String? role) {
   switch ((role ?? '').trim().toLowerCase()) {
     case 'admin':
       return PathConstant.adminPanel;
+    case 'account':
+      return PathConstant.accountPanel;
     case 'sales':
     case 'purchase':
-    case 'account':
     case 'user':
       return PathConstant.dashboard;
     default:
@@ -333,6 +348,16 @@ GoRouter createRouter(NavigationBloc navBloc) {
         ),
       ),
       GoRoute(
+        path: PathConstant.accountPanel,
+        name: 'accountPanel',
+        pageBuilder: (context, state) => NoTransitionPage(
+          child: BlocProvider(
+            create: (_) => AccountNavigationBloc(),
+            child: const AccountPanelShell(),
+          ),
+        ),
+      ),
+      GoRoute(
         path: PathConstant.login,
         name: 'login',
         pageBuilder: (context, state) => NoTransitionPage(
@@ -463,6 +488,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
 class PathConstant {
   static const String dashboard = '/';
   static const String adminPanel = '/admin';
+  static const String accountPanel = '/account';
   static const String login = '/login';
   static const String forgotPassword = '/forgot-password';
   static const String setPassword = '/set-password';

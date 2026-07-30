@@ -1,8 +1,9 @@
 /// Typed view over the backend's `user.role` string returned by `/auth/login`
 /// (and `/auth/me`, `/refresh-token`). The persisted value in
 /// `SharedPrefUtilsKeys.userRole` is intentionally still a lowercase string
-/// so the existing `globalRedirect` `_sessionIsAdmin()` comparison keeps
-/// working; new call sites should funnel through [UserRoleX.fromString].
+/// so the existing `globalRedirect` role comparison (`_sessionRole()` →
+/// `landingPathForRole`) keeps working; new call sites should funnel through
+/// [UserRoleX.fromString].
 enum UserRole {
   admin,
   sales,

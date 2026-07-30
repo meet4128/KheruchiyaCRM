@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/theme/app_theme.dart';
 import 'package:travel_crm/core/widgets/airport_picker/airport_picker.dart';
+import 'package:travel_crm/core/widgets/date_range_picker/app_date_range_picker.dart';
 import '../models/booking_type.dart';
 import '../models/traveller_breakdown.dart';
 import '../bloc/traveller_class_picker_cubit.dart';
@@ -82,66 +83,34 @@ class FlightDetailsSection extends StatelessWidget {
     );
   }
 
-  static Future<void> _showDatePicker(
+  /// Opens the custom dark-themed range calendar. First tap picks the start
+  /// (departure), the second the end (return / window end) and closes; tapping
+  /// a day before the current start restarts the selection. On completion,
+  /// [onStartSelected] and [onEndSelected] are called with the chosen days.
+  static Future<void> _showDateRangePicker(
     BuildContext context, {
-    required DateTime initialDate,
+    required DateTime? initialStart,
+    required DateTime? initialEnd,
     required DateTime firstDate,
-    ValueChanged<DateTime>? onSelected,
-    ValueChanged<DateTime?>? onSelectedNullable,
+    required ValueChanged<DateTime> onStartSelected,
+    required ValueChanged<DateTime?> onEndSelected,
   }) async {
-    final colors = AppTheme.colors(context);
-    // Custom dialog with CalendarDatePicker so tapping a day selects it
-    // immediately (no OK/Cancel confirmation step).
-    final picked = await showDialog<DateTime>(
-      context: context,
-      builder: (dialogContext) {
-        return Theme(
-          data: Theme.of(dialogContext).copyWith(
-            colorScheme: ColorScheme.dark(
-              primary: colors.secondary,
-              onPrimary: colors.textOnPrimary,
-              surface: colors.surface,
-              onSurface: colors.textPrimary,
-            ),
-            dialogBackgroundColor: colors.backgroundMedium,
-          ),
-          child: Dialog(
-            backgroundColor: colors.backgroundMedium,
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 40,
-              vertical: 24,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 360),
-              child: SizedBox(
-                width: 360,
-                height: 400,
-                child: CalendarDatePicker(
-                  initialDate: initialDate,
-                  firstDate: firstDate,
-                  lastDate: DateTime(firstDate.year + 2, 12, 31),
-                  onDateChanged: (date) => Navigator.pop(dialogContext, date),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
+    final result = await showAppDateRangePicker(
+      context,
+      initialStart: initialStart,
+      initialEnd: initialEnd,
+      firstDate: firstDate,
     );
-    if (picked != null) {
-      onSelected?.call(picked);
-      onSelectedNullable?.call(picked);
-    } else {
-      onSelectedNullable?.call(null);
+    if (result != null) {
+      onStartSelected(result.start);
+      onEndSelected(result.end);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = AppTheme.colors(context);
+    final isRoundTrip = bookingType == AirTicketBookingType.roundTrip;
 
     final travellerClassDisplay = TravellerBreakdown(
       adultCount: adultCount,
@@ -186,23 +155,32 @@ class FlightDetailsSection extends StatelessWidget {
                 showBorder: true,
                 onSelectAirport: onToChanged,
               ),
-              // Departure
+              // Departure — tapping opens a date-range picker (1st tap = start,
+              // 2nd = end). For Round Trip the end fills the separate Return
+              // field; for One-Way / Multi-city this field shows the whole
+              // flexible window (start – end).
               _DateField(
                 label: StringConstant.departure,
                 isRequired: true,
                 value: departureDate,
+                endValue: isRoundTrip ? null : returnDate,
                 errorText: departureDateError,
                 dateFormat: _formatDate,
-                hint: StringConstant.selectDepartureDate,
-                onTap: () => _showDatePicker(
+                hint: isRoundTrip
+                    ? StringConstant.selectDepartureDate
+                    : StringConstant.selectTravelWindow,
+                onTap: () => _showDateRangePicker(
                   context,
-                  initialDate: departureDate ?? DateTime.now(),
+                  initialStart: departureDate,
+                  initialEnd: returnDate,
                   firstDate: DateTime.now(),
-                  onSelected: onDepartureDateChanged,
+                  onStartSelected: onDepartureDateChanged,
+                  onEndSelected: (d) => onReturnDateChanged?.call(d),
                 ),
               ),
-              // Return — only for Round Trip (mandatory; same date selection as Departure)
-              if (bookingType == AirTicketBookingType.roundTrip)
+              // Return — only for Round Trip; opens the same range picker so
+              // departure + return are chosen together.
+              if (isRoundTrip)
                 _DateField(
                   label: StringConstant.returnLabel,
                   isRequired: true,
@@ -210,11 +188,13 @@ class FlightDetailsSection extends StatelessWidget {
                   errorText: returnDateError,
                   dateFormat: _formatDate,
                   hint: StringConstant.selectReturnDate,
-                  onTap: () => _showDatePicker(
+                  onTap: () => _showDateRangePicker(
                     context,
-                    initialDate: returnDate ?? departureDate ?? DateTime.now(),
-                    firstDate: departureDate ?? DateTime.now(),
-                    onSelectedNullable: onReturnDateChanged,
+                    initialStart: departureDate,
+                    initialEnd: returnDate,
+                    firstDate: DateTime.now(),
+                    onStartSelected: onDepartureDateChanged,
+                    onEndSelected: (d) => onReturnDateChanged?.call(d),
                   ),
                 ),
               // Traveller & Class (first segment only per design)
@@ -578,12 +558,18 @@ class _DateField extends StatelessWidget {
     required this.dateFormat,
     required this.hint,
     required this.onTap,
+    this.endValue,
     this.isRequired = false,
     this.errorText,
   });
 
   final String label;
   final DateTime? value;
+
+  /// When set (and later than [value]), the field renders a range
+  /// "07 Aug – 09 Aug" instead of a single date. Used for the One-Way /
+  /// Multi-city flexible travel window.
+  final DateTime? endValue;
   final String Function(DateTime) dateFormat;
   final String hint;
   final VoidCallback onTap;
@@ -594,7 +580,13 @@ class _DateField extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppTheme.colors(context);
     final textStyles = AppTheme.textStyles(context);
-    final displayText = value != null ? dateFormat(value!) : (hint.isNotEmpty ? hint : '');
+    final hasRange =
+        value != null && endValue != null && endValue!.isAfter(value!);
+    final displayText = value == null
+        ? (hint.isNotEmpty ? hint : '')
+        : hasRange
+            ? '${formatAppDateCompact(value!)} – ${formatAppDateCompact(endValue!)}'
+            : dateFormat(value!);
 
     final content = SizedBox(
       width: 160,

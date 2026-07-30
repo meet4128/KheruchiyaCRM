@@ -14,6 +14,7 @@ import 'package:travel_crm/features/presentation/inquiry_management/models/qna_c
 import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_message.dart';
 import 'package:travel_crm/features/presentation/inquiry_management/models/qna_chat_pending_attachment.dart';
 import 'package:travel_crm/data/models/amendment/send_whatsapp_message_request.dart';
+import 'package:travel_crm/data/models/amendment/session_message_item.dart';
 import 'package:travel_crm/data/models/amendment/whatsapp_template_payload.dart';
 import 'package:travel_crm/data/models/inquiry/payment_plan_dto.dart';
 import 'package:travel_crm/data/models/inquiry/payment_plan_installment_dto.dart';
@@ -487,18 +488,23 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
       final serverLists = <List<QnaChatMessage>>[];
       Object? lastError;
 
-      // Inbound customer replies are stored on the WhatsApp conversation feed.
+      // Inbound customer replies are stored on the WhatsApp conversation feed,
+      // which is keyed only by phone. Scope the request to this inquiry and
+      // drop any item explicitly tagged to a different inquiry so a customer's
+      // earlier inquiry never leaks its conversation into a newer one.
       if (state.hasValidPeerPhone) {
         try {
           final response = await _repository.listWhatsappMessages(
             peerPhone: state.peerPhone,
+            inquiryId: state.inquiryId,
           );
-          final mapped = qnaMessagesFromSessionItems(response.data.items);
+          final scopedItems = _itemsForCurrentInquiry(response.data.items);
+          final mapped = qnaMessagesFromSessionItems(scopedItems);
           serverLists.add(mapped);
           _logMessageFeed(
             source: 'whatsapp',
             peerPhone: state.peerPhone,
-            rawCount: response.data.items.length,
+            rawCount: scopedItems.length,
             mapped: mapped,
           );
         } catch (e) {
@@ -836,6 +842,7 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
         paymentStatus: isInstallment
             ? StringConstant.qnaChatPaymentStatusInstallment
             : StringConstant.qnaChatPaymentStatusOneTime,
+        isPaymentVerified: plan.verified ?? false,
         bookingType: plan.bookingType ?? state.bookingType,
         travelDate: travel == null
             ? null
@@ -854,6 +861,18 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
     Emitter<QnaChatState> emit,
   ) async {
     if (state.isPaymentSaving) return;
+    // A verified plan is locked — accounts have signed off, so block any save
+    // even if a stale button somehow dispatches this.
+    if (state.isPaymentVerified) {
+      emit(
+        state.copyWith(
+          paymentSaveStatus: QnaChatPaymentSaveStatus.failure,
+          paymentSaveError: 'This payment is verified and can no longer be updated.',
+          paymentSaveResultToken: state.paymentSaveResultToken + 1,
+        ),
+      );
+      return;
+    }
     if (state.inquiryId.isEmpty) {
       emit(
         state.copyWith(
@@ -988,6 +1007,22 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
 
   String _amountToText(num amount) =>
       amount == amount.roundToDouble() ? amount.toInt().toString() : amount.toString();
+
+  /// Defensive per-inquiry isolation for the phone-keyed WhatsApp feed.
+  ///
+  /// The backend scopes the request by `inquiryId`, but as a safety net we also
+  /// drop any item explicitly stamped with a *different* inquiry. Items with no
+  /// `inquiryId` (optimistic/legacy rows) are kept and rely on the server scope.
+  List<SessionMessageItem> _itemsForCurrentInquiry(List<SessionMessageItem> items) {
+    final inquiryId = state.inquiryId;
+    if (inquiryId.isEmpty) return items;
+    return items
+        .where((item) =>
+            item.inquiryId == null ||
+            item.inquiryId!.isEmpty ||
+            item.inquiryId == inquiryId)
+        .toList();
+  }
 
   void _logMessageFeed({
     required String source,

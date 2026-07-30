@@ -44,6 +44,7 @@ class QnaChatState extends Equatable {
     this.paymentSaveStatus = QnaChatPaymentSaveStatus.idle,
     this.paymentSaveError,
     this.paymentSaveResultToken = 0,
+    this.isPaymentVerified = false,
   });
 
   final String inquiryId;
@@ -85,6 +86,10 @@ class QnaChatState extends Equatable {
   /// Bumped each time a save attempt resolves (success or failure) so the UI
   /// can surface a one-shot snackbar without re-triggering on rebuilds.
   final int paymentSaveResultToken;
+
+  /// True once accounts have verified this inquiry's payment plan. When set,
+  /// the Q&A payment terms are locked — no editing and the Save action hides.
+  final bool isPaymentVerified;
 
   bool get isPaymentSaving => paymentSaveStatus == QnaChatPaymentSaveStatus.saving;
 
@@ -155,6 +160,7 @@ class QnaChatState extends Equatable {
     String? paymentSaveError,
     bool clearPaymentSaveError = false,
     int? paymentSaveResultToken,
+    bool? isPaymentVerified,
   }) {
     return QnaChatState(
       inquiryId: inquiryId ?? this.inquiryId,
@@ -192,6 +198,7 @@ class QnaChatState extends Equatable {
       paymentSaveError:
           clearPaymentSaveError ? null : (paymentSaveError ?? this.paymentSaveError),
       paymentSaveResultToken: paymentSaveResultToken ?? this.paymentSaveResultToken,
+      isPaymentVerified: isPaymentVerified ?? this.isPaymentVerified,
     );
   }
 
@@ -226,5 +233,6 @@ class QnaChatState extends Equatable {
         paymentSaveStatus,
         paymentSaveError,
         paymentSaveResultToken,
+        isPaymentVerified,
       ];
 }

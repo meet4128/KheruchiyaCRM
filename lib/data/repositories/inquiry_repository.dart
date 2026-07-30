@@ -167,14 +167,23 @@ class InquiryRepository {
 
   Future<SessionMessagesResponse> listWhatsappMessages({
     required String peerPhone,
+    String? inquiryId,
     int page = 1,
     int limit = 50,
     String sort = 'createdAt',
   }) async {
     try {
+      // The WhatsApp feed is keyed by phone, so a customer with multiple
+      // inquiries would otherwise share one inbound thread. When known, scope
+      // the request to a single inquiry so only that inquiry's replies return.
       return await apiClient.listWhatsappMessages(
         peerPhone,
-        {'page': page, 'limit': limit, 'sort': sort},
+        {
+          'page': page,
+          'limit': limit,
+          'sort': sort,
+          if (inquiryId != null && inquiryId.isNotEmpty) 'inquiryId': inquiryId,
+        },
       );
     } on DioException catch (e) {
       throw _mapDioException(e, logTag: 'ListWhatsappMessages');

@@ -6,6 +6,7 @@ import 'package:travel_crm/core/network/inquiry_api_client.dart';
 import 'package:travel_crm/data/models/inquiry/list_inquiry_item.dart';
 import 'package:travel_crm/data/models/inquiry/phone_number_dto.dart';
 import 'package:travel_crm/data/repositories/inquiry_repository.dart';
+import 'package:travel_crm/features/presentation/inquiry_management/models/vendor_inquiry_row.dart';
 
 part 'inquiry_management_event.dart';
 
@@ -216,7 +217,8 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
     return allItems.where((e) {
       if (e is! ListInquiryItem) return true;
       final id = e.id ?? '';
-      final inquiryNo = id.length > 8 ? id.substring(id.length - 8) : id;
+      final inquiryNo =
+          VendorInquiryRow.displayInquiryNo(e.inquiryNumber, id).toLowerCase();
       return (e.fullName?.toLowerCase().contains(term) ?? false) ||
           (e.title?.toLowerCase().contains(term) ?? false) ||
           (e.status?.toLowerCase().contains(term) ?? false) ||
@@ -224,7 +226,7 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
           (e.user?.toLowerCase().contains(term) ?? false) ||
           (e.assignedTo?.displayName.toLowerCase().contains(term) ?? false) ||
           id.toLowerCase().contains(term) ||
-          inquiryNo.toLowerCase().contains(term) ||
+          inquiryNo.contains(term) ||
           _matchesPhone(e.phoneNumber, termDigits);
     }).toList();
   }

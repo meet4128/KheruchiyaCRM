@@ -29,6 +29,8 @@ import 'package:travel_crm/data/models/members/get_member_response.dart';
 import 'package:travel_crm/data/models/members/resend_invite_response.dart';
 import 'package:travel_crm/data/models/members/update_member_request.dart';
 import 'package:travel_crm/data/models/members/update_member_response.dart';
+import 'package:travel_crm/data/models/payments/unverified_payments_response.dart';
+import 'package:travel_crm/data/models/payments/verify_payment_request.dart';
 import 'package:travel_crm/data/models/purchase_chat/open_purchase_chat_request.dart';
 import 'package:travel_crm/data/models/purchase_chat/open_purchase_chat_response.dart';
 import 'package:travel_crm/data/models/purchase_chat/purchase_chat_inbox_response.dart';
@@ -240,6 +242,33 @@ class AmendmentSearchQuery {
   }
 }
 
+/// Query params for `GET /payments/unverified` (Accounting → Unverified list).
+///
+/// Sales-submitted payment plans with `verified: false`. Supports paging and
+/// [sort] (default newest-submitted first). Search is handled client-side over
+/// the loaded rows, so there is no `search` param here.
+class UnverifiedPaymentsQuery {
+  const UnverifiedPaymentsQuery({
+    this.page = 1,
+    this.limit = 15,
+    this.sort = '-submittedAt',
+  });
+
+  final int page;
+  final int limit;
+  final String? sort;
+
+  Map<String, dynamic> toQuery() {
+    final queries = <String, dynamic>{
+      'page': page,
+      'limit': limit,
+      'sort': sort,
+    };
+    queries.removeWhere((key, value) => value == null);
+    return queries;
+  }
+}
+
 /// Query params for `GET /calendar/events` (Calendar screen). Matches the live
 /// spec: `from`/`to` (date-time, required), optional `agent` and `status`.
 class CalendarEventsQuery {
@@ -339,6 +368,13 @@ abstract class InquiryApiClient {
 
   @GET('/inquiries/{id}')
   Future<InquiryDetailResponse> getInquiryDetail(@Path('id') String id);
+
+  /// Sales-submitted payment plans awaiting account verification
+  /// (`verified: false`). Account/admin only.
+  @GET('/payments/unverified')
+  Future<UnverifiedPaymentsResponse> listUnverifiedPayments(
+    @Queries() Map<String, dynamic> queries,
+  );
 
   @GET('/amendments/search')
   Future<AmendmentSearchResponse> searchAmendments(
@@ -459,6 +495,12 @@ abstract class InquiryApiClient {
   Future<PaymentPlanResponse> updatePaymentPlan(
     @Path('inquiryId') String inquiryId,
     @Body() UpdatePaymentPlanRequest body,
+  );
+
+  @PATCH('/payments/{inquiryId}/verify')
+  Future<PaymentPlanResponse> verifyPayment(
+    @Path('inquiryId') String inquiryId,
+    @Body() VerifyPaymentRequest body,
   );
 
   @POST('/inquiries/{inquiryId}/payment-plan/uploads')

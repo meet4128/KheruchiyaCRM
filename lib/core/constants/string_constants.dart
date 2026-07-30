@@ -241,6 +241,8 @@ class StringConstant {
   // ========== Air Ticket Form Hints ==========
   static const String selectDepartureDate = 'Select departure date';
   static const String selectReturnDate = 'Select return date';
+  static const String selectTravelDates = 'Select travel dates';
+  static const String selectTravelWindow = 'Select travel window';
   static const String enterFromLocation = 'Enter from location';
   static const String enterToLocation = 'Enter to location';
   static const String enterRemark = 'Enter remark';
@@ -507,6 +509,8 @@ class StringConstant {
   static const String qnaChatInstallmentPlural = 'Installments';
   static const String qnaChatRemainingAmount = 'Remaining amount';
   static const String qnaChatSave = 'Save';
+  static const String qnaChatPaymentVerifiedLocked =
+      'Payment verified by accounts — these details are locked and can no longer be updated.';
   static const String qnaChatPaymentSaveSuccess = 'Payment terms saved.';
   static const String qnaChatPaymentSaveFailure = 'Could not save payment terms.';
   static const String qnaChatProofUploaded = 'Uploaded';

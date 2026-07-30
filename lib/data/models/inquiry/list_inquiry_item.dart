@@ -10,6 +10,7 @@ part 'list_inquiry_item.g.dart';
 class ListInquiryItem {
   const ListInquiryItem({
     this.id,
+    this.inquiryNumber,
     this.title,
     this.fullName,
     this.typeOfBooking,
@@ -29,6 +30,11 @@ class ListInquiryItem {
 
   @JsonKey(name: '_id')
   final String? id;
+
+  /// Backend-generated business number, e.g. `FT/2627/001` (`HT/...` for hotel).
+  /// Null on inquiries created before this field existed — callers fall back to
+  /// an `_id`-derived number.
+  final String? inquiryNumber;
 
   final String? title;
   final String? fullName;

@@ -778,26 +778,27 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
 
   /// Builds `airTicket.flightSegments` for the inquiries API.
   ///
-  /// - **One way:** one segment (from → to).
+  /// - **One way:** one segment (from → to) with a flexible travel window
+  ///   (`departureDate` = window start, `departureDateEnd` = window end).
   /// - **Round trip:** two segments — outbound, then return (to → from) using
-  ///   [AirTicketState.returnDate] as the second leg's `departureDate`.
-  /// - **Multi city:** outbound segment plus each extra city row.
+  ///   [AirTicketState.returnDate] as the second leg's `departureDate`. No
+  ///   `departureDateEnd` (departure and return are fixed days).
+  /// - **Multi city:** outbound segment plus each extra city row, each carrying
+  ///   its own flexible travel window.
   List<FlightSegmentRequest> _buildFlightSegmentsPayload(AirTicketState state) {
     final travelClass = state.classType.isNotEmpty ? state.classType : 'Economy';
     final count = state.travellerCount;
 
-    final outbound = _flightSegmentRequest(
-      fromRaw: state.from,
-      toRaw: state.to,
-      departure: state.departureDate,
-      travellerCount: count,
-      travelClass: travelClass,
-    );
-
     switch (state.bookingType) {
       case AirTicketBookingType.roundTrip:
         return [
-          outbound,
+          _flightSegmentRequest(
+            fromRaw: state.from,
+            toRaw: state.to,
+            departure: state.departureDate,
+            travellerCount: count,
+            travelClass: travelClass,
+          ),
           _flightSegmentRequest(
             fromRaw: state.to,
             toRaw: state.from,
@@ -807,13 +808,23 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
           ),
         ];
       case AirTicketBookingType.multiCity:
-        final segments = <FlightSegmentRequest>[outbound];
+        final segments = <FlightSegmentRequest>[
+          _flightSegmentRequest(
+            fromRaw: state.from,
+            toRaw: state.to,
+            departure: state.departureDate,
+            departureEnd: state.returnDate,
+            travellerCount: count,
+            travelClass: travelClass,
+          ),
+        ];
         for (final seg in state.flightSegments) {
           segments.add(
             _flightSegmentRequest(
               fromRaw: seg.from,
               toRaw: seg.to,
               departure: seg.departureDate,
+              departureEnd: seg.returnDate,
               travellerCount: count,
               travelClass: travelClass,
             ),
@@ -822,7 +833,16 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
         return segments;
       case AirTicketBookingType.oneWay:
       case null:
-        return [outbound];
+        return [
+          _flightSegmentRequest(
+            fromRaw: state.from,
+            toRaw: state.to,
+            departure: state.departureDate,
+            departureEnd: state.returnDate,
+            travellerCount: count,
+            travelClass: travelClass,
+          ),
+        ];
     }
   }
 
@@ -830,15 +850,22 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     required String fromRaw,
     required String toRaw,
     required DateTime? departure,
+    DateTime? departureEnd,
     required int travellerCount,
     required String travelClass,
   }) {
     final from = _parseAirport(fromRaw);
     final to = _parseAirport(toRaw);
+    // Only send a window end when it's a real, later day than the start; a
+    // same-day pick means "no flexibility", so we omit it.
+    final hasWindowEnd = departure != null &&
+        departureEnd != null &&
+        departureEnd.isAfter(departure);
     return FlightSegmentRequest(
       from: AirportCodeModel(code: from.code, city: from.city),
       to: AirportCodeModel(code: to.code, city: to.city),
       departureDate: _toIso8601(departure),
+      departureDateEnd: hasWindowEnd ? _toIso8601(departureEnd) : null,
       travellerCount: travellerCount,
       travelClass: travelClass,
     );

@@ -37,14 +37,20 @@ class QnaChatPaymentStatusSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<QnaChatBloc, QnaChatState>(
-      buildWhen: (previous, current) => previous.paymentStatus != current.paymentStatus,
+      buildWhen: (previous, current) =>
+          previous.paymentStatus != current.paymentStatus ||
+          previous.isPaymentVerified != current.isPaymentVerified,
       builder: (context, state) {
+        final locked = state.isPaymentVerified;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                _PaymentStatusDropdown(selected: state.paymentStatus),
+                _PaymentStatusDropdown(
+                  selected: state.paymentStatus,
+                  locked: locked,
+                ),
                 const Spacer(),
                 QnaChatQuickActions(
                   onAddNotes: onAddNotes,
@@ -59,6 +65,7 @@ class QnaChatPaymentStatusSection extends StatelessWidget {
                 customerName: customerName,
                 inquiryId: inquiryId,
                 bookingType: bookingType,
+                locked: locked,
               ),
             ],
           ],
@@ -69,14 +76,18 @@ class QnaChatPaymentStatusSection extends StatelessWidget {
 }
 
 class _PaymentStatusDropdown extends StatelessWidget {
-  const _PaymentStatusDropdown({required this.selected});
+  const _PaymentStatusDropdown({required this.selected, this.locked = false});
 
   final String? selected;
+
+  /// When true the payment plan is verified — the selector is view-only.
+  final bool locked;
 
   @override
   Widget build(BuildContext context) {
     final hasSelection = selected != null;
     return PopupMenuButton<String>(
+      enabled: !locked,
       tooltip: StringConstant.qnaChatPaymentStatus,
       color: ColorConstant.cardBgColor,
       onSelected: (value) =>
@@ -146,11 +157,15 @@ class _PaymentTermsForm extends StatefulWidget {
     required this.customerName,
     required this.inquiryId,
     this.bookingType,
+    this.locked = false,
   });
 
   final String customerName;
   final String inquiryId;
   final String? bookingType;
+
+  /// When true the plan is verified — inputs are locked and Save is hidden.
+  final bool locked;
 
   @override
   State<_PaymentTermsForm> createState() => _PaymentTermsFormState();
@@ -358,7 +373,10 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
           previous.paymentStatus != current.paymentStatus ||
           previous.paymentSaveStatus != current.paymentSaveStatus,
       builder: (context, state) {
-        return Container(
+        return IgnorePointer(
+          // A verified plan is read-only — block every field interaction.
+          ignoring: widget.locked,
+          child: Container(
           padding: const EdgeInsets.all(DimensionConstant.d15),
           decoration: BoxDecoration(
             color: ColorConstant.cardBgColor,
@@ -463,13 +481,16 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
               const SizedBox(height: DimensionConstant.d20),
               _installmentTable(context, state.installmentRows),
               const SizedBox(height: DimensionConstant.d20),
-              Align(
-                alignment: Alignment.centerRight,
-                child: _saveButton(context, isSaving: state.isPaymentSaving),
-              ),
+              if (widget.locked)
+                _lockedNotice()
+              else
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: _saveButton(context, isSaving: state.isPaymentSaving),
+                ),
             ],
           ),
-        );
+        ));
       },
     );
   }
@@ -512,6 +533,43 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
                   ),
                 ),
         ),
+      ),
+    );
+  }
+
+  /// Shown in place of the Save button once the plan is verified.
+  Widget _lockedNotice() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: DimensionConstant.d15,
+        vertical: DimensionConstant.d12,
+      ),
+      decoration: BoxDecoration(
+        color: ColorConstant.blackColor,
+        borderRadius: BorderRadius.circular(DimensionConstant.d4),
+        border: Border.all(
+          color: ColorConstant.subTitleGreenColor.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.verified_outlined,
+            color: ColorConstant.subTitleGreenColor,
+            size: DimensionConstant.d16,
+          ),
+          const SizedBox(width: DimensionConstant.d10),
+          Expanded(
+            child: Text(
+              StringConstant.qnaChatPaymentVerifiedLocked,
+              style: FontConstant.interMedium(
+                color: ColorConstant.whiteColor,
+                fontSize: DimensionConstant.d12,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

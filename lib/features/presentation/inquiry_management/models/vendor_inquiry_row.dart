@@ -72,10 +72,8 @@ class VendorInquiryRow {
   bool get isSlaRunning => slaDeadline != null && status == 'New In';
 
   factory VendorInquiryRow.fromListInquiryItem(ListInquiryItem e) {
+    final inquiryNo = displayInquiryNo(e.inquiryNumber, e.id);
     final id = e.id ?? '';
-    final inquiryNo = id.length > 8
-        ? '#${id.substring(id.length - 8)}'
-        : (id.isEmpty ? '-' : '#$id');
     final checklist = e.checklist;
     DateTime? createdLocal;
     try {
@@ -112,6 +110,17 @@ class VendorInquiryRow {
       assignedToText: assignee.text,
       status: statusDisplayLabel(e.status),
     );
+  }
+
+  /// Display inquiry number: prefer the backend business number
+  /// (e.g. `FT/2627/001`) when present, otherwise fall back to the last 8 chars
+  /// of the raw `_id` (e.g. `#665f1c9a`) for legacy inquiries.
+  static String displayInquiryNo(String? inquiryNumber, String? id) {
+    final n = inquiryNumber?.trim();
+    if (n != null && n.isNotEmpty) return n;
+    final rawId = id ?? '';
+    if (rawId.isEmpty) return '-';
+    return rawId.length > 8 ? '#${rawId.substring(rawId.length - 8)}' : '#$rawId';
   }
 
   /// Maps API inquiry status to vendor list labels (New In, Pending, Won, Loss).

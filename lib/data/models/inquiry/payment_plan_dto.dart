@@ -14,6 +14,7 @@ class PaymentPlanDto {
     this.numberOfInstallments,
     this.paymentReceivedTillNow,
     this.installments = const [],
+    this.verified,
     this.createdBy,
     this.updatedBy,
     this.createdAt,
@@ -34,6 +35,9 @@ class PaymentPlanDto {
   final int? numberOfInstallments;
   final num? paymentReceivedTillNow;
   final List<PaymentPlanInstallmentDto> installments;
+
+  /// Set true once accounts verify the plan; the client then locks editing.
+  final bool? verified;
   final String? createdBy;
   final String? updatedBy;
   final DateTime? createdAt;

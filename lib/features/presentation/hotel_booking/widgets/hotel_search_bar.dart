@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:travel_crm/core/constants/string_constants.dart';
 import 'package:travel_crm/core/theme/app_theme.dart';
+import 'package:travel_crm/core/widgets/date_range_picker/app_date_range_picker.dart';
 import '../models/room_guests.dart';
 
 /// Top search-summary bar for the hotel booking form.
@@ -53,78 +54,22 @@ class HotelSearchBar extends StatelessWidget {
     return '$weekday, ${date.day} ${_months[date.month - 1]}';
   }
 
-  Future<void> _pickCheckIn(BuildContext context) async {
+  /// Opens the shared range calendar for the stay: 1st tap = Check-In (start),
+  /// 2nd tap = Check-Out (end). The guest may check in/out on any day within the
+  /// selected range. Same-day (single tap twice) is allowed for a same-date stay.
+  Future<void> _pickStayRange(BuildContext context) async {
     final now = DateTime.now();
-    final picked = await _showCalendarPicker(
+    final result = await showAppDateRangePicker(
       context,
-      initialDate: checkInDate ?? now,
+      initialStart: checkInDate,
+      initialEnd: checkOutDate,
       firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: DateTime(now.year + 5, 12, 31),
     );
-    if (picked != null) onCheckInChanged(picked);
-  }
-
-  Future<void> _pickCheckOut(BuildContext context) async {
-    final now = DateTime.now();
-    // Check-out may be the same day as check-in (same-date stays allowed).
-    final first = checkInDate ?? DateTime(now.year, now.month, now.day);
-    final initial =
-        (checkOutDate != null && !checkOutDate!.isBefore(first)) ? checkOutDate! : first;
-    final picked = await _showCalendarPicker(
-      context,
-      initialDate: initial,
-      firstDate: first,
-    );
-    if (picked != null) onCheckOutChanged(picked);
-  }
-
-  /// Custom calendar dialog with [CalendarDatePicker] so tapping a day selects
-  /// it immediately (no OK/Cancel confirmation step), matching the Air Ticket
-  /// departure/return date selection.
-  static Future<DateTime?> _showCalendarPicker(
-    BuildContext context, {
-    required DateTime initialDate,
-    required DateTime firstDate,
-  }) {
-    final colors = AppTheme.colors(context);
-    return showDialog<DateTime>(
-      context: context,
-      builder: (dialogContext) {
-        return Theme(
-          data: Theme.of(dialogContext).copyWith(
-            colorScheme: ColorScheme.dark(
-              primary: colors.secondary,
-              onPrimary: colors.textOnPrimary,
-              surface: colors.surface,
-              onSurface: colors.textPrimary,
-            ),
-            dialogBackgroundColor: colors.backgroundMedium,
-          ),
-          child: Dialog(
-            backgroundColor: colors.backgroundMedium,
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 40,
-              vertical: 24,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 360),
-              child: SizedBox(
-                width: 360,
-                height: 400,
-                child: CalendarDatePicker(
-                  initialDate: initialDate,
-                  firstDate: firstDate,
-                  lastDate: DateTime(firstDate.year + 5, 12, 31),
-                  onDateChanged: (date) => Navigator.pop(dialogContext, date),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
+    if (result != null) {
+      onCheckInChanged(result.start);
+      onCheckOutChanged(result.end);
+    }
   }
 
   Future<void> _editRoomGuests(BuildContext context) async {
@@ -169,7 +114,7 @@ class HotelSearchBar extends StatelessWidget {
                 value: _formatDate(checkInDate),
                 hint: StringConstant.selectCheckInDate,
                 errorText: checkInError,
-                onTap: () => _pickCheckIn(context),
+                onTap: () => _pickStayRange(context),
               ),
             ),
             _divider(colors),
@@ -180,7 +125,7 @@ class HotelSearchBar extends StatelessWidget {
                 value: _formatDate(checkOutDate),
                 hint: StringConstant.selectCheckOutDate,
                 errorText: checkOutError,
-                onTap: () => _pickCheckOut(context),
+                onTap: () => _pickStayRange(context),
               ),
             ),
             _divider(colors),
