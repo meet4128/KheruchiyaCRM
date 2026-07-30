@@ -4,17 +4,24 @@ import 'package:travel_crm/data/repositories/payments_repository.dart';
 import 'verify_payment_state.dart';
 
 /// Drives the "Verify payment" confirmation dialog: tracks the confirmation
-/// checkbox and submits the verification via
-/// `PATCH /payments/{inquiryId}/verify`.
+/// checkbox and submits the verification.
+///
+/// When [installmentId] is provided the single installment is verified via
+/// `PATCH /payments/{inquiryId}/installments/{installmentId}/verify`; otherwise
+/// the whole plan is verified via `PATCH /payments/{inquiryId}/verify`.
 class VerifyPaymentCubit extends Cubit<VerifyPaymentState> {
   VerifyPaymentCubit({
     required PaymentsRepository repository,
     required this.inquiryId,
+    this.installmentId,
   })  : _repository = repository,
         super(const VerifyPaymentState());
 
   final PaymentsRepository _repository;
   final String inquiryId;
+
+  /// The installment to verify. When null the entire plan is verified.
+  final String? installmentId;
 
   void setConfirmed(bool value) => emit(state.copyWith(confirmed: value));
 
@@ -33,7 +40,16 @@ class VerifyPaymentCubit extends Cubit<VerifyPaymentState> {
       clearError: true,
     ));
     try {
-      await _repository.verifyPayment(inquiryId: inquiryId, verified: true);
+      final installment = installmentId;
+      if (installment != null && installment.isNotEmpty) {
+        await _repository.verifyInstallment(
+          inquiryId: inquiryId,
+          installmentId: installment,
+          verified: true,
+        );
+      } else {
+        await _repository.verifyPayment(inquiryId: inquiryId, verified: true);
+      }
       emit(state.copyWith(status: VerifyPaymentStatus.success));
     } catch (e) {
       emit(state.copyWith(

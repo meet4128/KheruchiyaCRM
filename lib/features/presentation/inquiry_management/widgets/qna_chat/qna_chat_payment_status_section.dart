@@ -871,8 +871,10 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
 
   /// Per-installment Actions cell:
   ///  - VERIFIED → green "Verified" (row is locked).
-  ///  - PENDING  → "Pending" tag + a "Log Payment" button to re-submit.
-  ///  - new/edited → "Log Payment" button, enabled once the row is complete.
+  ///  - logged & awaiting verification → "Pending" tag + a "Log Payment" button
+  ///    to re-submit.
+  ///  - not yet logged → only the "Log Payment" button (enabled once the row is
+  ///    complete); no "Pending" tag.
   Widget _actionsCell(
     BuildContext context,
     QnaChatInstallmentRow row, {
@@ -903,7 +905,7 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (row.isPending) ...[
+        if (row.isAwaitingVerification) ...[
           Text(
             StringConstant.qnaChatPending,
             style: FontConstant.interMedium(

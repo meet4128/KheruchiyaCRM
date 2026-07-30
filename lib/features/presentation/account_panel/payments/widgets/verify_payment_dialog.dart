@@ -9,16 +9,20 @@ import '../bloc/unverified_payments_bloc.dart';
 import '../bloc/unverified_payments_event.dart';
 import '../bloc/verify_payment/verify_payment_cubit.dart';
 import '../bloc/verify_payment/verify_payment_state.dart';
-import '../models/unverified_payment_row_ui.dart';
+import '../models/payment_installment_row_ui.dart';
 
-/// Opens the "Verify payment" confirmation dialog for a payment row.
+/// Opens the "Verify payment" confirmation dialog for a single installment.
 ///
-/// On a successful verify the list is refreshed so the now-verified plan drops
-/// out of the Unverified queue. [listBloc] is the caller's
+/// Mirrors the plan-level verify flow: the accountant reviews the instalment
+/// details, ticks the confirmation checkbox and submits. On success the list is
+/// refreshed (keeping the row expanded) so the now-verified installment — and
+/// whether the plan left the queue — shows. [listBloc] is the caller's
 /// [UnverifiedPaymentsBloc] (the dialog sits above its provider once pushed).
-Future<void> showVerifyPaymentDialog(
+Future<void> showVerifyInstallmentDialog(
   BuildContext context, {
-  required UnverifiedPaymentRowUi row,
+  required String inquiryId,
+  required String assignedTo,
+  required PaymentInstallmentRowUi installment,
 }) {
   final listBloc = context.read<UnverifiedPaymentsBloc>();
   return showDialog<void>(
@@ -27,17 +31,27 @@ Future<void> showVerifyPaymentDialog(
     builder: (_) => BlocProvider(
       create: (_) => VerifyPaymentCubit(
         repository: sl<PaymentsRepository>(),
-        inquiryId: row.inquiryId,
+        inquiryId: inquiryId,
+        installmentId: installment.paymentId,
       ),
-      child: _VerifyPaymentDialog(row: row, listBloc: listBloc),
+      child: _VerifyPaymentDialog(
+        installment: installment,
+        assignedTo: assignedTo,
+        listBloc: listBloc,
+      ),
     ),
   );
 }
 
 class _VerifyPaymentDialog extends StatelessWidget {
-  const _VerifyPaymentDialog({required this.row, required this.listBloc});
+  const _VerifyPaymentDialog({
+    required this.installment,
+    required this.assignedTo,
+    required this.listBloc,
+  });
 
-  final UnverifiedPaymentRowUi row;
+  final PaymentInstallmentRowUi installment;
+  final String assignedTo;
   final UnverifiedPaymentsBloc listBloc;
 
   @override
@@ -51,8 +65,11 @@ class _VerifyPaymentDialog extends StatelessWidget {
         if (state.status == VerifyPaymentStatus.success) {
           Navigator.of(context).pop();
           SnackBarUtils.showSuccess(context, 'Payment marked as verified.');
-          // Refresh so the verified plan leaves the Unverified queue.
-          listBloc.add(const UnverifiedPaymentsRefreshed());
+          // Refresh (keeping the row open) so the verified installment — and
+          // whether the plan left the queue — shows.
+          listBloc.add(
+            const UnverifiedPaymentsRefreshed(preserveExpansion: true),
+          );
         } else if (state.status == VerifyPaymentStatus.failure) {
           SnackBarUtils.showError(
             context,
@@ -82,7 +99,10 @@ class _VerifyPaymentDialog extends StatelessWidget {
                 children: [
                   _DialogHeader(),
                   const SizedBox(height: 24),
-                  _PaymentDetailsSection(row: row),
+                  _PaymentDetailsSection(
+                    installment: installment,
+                    assignedTo: assignedTo,
+                  ),
                   const SizedBox(height: 28),
                   _ConfirmationSection(),
                   const SizedBox(height: 24),
@@ -131,15 +151,20 @@ class _DialogHeader extends StatelessWidget {
 }
 
 class _PaymentDetailsSection extends StatelessWidget {
-  const _PaymentDetailsSection({required this.row});
+  const _PaymentDetailsSection({
+    required this.installment,
+    required this.assignedTo,
+  });
 
-  final UnverifiedPaymentRowUi row;
+  final PaymentInstallmentRowUi installment;
+  final String assignedTo;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppTheme.colors(context);
     final textStyles = AppTheme.textStyles(context);
-    final paidOn = row.paidOnSub.isNotEmpty ? row.paidOnSub : row.paidOn;
+    final paidOn =
+        installment.isReceived ? installment.receivedOn : installment.dueOn;
 
     return Column(
       children: [
@@ -170,13 +195,16 @@ class _PaymentDetailsSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _DetailField(label: 'Paid Amount (INR)', value: row.amount),
+                child: _DetailField(
+                  label: 'Paid Amount (INR)',
+                  value: installment.amount,
+                ),
               ),
               Expanded(
                 child: _DetailField(label: 'Paid On', value: paidOn),
               ),
               Expanded(
-                child: _DetailField(label: 'Logged By', value: row.assignedTo),
+                child: _DetailField(label: 'Logged By', value: assignedTo),
               ),
             ],
           ),

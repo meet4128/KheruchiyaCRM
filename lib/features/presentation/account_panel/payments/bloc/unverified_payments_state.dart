@@ -17,7 +17,6 @@ class UnverifiedPaymentsState extends Equatable {
     this.totalItems = 0,
     this.errorMessage,
     this.expandedIds = const {},
-    this.verifyingInstallmentIds = const {},
   });
 
   final UnverifiedPaymentsStatus status;
@@ -35,13 +34,6 @@ class UnverifiedPaymentsState extends Equatable {
 
   /// Payment plan ids whose installment breakdown is currently expanded.
   final Set<String> expandedIds;
-
-  /// Installment ids (`_id`) with a verify call in flight — the tile shows a
-  /// spinner in place of its Verify button.
-  final Set<String> verifyingInstallmentIds;
-
-  bool isInstallmentVerifying(String installmentId) =>
-      verifyingInstallmentIds.contains(installmentId);
 
   bool get isLoading => status == UnverifiedPaymentsStatus.loading;
   bool get hasPrevPage => page > 1;
@@ -83,7 +75,6 @@ class UnverifiedPaymentsState extends Equatable {
     String? errorMessage,
     bool clearError = false,
     Set<String>? expandedIds,
-    Set<String>? verifyingInstallmentIds,
   }) {
     return UnverifiedPaymentsState(
       status: status ?? this.status,
@@ -94,8 +85,6 @@ class UnverifiedPaymentsState extends Equatable {
       totalItems: totalItems ?? this.totalItems,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       expandedIds: expandedIds ?? this.expandedIds,
-      verifyingInstallmentIds:
-          verifyingInstallmentIds ?? this.verifyingInstallmentIds,
     );
   }
 
@@ -109,6 +98,5 @@ class UnverifiedPaymentsState extends Equatable {
         totalItems,
         errorMessage,
         expandedIds,
-        verifyingInstallmentIds,
       ];
 }

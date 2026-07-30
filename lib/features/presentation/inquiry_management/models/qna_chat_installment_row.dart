@@ -52,6 +52,17 @@ class QnaChatInstallmentRow extends Equatable {
   bool get isVerified => verificationStatus == 'VERIFIED';
   bool get isPending => verificationStatus == 'PENDING';
 
+  /// True once a payment has actually been logged for this installment — the
+  /// received date is only set when a payment is recorded (logging requires it
+  /// via [isComplete]). The backend seeds every installment as `PENDING`, so
+  /// this guards the "Pending" tag from showing on rows with no logged payment.
+  bool get isPaymentLogged => receivedDate != null;
+
+  /// Awaiting account verification: a payment was logged and the server marked
+  /// it `PENDING`. Only in this state does the row show the "Pending" tag; an
+  /// un-logged installment shows just the "Log Payment" action.
+  bool get isAwaitingVerification => isPending && isPaymentLogged;
+
   /// A row can be logged (submitted for verification) only once it has a real
   /// amount, a received date and a mode — plus proof for non-Cash payments.
   bool get isComplete {

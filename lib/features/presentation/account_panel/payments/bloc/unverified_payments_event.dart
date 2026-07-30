@@ -12,9 +12,16 @@ class UnverifiedPaymentsStarted extends UnverifiedPaymentsEvent {
   const UnverifiedPaymentsStarted();
 }
 
-/// Re-runs the current query (refresh button / retry after error).
+/// Re-runs the current query (refresh button / retry after error). When
+/// [preserveExpansion] is true the currently expanded rows stay open — used
+/// after verifying a single installment so its row doesn't collapse.
 class UnverifiedPaymentsRefreshed extends UnverifiedPaymentsEvent {
-  const UnverifiedPaymentsRefreshed();
+  const UnverifiedPaymentsRefreshed({this.preserveExpansion = false});
+
+  final bool preserveExpansion;
+
+  @override
+  List<Object?> get props => [preserveExpansion];
 }
 
 /// User typed in the search box — client-side filter over the loaded rows
@@ -46,20 +53,4 @@ class UnverifiedPaymentExpansionToggled extends UnverifiedPaymentsEvent {
 
   @override
   List<Object?> get props => [paymentPlanId];
-}
-
-/// Verifies a single installment (`PATCH .../installments/{id}/verify`). On
-/// success the list refreshes; a plan leaves the queue once all its
-/// installments are verified.
-class UnverifiedInstallmentVerifyRequested extends UnverifiedPaymentsEvent {
-  const UnverifiedInstallmentVerifyRequested({
-    required this.inquiryId,
-    required this.installmentId,
-  });
-
-  final String inquiryId;
-  final String installmentId;
-
-  @override
-  List<Object?> get props => [inquiryId, installmentId];
 }

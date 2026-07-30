@@ -28,12 +28,13 @@ class UnverifiedPaymentsTable extends StatelessWidget {
     'Credit Account',
     'Contact',
     'Assigned to',
-    'Actions',
   ];
 
   /// Fixed widths so the header and every (expandable) row stay aligned inside
-  /// the horizontal scroll. Index 0 is the expand chevron.
-  static const _columnWidths = <double>[44, 140, 110, 140, 150, 220, 160, 130];
+  /// the horizontal scroll. Index 0 is the expand chevron. Verification is done
+  /// per-installment inside the expanded breakdown, so there is no row-level
+  /// Actions column.
+  static const _columnWidths = <double>[44, 140, 110, 140, 150, 220, 160];
 
   static double get _tableWidth =>
       _columnWidths.fold<double>(0, (sum, w) => sum + w);
@@ -214,7 +215,6 @@ class _ExpandableRow extends StatelessWidget {
                 _Cell(index: 4, child: _CreditAccountCell(row: row)),
                 _Cell(index: 5, child: _ContactCell(row: row)),
                 _Cell(index: 6, child: _AssignedToCell(name: row.assignedTo)),
-                _Cell(index: 7, child: _VerifyButton(row: row)),
               ],
             ),
           ),
@@ -292,6 +292,7 @@ class _InstallmentPanel extends StatelessWidget {
                 child: _InstallmentTile(
                   installment: installment,
                   inquiryId: row.inquiryId,
+                  assignedTo: row.assignedTo,
                 ),
               ),
         ],
@@ -301,10 +302,15 @@ class _InstallmentPanel extends StatelessWidget {
 }
 
 class _InstallmentTile extends StatelessWidget {
-  const _InstallmentTile({required this.installment, required this.inquiryId});
+  const _InstallmentTile({
+    required this.installment,
+    required this.inquiryId,
+    required this.assignedTo,
+  });
 
   final PaymentInstallmentRowUi installment;
   final String inquiryId;
+  final String assignedTo;
 
   @override
   Widget build(BuildContext context) {
@@ -344,7 +350,11 @@ class _InstallmentTile extends StatelessWidget {
           _StatusChip(status: installment.status),
           if (installment.hasProof)
             _ProofLink(url: installment.paymentProofUrl),
-          _InstallmentVerifyAction(installment: installment, inquiryId: inquiryId),
+          _InstallmentVerifyAction(
+            installment: installment,
+            inquiryId: inquiryId,
+            assignedTo: assignedTo,
+          ),
         ],
       ),
     );
@@ -353,16 +363,19 @@ class _InstallmentTile extends StatelessWidget {
 
 /// Per-installment verify control shown at the end of each installment tile:
 ///  - already VERIFIED → a green "Verified" pill.
-///  - received & not verified → a "Verify" button (spinner while in flight).
+///  - received & not verified → a "Verify" button that opens the confirmation
+///    dialog (same flow as the plan-level verify).
 ///  - not yet received → nothing (no payment to verify).
 class _InstallmentVerifyAction extends StatelessWidget {
   const _InstallmentVerifyAction({
     required this.installment,
     required this.inquiryId,
+    required this.assignedTo,
   });
 
   final PaymentInstallmentRowUi installment;
   final String inquiryId;
+  final String assignedTo;
 
   @override
   Widget build(BuildContext context) {
@@ -388,25 +401,13 @@ class _InstallmentVerifyAction extends StatelessWidget {
 
     if (!installment.canVerify) return const SizedBox.shrink();
 
-    final verifying = context.select<UnverifiedPaymentsBloc, bool>(
-      (b) => b.state.isInstallmentVerifying(installment.paymentId),
-    );
-
-    if (verifying) {
-      return const SizedBox(
-        width: 18,
-        height: 18,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    }
-
     return OutlinedButton.icon(
-      onPressed: () => context.read<UnverifiedPaymentsBloc>().add(
-            UnverifiedInstallmentVerifyRequested(
-              inquiryId: inquiryId,
-              installmentId: installment.paymentId,
-            ),
-          ),
+      onPressed: () => showVerifyInstallmentDialog(
+        context,
+        inquiryId: inquiryId,
+        assignedTo: assignedTo,
+        installment: installment,
+      ),
       style: OutlinedButton.styleFrom(
         foregroundColor: colors.secondary,
         side: BorderSide(color: colors.secondary),
@@ -682,30 +683,6 @@ class _AssignedToCell extends StatelessWidget {
     if (parts.isEmpty || parts.first == '—') return '?';
     if (parts.length == 1) return parts.first[0].toUpperCase();
     return (parts.first[0] + parts.last[0]).toUpperCase();
-  }
-}
-
-/// Rendered per the design. The verify action is intentionally not wired yet
-/// (endpoint pending) — tapping shows a "coming soon" hint.
-class _VerifyButton extends StatelessWidget {
-  const _VerifyButton({required this.row});
-
-  final UnverifiedPaymentRowUi row;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppTheme.colors(context);
-    return OutlinedButton.icon(
-      onPressed: () => showVerifyPaymentDialog(context, row: row),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: colors.warning,
-        side: BorderSide(color: colors.warning.withValues(alpha: 0.6)),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-      icon: const Icon(Icons.check_circle_outline, size: 16),
-      label: const Text('Verify'),
-    );
   }
 }
 

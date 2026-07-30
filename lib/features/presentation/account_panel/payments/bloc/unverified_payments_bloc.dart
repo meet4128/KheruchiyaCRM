@@ -19,7 +19,6 @@ class UnverifiedPaymentsBloc
     on<UnverifiedPaymentsPageRequested>(_onPageRequested);
     on<UnverifiedPaymentsSearchChanged>(_onSearchChanged);
     on<UnverifiedPaymentExpansionToggled>(_onExpansionToggled);
-    on<UnverifiedInstallmentVerifyRequested>(_onInstallmentVerifyRequested);
   }
 
   final PaymentsRepository _repository;
@@ -34,7 +33,11 @@ class UnverifiedPaymentsBloc
     UnverifiedPaymentsRefreshed event,
     Emitter<UnverifiedPaymentsState> emit,
   ) =>
-      _fetch(emit, page: state.page);
+      _fetch(
+        emit,
+        page: state.page,
+        preserveExpansion: event.preserveExpansion,
+      );
 
   Future<void> _onPageRequested(
     UnverifiedPaymentsPageRequested event,
@@ -60,35 +63,6 @@ class UnverifiedPaymentsBloc
     final expanded = Set<String>.from(state.expandedIds);
     if (!expanded.remove(id)) expanded.add(id);
     emit(state.copyWith(expandedIds: expanded));
-  }
-
-  /// Verifies one installment, then refreshes the list (keeping the row
-  /// expanded) so its new state — and whether the plan left the queue — shows.
-  Future<void> _onInstallmentVerifyRequested(
-    UnverifiedInstallmentVerifyRequested event,
-    Emitter<UnverifiedPaymentsState> emit,
-  ) async {
-    final id = event.installmentId;
-    if (id.isEmpty || state.isInstallmentVerifying(id)) return;
-
-    emit(state.copyWith(
-      verifyingInstallmentIds: {...state.verifyingInstallmentIds, id},
-    ));
-
-    try {
-      await _repository.verifyInstallment(
-        inquiryId: event.inquiryId,
-        installmentId: id,
-        verified: true,
-      );
-      await _fetch(emit, page: state.page, preserveExpansion: true);
-    } catch (_) {
-      // Keep the list intact on a single-row failure; just drop the spinner.
-    } finally {
-      emit(state.copyWith(
-        verifyingInstallmentIds: {...state.verifyingInstallmentIds}..remove(id),
-      ));
-    }
   }
 
   Future<void> _fetch(
