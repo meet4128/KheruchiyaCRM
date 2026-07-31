@@ -37,7 +37,9 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     on<FromLocationChanged>(_onFromLocationChanged);
     on<ToLocationChanged>(_onToLocationChanged);
     on<DepartureDateChanged>(_onDepartureDateChanged);
+    on<DepartureDateEndChanged>(_onDepartureDateEndChanged);
     on<ReturnDateChanged>(_onReturnDateChanged);
+    on<ReturnDateEndChanged>(_onReturnDateEndChanged);
     on<TravellerBreakdownChanged>(_onTravellerBreakdownChanged);
     on<ClassTypeChanged>(_onClassTypeChanged);
     on<VisaTypeChanged>(_onVisaTypeChanged);
@@ -106,6 +108,10 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
       returnDate: returnDate,
       returnDateError: returnDateError,
       clearReturnDateError: event.bookingType == AirTicketBookingType.oneWay,
+      // The flexible-window ends are booking-type specific, so drop any stale
+      // window when the type changes (fresh selection per mode).
+      clearDepartureDateEnd: true,
+      clearReturnDateEnd: true,
     ));
   }
 
@@ -149,18 +155,35 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     Emitter<AirTicketState> emit,
   ) {
     final error = _validateDepartureDate(event.departureDate);
-    
+
     // If return date exists and is before new departure date, clear it
     final returnDate = state.returnDate != null &&
             state.returnDate!.isBefore(event.departureDate)
         ? null
         : state.returnDate;
 
+    // Drop the departure window end if it now precedes the new start (Round
+    // Trip); the range picker sets both together so this only guards edits.
+    final clearDepartureDateEnd = state.departureDateEnd != null &&
+        state.departureDateEnd!.isBefore(event.departureDate);
+
     emit(state.copyWith(
       departureDate: event.departureDate,
       departureDateError: error,
       returnDate: returnDate,
       clearDepartureDateError: error == null,
+      clearDepartureDateEnd: clearDepartureDateEnd,
+    ));
+  }
+
+  /// Handle departure window end changed event (Round Trip flexible window).
+  void _onDepartureDateEndChanged(
+    DepartureDateEndChanged event,
+    Emitter<AirTicketState> emit,
+  ) {
+    emit(state.copyWith(
+      departureDateEnd: event.departureDateEnd,
+      clearDepartureDateEnd: event.departureDateEnd == null,
     ));
   }
 
@@ -175,10 +198,27 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
       state.departureDate,
       state.bookingType,
     );
+    // Drop the return window end if it now precedes the new return start.
+    final clearReturnDateEnd = event.returnDate != null &&
+        state.returnDateEnd != null &&
+        state.returnDateEnd!.isBefore(event.returnDate!);
+
     emit(state.copyWith(
       returnDate: event.returnDate,
       returnDateError: error,
       clearReturnDateError: error == null,
+      clearReturnDateEnd: clearReturnDateEnd,
+    ));
+  }
+
+  /// Handle return window end changed event (Round Trip flexible window).
+  void _onReturnDateEndChanged(
+    ReturnDateEndChanged event,
+    Emitter<AirTicketState> emit,
+  ) {
+    emit(state.copyWith(
+      returnDateEnd: event.returnDateEnd,
+      clearReturnDateEnd: event.returnDateEnd == null,
     ));
   }
 
@@ -648,9 +688,12 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     final notes = _flightNotesParam(state);
     final onwardFrom = _formatAirportForMessage(state.from);
     final onwardTo = _formatAirportForMessage(state.to);
-    final onwardDate = _formatFlightDate(state.departureDate);
-
     final bookingType = state.bookingType;
+    // Round Trip departure is a flexible window; show it as a range when an end
+    // was picked. One-Way keeps a single onward date.
+    final onwardDate = bookingType == AirTicketBookingType.roundTrip
+        ? _formatFlightDateRange(state.departureDate, state.departureDateEnd)
+        : _formatFlightDate(state.departureDate);
     if (bookingType == null || bookingType == AirTicketBookingType.oneWay) {
       return WhatsappTemplatePayload(
         name: WhatsappConstants.flightOneWayTemplateName,
@@ -679,7 +722,9 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     } else {
       returnFrom = onwardTo;
       returnTo = onwardFrom;
-      returnDate = _formatFlightDate(state.returnDate);
+      // Round Trip return is a flexible window; show it as a range when an end
+      // was picked.
+      returnDate = _formatFlightDateRange(state.returnDate, state.returnDateEnd);
     }
 
     return WhatsappTemplatePayload(
@@ -714,6 +759,14 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
   String _formatFlightDate(DateTime? date) {
     if (date == null) return 'To be confirmed';
     return DateFormat('d MMMM yyyy').format(date);
+  }
+
+  /// Formats a flexible window as "12 August 2026 - 15 August 2026" for the
+  /// WhatsApp template, or a single date when [end] is null / not after [start].
+  String _formatFlightDateRange(DateTime? start, DateTime? end) {
+    if (start == null) return 'To be confirmed';
+    if (end == null || !end.isAfter(start)) return _formatFlightDate(start);
+    return '${_formatFlightDate(start)} - ${_formatFlightDate(end)}';
   }
 
   /// Builds a single-line passenger summary, omitting zero counts, e.g.
@@ -780,9 +833,11 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
   ///
   /// - **One way:** one segment (from → to) with a flexible travel window
   ///   (`departureDate` = window start, `departureDateEnd` = window end).
-  /// - **Round trip:** two segments — outbound, then return (to → from) using
-  ///   [AirTicketState.returnDate] as the second leg's `departureDate`. No
-  ///   `departureDateEnd` (departure and return are fixed days).
+  /// - **Round trip:** two segments — outbound, then return (to → from). Each
+  ///   leg carries its own flexible travel window: the outbound uses
+  ///   [AirTicketState.departureDate]/`departureDateEnd`, the return uses
+  ///   [AirTicketState.returnDate]/`returnDateEnd` as its `departureDate`/
+  ///   `departureDateEnd`.
   /// - **Multi city:** outbound segment plus each extra city row, each carrying
   ///   its own flexible travel window.
   List<FlightSegmentRequest> _buildFlightSegmentsPayload(AirTicketState state) {
@@ -791,11 +846,14 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
 
     switch (state.bookingType) {
       case AirTicketBookingType.roundTrip:
+        // Outbound and return are each a flexible window: the outbound uses
+        // departureDate..departureDateEnd, the return uses returnDate..returnDateEnd.
         return [
           _flightSegmentRequest(
             fromRaw: state.from,
             toRaw: state.to,
             departure: state.departureDate,
+            departureEnd: state.departureDateEnd,
             travellerCount: count,
             travelClass: travelClass,
           ),
@@ -803,6 +861,7 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
             fromRaw: state.to,
             toRaw: state.from,
             departure: state.returnDate,
+            departureEnd: state.returnDateEnd,
             travellerCount: count,
             travelClass: travelClass,
           ),

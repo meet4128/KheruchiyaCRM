@@ -16,7 +16,9 @@ class FlightDetailsSection extends StatelessWidget {
     required this.from,
     required this.to,
     required this.departureDate,
+    this.departureDateEnd,
     this.returnDate,
+    this.returnDateEnd,
     required this.bookingType,
     required this.adultCount,
     required this.childCount,
@@ -30,7 +32,9 @@ class FlightDetailsSection extends StatelessWidget {
     required this.onFromChanged,
     required this.onToChanged,
     required this.onDepartureDateChanged,
+    this.onDepartureDateEndChanged,
     this.onReturnDateChanged,
+    this.onReturnDateEndChanged,
     required this.onSwapLocations,
     this.onTravellerBreakdownChanged,
     this.onClassTypeChanged,
@@ -44,7 +48,11 @@ class FlightDetailsSection extends StatelessWidget {
   final String from;
   final String to;
   final DateTime? departureDate;
+  /// Round Trip only: end of the departure flexible window.
+  final DateTime? departureDateEnd;
   final DateTime? returnDate;
+  /// Round Trip only: end of the return flexible window.
+  final DateTime? returnDateEnd;
   final AirTicketBookingType? bookingType;
   final int adultCount;
   final int childCount;
@@ -58,7 +66,11 @@ class FlightDetailsSection extends StatelessWidget {
   final ValueChanged<String> onFromChanged;
   final ValueChanged<String> onToChanged;
   final ValueChanged<DateTime> onDepartureDateChanged;
+  /// Round Trip only: called with the end of the departure flexible window.
+  final ValueChanged<DateTime?>? onDepartureDateEndChanged;
   final ValueChanged<DateTime?>? onReturnDateChanged;
+  /// Round Trip only: called with the end of the return flexible window.
+  final ValueChanged<DateTime?>? onReturnDateEndChanged;
   final VoidCallback onSwapLocations;
   final ValueChanged<TravellerBreakdown>? onTravellerBreakdownChanged;
   final ValueChanged<String>? onClassTypeChanged;
@@ -156,45 +168,50 @@ class FlightDetailsSection extends StatelessWidget {
                 onSelectAirport: onToChanged,
               ),
               // Departure — tapping opens a date-range picker (1st tap = start,
-              // 2nd = end). For Round Trip the end fills the separate Return
-              // field; for One-Way / Multi-city this field shows the whole
-              // flexible window (start – end).
+              // 2nd = end) so the traveller picks a flexible departure window.
+              // For Round Trip the window end is the separate departureDateEnd;
+              // for One-Way / Multi-city returnDate holds the window end.
               _DateField(
                 label: StringConstant.departure,
                 isRequired: true,
                 value: departureDate,
-                endValue: isRoundTrip ? null : returnDate,
+                endValue: isRoundTrip ? departureDateEnd : returnDate,
                 errorText: departureDateError,
                 dateFormat: _formatDate,
                 hint: isRoundTrip
-                    ? StringConstant.selectDepartureDate
+                    ? StringConstant.selectDepartureWindow
                     : StringConstant.selectTravelWindow,
                 onTap: () => _showDateRangePicker(
                   context,
                   initialStart: departureDate,
-                  initialEnd: returnDate,
+                  initialEnd: isRoundTrip ? departureDateEnd : returnDate,
                   firstDate: DateTime.now(),
                   onStartSelected: onDepartureDateChanged,
-                  onEndSelected: (d) => onReturnDateChanged?.call(d),
+                  onEndSelected: (d) => isRoundTrip
+                      ? onDepartureDateEndChanged?.call(d)
+                      : onReturnDateChanged?.call(d),
                 ),
               ),
-              // Return — only for Round Trip; opens the same range picker so
-              // departure + return are chosen together.
+              // Return — only for Round Trip; its own range picker so the return
+              // is also a flexible window (returnDate .. returnDateEnd),
+              // mirroring the departure selection.
               if (isRoundTrip)
                 _DateField(
                   label: StringConstant.returnLabel,
                   isRequired: true,
                   value: returnDate,
+                  endValue: returnDateEnd,
                   errorText: returnDateError,
                   dateFormat: _formatDate,
-                  hint: StringConstant.selectReturnDate,
+                  hint: StringConstant.selectReturnWindow,
                   onTap: () => _showDateRangePicker(
                     context,
-                    initialStart: departureDate,
-                    initialEnd: returnDate,
-                    firstDate: DateTime.now(),
-                    onStartSelected: onDepartureDateChanged,
-                    onEndSelected: (d) => onReturnDateChanged?.call(d),
+                    initialStart: returnDate,
+                    initialEnd: returnDateEnd,
+                    // Return window cannot start before departure.
+                    firstDate: departureDate ?? DateTime.now(),
+                    onStartSelected: (d) => onReturnDateChanged?.call(d),
+                    onEndSelected: (d) => onReturnDateEndChanged?.call(d),
                   ),
                 ),
               // Traveller & Class (first segment only per design)

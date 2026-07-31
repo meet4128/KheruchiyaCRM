@@ -25,7 +25,9 @@ class AirTicketState extends Equatable {
     this.from = '',
     this.to = '',
     this.departureDate,
+    this.departureDateEnd,
     this.returnDate,
+    this.returnDateEnd,
     this.adultCount = 1,
     this.childCount = 0,
     this.infantCount = 0,
@@ -63,7 +65,17 @@ class AirTicketState extends Equatable {
   final String from;
   final String to;
   final DateTime? departureDate;
+
+  /// End of the departure flexible window. For One-Way / Multi-city the
+  /// departure window is stored as [departureDate]..[returnDate] (legacy), while
+  /// for Round Trip the departure window is [departureDate]..[departureDateEnd].
+  /// Null when the traveller picked a single departure day.
+  final DateTime? departureDateEnd;
   final DateTime? returnDate;
+
+  /// End of the Round-Trip return flexible window ([returnDate]..[returnDateEnd]).
+  /// Null for One-Way / Multi-city and when a single return day was picked.
+  final DateTime? returnDateEnd;
   final int adultCount;
   final int childCount;
   final int infantCount;
@@ -166,7 +178,9 @@ class AirTicketState extends Equatable {
     String? from,
     String? to,
     DateTime? departureDate,
+    DateTime? departureDateEnd,
     DateTime? returnDate,
+    DateTime? returnDateEnd,
     int? adultCount,
     int? childCount,
     int? infantCount,
@@ -198,6 +212,8 @@ class AirTicketState extends Equatable {
     bool clearToError = false,
     bool clearDepartureDateError = false,
     bool clearReturnDateError = false,
+    bool clearDepartureDateEnd = false,
+    bool clearReturnDateEnd = false,
     bool clearTravellerCountError = false,
     bool clearVisaTypeError = false,
     bool clearRemarkError = false,
@@ -208,7 +224,12 @@ class AirTicketState extends Equatable {
       from: from ?? this.from,
       to: to ?? this.to,
       departureDate: departureDate ?? this.departureDate,
+      departureDateEnd: clearDepartureDateEnd
+          ? null
+          : (departureDateEnd ?? this.departureDateEnd),
       returnDate: returnDate ?? this.returnDate,
+      returnDateEnd:
+          clearReturnDateEnd ? null : (returnDateEnd ?? this.returnDateEnd),
       adultCount: adultCount ?? this.adultCount,
       childCount: childCount ?? this.childCount,
       infantCount: infantCount ?? this.infantCount,
@@ -266,7 +287,9 @@ class AirTicketState extends Equatable {
         from,
         to,
         departureDate,
+        departureDateEnd,
         returnDate,
+        returnDateEnd,
         adultCount,
         childCount,
         infantCount,

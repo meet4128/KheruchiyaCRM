@@ -66,6 +66,17 @@ class DepartureDateChanged extends AirTicketEvent {
   List<Object> get props => [departureDate];
 }
 
+/// Event fired when the departure flexible-window end changes (Round Trip).
+/// The departure window is [DepartureDateChanged] (start)..this (end).
+class DepartureDateEndChanged extends AirTicketEvent {
+  const DepartureDateEndChanged(this.departureDateEnd);
+
+  final DateTime? departureDateEnd;
+
+  @override
+  List<Object?> get props => [departureDateEnd];
+}
+
 /// Event fired when return date changes
 class ReturnDateChanged extends AirTicketEvent {
   const ReturnDateChanged(this.returnDate);
@@ -74,6 +85,17 @@ class ReturnDateChanged extends AirTicketEvent {
 
   @override
   List<Object?> get props => [returnDate];
+}
+
+/// Event fired when the return flexible-window end changes (Round Trip).
+/// The return window is [ReturnDateChanged] (start)..this (end).
+class ReturnDateEndChanged extends AirTicketEvent {
+  const ReturnDateEndChanged(this.returnDateEnd);
+
+  final DateTime? returnDateEnd;
+
+  @override
+  List<Object?> get props => [returnDateEnd];
 }
 
 /// Event fired when traveller breakdown (adult / child / infant) changes

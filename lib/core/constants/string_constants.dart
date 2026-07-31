@@ -243,6 +243,8 @@ class StringConstant {
   static const String selectReturnDate = 'Select return date';
   static const String selectTravelDates = 'Select travel dates';
   static const String selectTravelWindow = 'Select travel window';
+  static const String selectDepartureWindow = 'Select departure window';
+  static const String selectReturnWindow = 'Select return window';
   static const String enterFromLocation = 'Enter from location';
   static const String enterToLocation = 'Enter to location';
   static const String enterRemark = 'Enter remark';
