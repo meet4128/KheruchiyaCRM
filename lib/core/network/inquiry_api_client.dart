@@ -369,6 +369,13 @@ abstract class InquiryApiClient {
   @GET('/inquiries/{id}')
   Future<InquiryDetailResponse> getInquiryDetail(@Path('id') String id);
 
+  /// Marks this inquiry's Q&A as read for the current user, clearing its
+  /// `unreadCount` badge on the vendor list. Body is optional (`readAt`); the
+  /// server uses `now()` when omitted. Response is ignored — the list is
+  /// refreshed afterwards to pick up the cleared count.
+  @POST('/inquiries/{inquiryId}/qna/read')
+  Future<void> markQnaRead(@Path('inquiryId') String inquiryId);
+
   /// Sales-submitted payment plans awaiting account verification
   /// (`verified: false`). Account/admin only.
   @GET('/payments/unverified')

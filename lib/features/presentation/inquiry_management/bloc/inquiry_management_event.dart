@@ -68,6 +68,17 @@ final class InquiryStatusUpdated extends InquiryManagementEvent {
   final String status;
 }
 
+/// Marks an inquiry's Q&A as read for the current user
+/// (`POST /inquiries/{id}/qna/read`) when the row's "expand" action is tapped on
+/// the vendor list. Best-effort and does not refetch on its own — the list is
+/// refreshed on return from the detail, which picks up the cleared `unreadCount`
+/// and removes the badge.
+final class InquiryQnaMarkedRead extends InquiryManagementEvent {
+  InquiryQnaMarkedRead({required this.inquiryId});
+
+  final String inquiryId;
+}
+
 /// Assign an inquiry to a member via `PATCH /inquiries/{id}/assign`, then
 /// refresh so the server re-scopes the list (the inquiry drops off other reps'
 /// lists once assigned).

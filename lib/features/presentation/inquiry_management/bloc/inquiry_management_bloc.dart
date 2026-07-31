@@ -25,6 +25,7 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
     on<InquiryManagementLoadMoreRequested>(_onLoadMoreRequested);
     on<InquiryAssigned>(_onAssigned);
     on<InquiryStatusUpdated>(_onStatusUpdated);
+    on<InquiryQnaMarkedRead>(_onQnaMarkedRead);
   }
 
   final InquiryRepository inquiryRepository;
@@ -81,6 +82,24 @@ class InquiryManagementBloc extends Bloc<InquiryManagementEvent, InquiryManageme
         assignMessage: message.isEmpty ? 'Could not update status.' : message,
         assignIsError: true,
       ));
+    }
+  }
+
+  /// Marks the inquiry's Q&A as read when its "expand" action is tapped on the
+  /// vendor list. Best-effort: swallows errors (logged only) and does not emit —
+  /// the list is refreshed on return from the detail, which re-fetches the
+  /// cleared `unreadCount` and removes the badge. A failure here must never block
+  /// opening the inquiry.
+  Future<void> _onQnaMarkedRead(
+    InquiryQnaMarkedRead event,
+    Emitter<InquiryManagementState> emit,
+  ) async {
+    final inquiryId = event.inquiryId.trim();
+    if (inquiryId.isEmpty) return;
+    try {
+      await inquiryRepository.markQnaRead(inquiryId);
+    } catch (e) {
+      developer.log('Mark Q&A read failed: $e', name: 'InquiryManagementBloc');
     }
   }
 

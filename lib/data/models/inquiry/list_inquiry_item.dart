@@ -21,6 +21,7 @@ class ListInquiryItem {
     this.user,
     this.assignedTo,
     this.phoneNumber,
+    this.unreadCount = 0,
   });
 
   factory ListInquiryItem.fromJson(Map<String, dynamic> json) =>
@@ -57,4 +58,11 @@ class ListInquiryItem {
   /// Structured phone (`{countryCode, number}`) returned per list item.
   /// Used for phone-number search in the vendor list.
   final PhoneNumberDto? phoneNumber;
+
+  /// Per-authenticated-user count of unseen **inbound** Q&A (WhatsApp) messages
+  /// for this inquiry — inbound customer replies that arrived after the user last
+  /// opened this inquiry's Q&A. Always present from the API; defaults to `0`.
+  /// Cleared server-side by `POST /inquiries/{id}/qna/read`.
+  @JsonKey(defaultValue: 0)
+  final int unreadCount;
 }

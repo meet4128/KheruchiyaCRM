@@ -100,6 +100,18 @@ class InquiryRepository {
     }
   }
 
+  /// Marks the inquiry's Q&A as read for the current user
+  /// (`POST /inquiries/{id}/qna/read`), clearing its unread badge on the vendor
+  /// list. Fire-and-forget from the caller's perspective — the list is refreshed
+  /// afterwards to reflect the cleared `unreadCount`.
+  Future<void> markQnaRead(String inquiryId) async {
+    try {
+      await apiClient.markQnaRead(inquiryId);
+    } on DioException catch (e) {
+      throw _mapDioException(e, logTag: 'MarkQnaRead');
+    }
+  }
+
   Future<SessionMessagesResponse> listSessionMessages({
     required String inquiryId,
     required String sessionId,

@@ -129,6 +129,11 @@ class _VendorListViewState extends State<VendorListView> {
         status: 'PENDING',
       ));
     }
+    // Tapping expand marks this inquiry's Q&A as seen for the current user; the
+    // refresh on return clears its unread badge. Best-effort in the bloc.
+    if (row.unreadCount > 0) {
+      _bloc.add(InquiryQnaMarkedRead(inquiryId: row.bookingId));
+    }
     await context.push(PathConstant.inquiryManagementDetail, extra: row);
     if (!mounted) return;
     _bloc.add(InquiryManagementRefreshed());
@@ -762,7 +767,7 @@ class _VendorListViewState extends State<VendorListView> {
           ),
         );
       case 'inquiry':
-        return _cellText(row.inquiryNo);
+        return _buildInquiryCell(row);
       case 'generated':
         return _cellText(row.generatedAt);
       case 'name':
@@ -883,6 +888,33 @@ class _VendorListViewState extends State<VendorListView> {
         text,
         textAlign: TextAlign.center,
         style: FontConstant.interNormal(color: Colors.white, fontSize: 12),
+      ),
+    );
+  }
+
+  /// Inquiry Number cell: the number, plus a red unread-count badge when this
+  /// inquiry has new (unseen) Q&A messages for the current user. The badge
+  /// clears after the user opens the inquiry's Q&A (the detail flow marks it read
+  /// and the list refreshes on return).
+  Widget _buildInquiryCell(VendorInquiryRow row) {
+    if (row.unreadCount <= 0) return _cellText(row.inquiryNo);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Flexible(
+            child: Text(
+              row.inquiryNo,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: FontConstant.interNormal(color: Colors.white, fontSize: 12),
+            ),
+          ),
+          const SizedBox(width: 6),
+          _UnreadBadge(count: row.unreadCount),
+        ],
       ),
     );
   }
@@ -1010,6 +1042,9 @@ class _LeadCard extends StatelessWidget {
     // Captured before the await so the list refreshes even if this card is
     // rebuilt while the detail screen is open.
     final bloc = context.read<InquiryManagementBloc>();
+    if (row.unreadCount > 0) {
+      bloc.add(InquiryQnaMarkedRead(inquiryId: row.bookingId));
+    }
     await context.push(PathConstant.inquiryManagementDetail, extra: row);
     bloc.add(InquiryManagementRefreshed());
   }
@@ -1281,6 +1316,35 @@ class _AssigneeAvatars extends StatelessWidget {
             ),
           );
         }),
+      ),
+    );
+  }
+}
+
+/// Small red pill showing the number of unseen Q&A messages for an inquiry.
+/// Caps the display at `99+` so a large count never blows out the cell width.
+class _UnreadBadge extends StatelessWidget {
+  const _UnreadBadge({required this.count});
+
+  static const Color _badgeColor = Color(0xFFFF383C);
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final String label = count > 99 ? '99+' : '$count';
+    return Container(
+      constraints: const BoxConstraints(minWidth: 18),
+      height: 18,
+      padding: const EdgeInsets.symmetric(horizontal: 5),
+      decoration: BoxDecoration(
+        color: _badgeColor,
+        borderRadius: BorderRadius.circular(9),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        label,
+        style: FontConstant.interMedium(color: Colors.white, fontSize: 10),
       ),
     );
   }

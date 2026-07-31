@@ -29,6 +29,7 @@ class VendorInquiryRow {
     required this.assignedToNames,
     required this.assignedToText,
     required this.status,
+    this.unreadCount = 0,
   });
 
   final String inquiryNo;
@@ -64,6 +65,11 @@ class VendorInquiryRow {
   final List<String> assignedToNames;
   final String assignedToText;
   final String status;
+
+  /// Per-user count of unseen inbound Q&A messages for this inquiry (from
+  /// [ListInquiryItem.unreadCount]). Drives the notification badge next to the
+  /// inquiry number in the vendor list; `0` hides the badge.
+  final int unreadCount;
 
   /// Whether the SLA timer should actively run (and count into "Overdue") for
   /// this row: only while the inquiry is still **New In** (`IN_PROGRESS`) and it
@@ -109,6 +115,7 @@ class VendorInquiryRow {
       assignedToNames: assignee.names,
       assignedToText: assignee.text,
       status: statusDisplayLabel(e.status),
+      unreadCount: e.unreadCount,
     );
   }
 
@@ -300,6 +307,7 @@ class VendorInquiryRow {
       assignedToNames: assignedToNames,
       assignedToText: assignedToText,
       status: status ?? this.status,
+      unreadCount: unreadCount,
     );
   }
 
