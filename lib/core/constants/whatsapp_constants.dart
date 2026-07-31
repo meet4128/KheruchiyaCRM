@@ -71,6 +71,36 @@ class WhatsappConstants {
     return null;
   }
 
+  /// Number of body params each known template expects. Used to rebuild a
+  /// preview from the ", "-joined param text stored in raw chat-log messages
+  /// (e.g. `[template:flight_inquiry_oneway]: name, from, to, ...`).
+  static int? bodyParamCount(String? name) {
+    switch (name) {
+      case templateName:
+        return 1;
+      case flightOneWayTemplateName:
+        return 6;
+      case flightRoundTripTemplateName:
+        return 9;
+      case hotelInquiryTemplateName:
+        return 7;
+    }
+    return null;
+  }
+
+  /// Rebuilds a template preview from the ", "-joined param string found in raw
+  /// chat-log text. Returns `null` when [name] is unknown or the split param
+  /// count doesn't match the template — e.g. a free-form note or a multi
+  /// passenger value ("2 Adults, 1 Child") introduced extra commas — so callers
+  /// can fall back to the raw summary instead of guessing field boundaries.
+  static String? previewFromJoinedParams(String? name, String joinedParams) {
+    final expected = bodyParamCount(name);
+    if (expected == null) return null;
+    final parts = joinedParams.split(', ').map((e) => e.trim()).toList();
+    if (parts.length != expected) return null;
+    return previewFromParams(name, parts);
+  }
+
   static String _param(List<String> params, int index) =>
       index < params.length ? params[index] : '';
 

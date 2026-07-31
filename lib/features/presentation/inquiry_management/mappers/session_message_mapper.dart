@@ -100,9 +100,19 @@ String normalizeQnaChatMessageBody(String body) {
   final match = rawTemplate.firstMatch(trimmed);
   if (match != null) {
     final name = match.group(1)?.trim();
-    final param = match.group(2)?.trim() ?? '';
+    final rawParams = match.group(2)?.trim() ?? '';
+    // Greeting has a single free-form param (the customer name).
     if (name == WhatsappConstants.templateName) {
-      return WhatsappConstants.templatePreview(param);
+      return WhatsappConstants.templatePreview(rawParams);
+    }
+    // Flight / hotel inquiry templates: params are ", "-joined in the raw text.
+    final preview = WhatsappConstants.previewFromJoinedParams(name, rawParams);
+    if (preview != null) return preview;
+    // Known template whose params couldn't be split cleanly (commas inside a
+    // note or passenger value): drop the "[template:name]:" tag and show the
+    // param summary rather than the raw placeholder.
+    if (WhatsappConstants.isKnownTemplate(name) && rawParams.isNotEmpty) {
+      return rawParams;
     }
   }
 
