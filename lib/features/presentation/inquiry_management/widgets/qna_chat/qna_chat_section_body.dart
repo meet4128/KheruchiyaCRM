@@ -79,7 +79,7 @@ class QnaChatSectionBody extends StatelessWidget {
               const SizedBox(height: DimensionConstant.d20),
               QnaChatPaymentStatusSection(
                 customerName: state.customerName,
-                inquiryId: state.shortInquiryId,
+                inquiryId: state.inquiryLabel,
                 bookingType: state.bookingType,
                 onAddNotes: state.hasSession ? () => _promptAddNote(context) : null,
               ),

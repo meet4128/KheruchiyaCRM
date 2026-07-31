@@ -15,6 +15,7 @@ class UnverifiedPaymentItem {
   const UnverifiedPaymentItem({
     this.paymentPlanId,
     this.inquiryId,
+    this.inquiryNumber,
     this.travelDate,
     this.bookingType,
     this.totalAmount,
@@ -36,6 +37,10 @@ class UnverifiedPaymentItem {
 
   final String? paymentPlanId;
   final String? inquiryId;
+
+  /// Human-readable inquiry number (e.g. `FT/2627/001`), returned at the item
+  /// top level. Shown as-is in the accounts Inquiry Number column.
+  final String? inquiryNumber;
   final DateTime? travelDate;
   final String? bookingType;
   final num? totalAmount;

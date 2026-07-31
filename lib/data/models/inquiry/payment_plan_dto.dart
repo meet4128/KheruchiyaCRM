@@ -8,6 +8,7 @@ class PaymentPlanDto {
   const PaymentPlanDto({
     this.id,
     this.inquiryId,
+    this.inquiryNumber,
     this.travelDate,
     this.bookingType,
     this.totalAmount,
@@ -29,6 +30,9 @@ class PaymentPlanDto {
   @JsonKey(name: '_id')
   final String? id;
   final String? inquiryId;
+
+  /// Human-readable inquiry number (e.g. `FT/2627/001`) persisted on the plan.
+  final String? inquiryNumber;
   final DateTime? travelDate;
   final String? bookingType;
   final num? totalAmount;

@@ -69,18 +69,27 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
 
   void _onStarted(QnaChatStarted event, Emitter<QnaChatState> emit) {
     _pollTimer?.cancel();
+    // The payment terms are keyed to a single inquiry. When this bloc is reused
+    // for another inquiry (e.g. the same customer/phone booking a new inquiry),
+    // wipe the previous inquiry's payment form so its plan never bleeds through.
+    // The fresh plan for [event.inquiryId] is then loaded below via
+    // [QnaChatPaymentPlanLoadRequested]; a new inquiry with no saved plan simply
+    // keeps this cleared state.
     emit(
-      state.copyWith(
-        inquiryId: event.inquiryId,
-        peerPhone: event.peerPhone,
-        customerName: event.customerName,
-        bookingType: event.bookingType,
-        sessionId: event.sessionId,
-        messages: const [],
-        messageDraft: '',
-        greetingTemplateSent: false,
-        loadStatus: QnaChatStatus.success,
-        clearErrorMessage: true,
+      _resetPaymentForm(
+        state.copyWith(
+          inquiryId: event.inquiryId,
+          inquiryDisplayNo: event.inquiryDisplayNo,
+          peerPhone: event.peerPhone,
+          customerName: event.customerName,
+          bookingType: event.bookingType,
+          sessionId: event.sessionId,
+          messages: const [],
+          messageDraft: '',
+          greetingTemplateSent: false,
+          loadStatus: QnaChatStatus.success,
+          clearErrorMessage: true,
+        ),
       ),
     );
     if (state.hasValidPeerPhone || state.hasSession) {
@@ -813,7 +822,12 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
     try {
       final response = await _repository.getPaymentPlan(state.inquiryId);
       final plan = response.data.paymentPlan;
-      if (plan == null) return;
+      if (plan == null) {
+        // This inquiry has no saved plan — ensure the form shows empty rather
+        // than any plan left over from a previously loaded inquiry.
+        emit(_resetPaymentForm(state));
+        return;
+      }
       _applyPaymentPlan(plan, emit);
     } on Object catch (error) {
       // A missing plan (404) is expected for new inquiries — log and ignore.
@@ -821,6 +835,24 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
         developer.log('Load payment plan failed: $error', name: 'QnaChatBloc');
       }
     }
+  }
+
+  /// Clears every payment-terms field back to its default so no part of one
+  /// inquiry's payment plan can linger when the form is shown for another
+  /// inquiry. Non-payment state (messages, session, etc.) on [base] is kept.
+  QnaChatState _resetPaymentForm(QnaChatState base) {
+    return base.copyWith(
+      clearPaymentStatus: true,
+      clearTravelDate: true,
+      clearTravelTime: true,
+      totalAmount: '',
+      installmentCount: 1,
+      installmentRows: const [],
+      clearInstallmentAmountErrorRemaining: true,
+      paymentSaveStatus: QnaChatPaymentSaveStatus.idle,
+      clearPaymentSaveError: true,
+      isPaymentVerified: false,
+    );
   }
 
   void _applyPaymentPlan(PaymentPlanDto plan, Emitter<QnaChatState> emit) {
@@ -841,8 +873,16 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
           verificationStatus: dto.verificationStatus,
         ),
     ];
+    final planInquiryNo = plan.inquiryNumber?.trim();
     emit(
       state.copyWith(
+        // Prefer the number the widget already passed in; fall back to the
+        // plan's own so the header stays correct even without a vendor row.
+        inquiryDisplayNo: state.inquiryDisplayNo.trim().isNotEmpty
+            ? state.inquiryDisplayNo
+            : (planInquiryNo == null || planInquiryNo.isEmpty
+                ? state.inquiryDisplayNo
+                : planInquiryNo),
         paymentStatus: isInstallment
             ? StringConstant.qnaChatPaymentStatusInstallment
             : StringConstant.qnaChatPaymentStatusOneTime,
@@ -929,6 +969,8 @@ class QnaChatBloc extends Bloc<QnaChatEvent, QnaChatState> {
     );
 
     final request = UpdatePaymentPlanRequest(
+      inquiryNumber:
+          state.inquiryDisplayNo.trim().isEmpty ? null : state.inquiryDisplayNo.trim(),
       travelDate: _combinedTravelDateTime(),
       bookingType: state.bookingType,
       totalAmount: num.tryParse(state.totalAmount.trim()),

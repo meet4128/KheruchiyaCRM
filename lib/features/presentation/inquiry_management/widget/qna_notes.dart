@@ -29,12 +29,14 @@ class QnaNotes extends StatefulWidget {
     super.key,
     required this.inquiryId,
     required this.peerPhone,
+    this.inquiryDisplayNo = '',
     this.sessionId,
     this.customerName = '',
     this.bookingType,
   });
 
   final String inquiryId;
+  final String inquiryDisplayNo;
   final String peerPhone;
   final String? sessionId;
   final String customerName;
@@ -61,6 +63,7 @@ class _QnaNotesState extends State<QnaNotes> {
       ..add(
         QnaChatStarted(
           inquiryId: widget.inquiryId,
+          inquiryDisplayNo: widget.inquiryDisplayNo,
           peerPhone: widget.peerPhone,
           sessionId: widget.sessionId,
           customerName: widget.customerName,
@@ -77,11 +80,13 @@ class _QnaNotesState extends State<QnaNotes> {
     }
     if (oldWidget.peerPhone != widget.peerPhone ||
         oldWidget.inquiryId != widget.inquiryId ||
+        oldWidget.inquiryDisplayNo != widget.inquiryDisplayNo ||
         oldWidget.customerName != widget.customerName ||
         oldWidget.bookingType != widget.bookingType) {
       _chatBloc.add(
         QnaChatStarted(
           inquiryId: widget.inquiryId,
+          inquiryDisplayNo: widget.inquiryDisplayNo,
           peerPhone: widget.peerPhone,
           sessionId: widget.sessionId,
           customerName: widget.customerName,

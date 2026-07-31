@@ -405,7 +405,7 @@ class _PaymentTermsFormState extends State<_PaymentTermsForm> {
                       ),
                     ),
                     TextSpan(
-                      text: '#${widget.inquiryId}',
+                      text: widget.inquiryId,
                       style: FontConstant.interMedium(
                         color: ColorConstant.inquiryInfoTxtColor,
                         fontSize: DimensionConstant.d13,

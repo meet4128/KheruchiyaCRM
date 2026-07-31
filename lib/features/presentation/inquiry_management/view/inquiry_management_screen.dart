@@ -214,6 +214,7 @@ class _InquiryManagementScreenState extends State<InquiryManagementScreen> {
                       const SizedBox(height: DimensionConstant.d10),
                       QnaNotes(
                         inquiryId: detailState.inquiryId,
+                        inquiryDisplayNo: row?.inquiryNo ?? '',
                         peerPhone: detailState.peerPhoneE164,
                         sessionId: detailState.activeSessionId,
                         customerName: row?.name ?? '',

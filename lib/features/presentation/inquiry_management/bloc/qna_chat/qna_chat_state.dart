@@ -16,6 +16,7 @@ enum QnaChatPaymentSaveStatus { idle, saving, success, failure }
 class QnaChatState extends Equatable {
   const QnaChatState({
     this.inquiryId = '',
+    this.inquiryDisplayNo = '',
     this.peerPhone = '',
     this.customerName = '',
     this.bookingType,
@@ -48,6 +49,10 @@ class QnaChatState extends Equatable {
   });
 
   final String inquiryId;
+
+  /// Human-readable inquiry number (e.g. `FT/2627/003`), sourced from the
+  /// inquiry row. Empty when unavailable.
+  final String inquiryDisplayNo;
   final String peerPhone;
   final String customerName;
   final String? bookingType;
@@ -57,6 +62,11 @@ class QnaChatState extends Equatable {
   String get shortInquiryId => inquiryId.length > 8
       ? inquiryId.substring(inquiryId.length - 8)
       : inquiryId;
+
+  /// Label shown next to "Inquiry Information": prefer the human-readable
+  /// inquiry number (e.g. `FT/2627/003`), falling back to [shortInquiryId].
+  String get inquiryLabel =>
+      inquiryDisplayNo.trim().isNotEmpty ? inquiryDisplayNo.trim() : shortInquiryId;
   final bool isSectionExpanded;
   final bool isInnerExpanded;
   final List<QnaChatMessage> messages;
@@ -124,6 +134,7 @@ class QnaChatState extends Equatable {
 
   QnaChatState copyWith({
     String? inquiryId,
+    String? inquiryDisplayNo,
     String? peerPhone,
     String? customerName,
     String? bookingType,
@@ -149,7 +160,9 @@ class QnaChatState extends Equatable {
     String? paymentStatus,
     bool clearPaymentStatus = false,
     DateTime? travelDate,
+    bool clearTravelDate = false,
     TimeOfDay? travelTime,
+    bool clearTravelTime = false,
     String? totalAmount,
     int? installmentCount,
     List<QnaChatInstallmentRow>? installmentRows,
@@ -164,6 +177,7 @@ class QnaChatState extends Equatable {
   }) {
     return QnaChatState(
       inquiryId: inquiryId ?? this.inquiryId,
+      inquiryDisplayNo: inquiryDisplayNo ?? this.inquiryDisplayNo,
       peerPhone: peerPhone ?? this.peerPhone,
       customerName: customerName ?? this.customerName,
       bookingType: bookingType ?? this.bookingType,
@@ -185,8 +199,8 @@ class QnaChatState extends Equatable {
       isRefreshing: isRefreshing ?? this.isRefreshing,
       greetingTemplateSent: greetingTemplateSent ?? this.greetingTemplateSent,
       paymentStatus: clearPaymentStatus ? null : (paymentStatus ?? this.paymentStatus),
-      travelDate: travelDate ?? this.travelDate,
-      travelTime: travelTime ?? this.travelTime,
+      travelDate: clearTravelDate ? null : (travelDate ?? this.travelDate),
+      travelTime: clearTravelTime ? null : (travelTime ?? this.travelTime),
       totalAmount: totalAmount ?? this.totalAmount,
       installmentCount: installmentCount ?? this.installmentCount,
       installmentRows: installmentRows ?? this.installmentRows,
@@ -205,6 +219,7 @@ class QnaChatState extends Equatable {
   @override
   List<Object?> get props => [
         inquiryId,
+        inquiryDisplayNo,
         peerPhone,
         customerName,
         bookingType,

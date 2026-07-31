@@ -95,8 +95,12 @@ PaymentPlanInstallmentDto? _mostRecentPaid(
 }
 
 String _inquiryNumber(UnverifiedPaymentItem dto) {
-  final ref = dto.inquiry?.referenceNumber?.number;
-  if (ref != null && ref.trim().isNotEmpty) return '#${ref.trim()}';
+  // Prefer the human-readable inquiry number (e.g. `FT/2627/001`) from the item
+  // top level; it is already fully formatted, so show it as-is.
+  final number = dto.inquiryNumber;
+  if (number != null && number.trim().isNotEmpty) return number.trim();
+  // Fallback for legacy rows: the UUID tail. Never the reference phone number —
+  // that belongs to the Contact column, not the Inquiry Number column.
   final id = dto.inquiryId;
   if (id != null && id.length >= 5) return '#${id.substring(id.length - 5)}';
   return '—';
