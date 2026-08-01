@@ -7,7 +7,9 @@ class HotelBookingRequest {
   const HotelBookingRequest({
     required this.city,
     required this.checkInDate,
+    this.checkInDateEnd,
     required this.checkOutDate,
+    this.checkOutDateEnd,
     required this.rooms,
     required this.adults,
     required this.propertyType,
@@ -28,7 +30,17 @@ class HotelBookingRequest {
 
   final String city;
   final String checkInDate;
+
+  /// End of the check-in flexible window (ISO 8601). Omitted when the guest
+  /// picked a single check-in day. Mirrors flight segment `departureDateEnd`.
+  @JsonKey(includeIfNull: false)
+  final String? checkInDateEnd;
   final String checkOutDate;
+
+  /// End of the check-out flexible window (ISO 8601). Omitted when the guest
+  /// picked a single check-out day.
+  @JsonKey(includeIfNull: false)
+  final String? checkOutDateEnd;
   final int rooms;
   final int adults;
   final List<String> propertyType;

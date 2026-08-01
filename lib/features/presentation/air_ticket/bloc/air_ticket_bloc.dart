@@ -689,11 +689,14 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
     final onwardFrom = _formatAirportForMessage(state.from);
     final onwardTo = _formatAirportForMessage(state.to);
     final bookingType = state.bookingType;
-    // Round Trip departure is a flexible window; show it as a range when an end
-    // was picked. One-Way keeps a single onward date.
+    // Every booking type's onward leg is a flexible window; show it as a range
+    // when an end was picked. Round Trip keeps its window end in
+    // [AirTicketState.departureDateEnd]; One-Way / Multi-city reuse
+    // [AirTicketState.returnDate] as the onward window end (matching the API
+    // payload in _buildFlightSegmentsPayload).
     final onwardDate = bookingType == AirTicketBookingType.roundTrip
         ? _formatFlightDateRange(state.departureDate, state.departureDateEnd)
-        : _formatFlightDate(state.departureDate);
+        : _formatFlightDateRange(state.departureDate, state.returnDate);
     if (bookingType == null || bookingType == AirTicketBookingType.oneWay) {
       return WhatsappTemplatePayload(
         name: WhatsappConstants.flightOneWayTemplateName,
@@ -718,7 +721,9 @@ class AirTicketBloc extends Bloc<AirTicketEvent, AirTicketState> {
       final last = state.flightSegments.last;
       returnFrom = _formatAirportForMessage(last.from);
       returnTo = _formatAirportForMessage(last.to);
-      returnDate = _formatFlightDate(last.departureDate);
+      // The final leg is also a flexible window: its end is held in the
+      // segment's returnDate (see _buildFlightSegmentsPayload multi-city).
+      returnDate = _formatFlightDateRange(last.departureDate, last.returnDate);
     } else {
       returnFrom = onwardTo;
       returnTo = onwardFrom;

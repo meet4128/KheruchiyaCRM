@@ -45,6 +45,17 @@ class CheckInDateChanged extends HotelBookingEvent {
   List<Object> get props => [checkInDate];
 }
 
+/// Event fired when the check-in flexible-window end changes.
+/// The check-in window is [CheckInDateChanged] (start)..this (end).
+class CheckInDateEndChanged extends HotelBookingEvent {
+  const CheckInDateEndChanged(this.checkInDateEnd);
+
+  final DateTime? checkInDateEnd;
+
+  @override
+  List<Object?> get props => [checkInDateEnd];
+}
+
 /// Event fired when check-out date changes.
 class CheckOutDateChanged extends HotelBookingEvent {
   const CheckOutDateChanged(this.checkOutDate);
@@ -53,6 +64,17 @@ class CheckOutDateChanged extends HotelBookingEvent {
 
   @override
   List<Object> get props => [checkOutDate];
+}
+
+/// Event fired when the check-out flexible-window end changes.
+/// The check-out window is [CheckOutDateChanged] (start)..this (end).
+class CheckOutDateEndChanged extends HotelBookingEvent {
+  const CheckOutDateEndChanged(this.checkOutDateEnd);
+
+  final DateTime? checkOutDateEnd;
+
+  @override
+  List<Object?> get props => [checkOutDateEnd];
 }
 
 /// Event fired when the number of rooms changes.

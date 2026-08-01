@@ -22,7 +22,9 @@ class HotelBookingState extends Equatable {
   const HotelBookingState({
     this.city = '',
     this.checkInDate,
+    this.checkInDateEnd,
     this.checkOutDate,
+    this.checkOutDateEnd,
     this.rooms = 1,
     this.adults = 1,
     this.propertyType = const <HotelPropertyType>{},
@@ -61,7 +63,17 @@ class HotelBookingState extends Equatable {
   // Form field values
   final String city;
   final DateTime? checkInDate;
+
+  /// End of the check-in flexible window ([checkInDate]..[checkInDateEnd]).
+  /// Null when the guest picked a single check-in day. Mirrors the Air Ticket
+  /// departure window.
+  final DateTime? checkInDateEnd;
   final DateTime? checkOutDate;
+
+  /// End of the check-out flexible window ([checkOutDate]..[checkOutDateEnd]).
+  /// Null when the guest picked a single check-out day. Mirrors the Air Ticket
+  /// return window.
+  final DateTime? checkOutDateEnd;
   final int rooms;
   final int adults;
   final Set<HotelPropertyType> propertyType;
@@ -144,7 +156,9 @@ class HotelBookingState extends Equatable {
   HotelBookingState copyWith({
     String? city,
     DateTime? checkInDate,
+    DateTime? checkInDateEnd,
     DateTime? checkOutDate,
+    DateTime? checkOutDateEnd,
     int? rooms,
     int? adults,
     Set<HotelPropertyType>? propertyType,
@@ -178,6 +192,8 @@ class HotelBookingState extends Equatable {
     bool clearCityError = false,
     bool clearCheckInError = false,
     bool clearCheckOutError = false,
+    bool clearCheckInDateEnd = false,
+    bool clearCheckOutDateEnd = false,
     bool clearRoomGuestsError = false,
     bool clearPropertyTypeError = false,
     bool clearHotelCategoryError = false,
@@ -187,7 +203,13 @@ class HotelBookingState extends Equatable {
     return HotelBookingState(
       city: city ?? this.city,
       checkInDate: checkInDate ?? this.checkInDate,
+      checkInDateEnd: clearCheckInDateEnd
+          ? null
+          : (checkInDateEnd ?? this.checkInDateEnd),
       checkOutDate: checkOutDate ?? this.checkOutDate,
+      checkOutDateEnd: clearCheckOutDateEnd
+          ? null
+          : (checkOutDateEnd ?? this.checkOutDateEnd),
       rooms: rooms ?? this.rooms,
       adults: adults ?? this.adults,
       propertyType: propertyType ?? this.propertyType,
@@ -250,7 +272,9 @@ class HotelBookingState extends Equatable {
   List<Object?> get props => [
         city,
         checkInDate,
+        checkInDateEnd,
         checkOutDate,
+        checkOutDateEnd,
         rooms,
         adults,
         propertyType,

@@ -11,12 +11,16 @@ class HotelSearchBar extends StatelessWidget {
     super.key,
     required this.city,
     required this.checkInDate,
+    this.checkInDateEnd,
     required this.checkOutDate,
+    this.checkOutDateEnd,
     required this.rooms,
     required this.adults,
     required this.onCityChanged,
     required this.onCheckInChanged,
+    required this.onCheckInEndChanged,
     required this.onCheckOutChanged,
+    required this.onCheckOutEndChanged,
     required this.onRoomsChanged,
     required this.onAdultsChanged,
     this.cityError,
@@ -27,12 +31,20 @@ class HotelSearchBar extends StatelessWidget {
 
   final String city;
   final DateTime? checkInDate;
+
+  /// End of the check-in flexible window (renders a range when after start).
+  final DateTime? checkInDateEnd;
   final DateTime? checkOutDate;
+
+  /// End of the check-out flexible window (renders a range when after start).
+  final DateTime? checkOutDateEnd;
   final int rooms;
   final int adults;
   final ValueChanged<String> onCityChanged;
   final ValueChanged<DateTime> onCheckInChanged;
+  final ValueChanged<DateTime?> onCheckInEndChanged;
   final ValueChanged<DateTime> onCheckOutChanged;
+  final ValueChanged<DateTime?> onCheckOutEndChanged;
   final ValueChanged<int> onRoomsChanged;
   final ValueChanged<int> onAdultsChanged;
   final String? cityError;
@@ -54,21 +66,46 @@ class HotelSearchBar extends StatelessWidget {
     return '$weekday, ${date.day} ${_months[date.month - 1]}';
   }
 
-  /// Opens the shared range calendar for the stay: 1st tap = Check-In (start),
-  /// 2nd tap = Check-Out (end). The guest may check in/out on any day within the
-  /// selected range. Same-day (single tap twice) is allowed for a same-date stay.
-  Future<void> _pickStayRange(BuildContext context) async {
+  /// Displays a single date, or a flexible window "07 Aug – 09 Aug" when [end]
+  /// is a real day after [start] (mirrors the Air Ticket date field).
+  String _formatWindow(DateTime? start, DateTime? end) {
+    if (start == null) return '';
+    if (end == null || !end.isAfter(start)) return _formatDate(start);
+    return '${formatAppDateCompact(start)} – ${formatAppDateCompact(end)}';
+  }
+
+  /// Opens the range calendar for the **check-in** flexible window: 1st tap =
+  /// window start, 2nd tap = window end. Same-day (single day) is allowed and
+  /// carries no window end.
+  Future<void> _pickCheckInWindow(BuildContext context) async {
     final now = DateTime.now();
     final result = await showAppDateRangePicker(
       context,
       initialStart: checkInDate,
-      initialEnd: checkOutDate,
+      initialEnd: checkInDateEnd,
       firstDate: DateTime(now.year, now.month, now.day),
       lastDate: DateTime(now.year + 5, 12, 31),
     );
     if (result != null) {
       onCheckInChanged(result.start);
-      onCheckOutChanged(result.end);
+      onCheckInEndChanged(result.end);
+    }
+  }
+
+  /// Opens the range calendar for the **check-out** flexible window. The window
+  /// cannot start before the check-in day.
+  Future<void> _pickCheckOutWindow(BuildContext context) async {
+    final now = DateTime.now();
+    final result = await showAppDateRangePicker(
+      context,
+      initialStart: checkOutDate,
+      initialEnd: checkOutDateEnd,
+      firstDate: checkInDate ?? DateTime(now.year, now.month, now.day),
+      lastDate: DateTime(now.year + 5, 12, 31),
+    );
+    if (result != null) {
+      onCheckOutChanged(result.start);
+      onCheckOutEndChanged(result.end);
     }
   }
 
@@ -111,10 +148,10 @@ class HotelSearchBar extends StatelessWidget {
               flex: 2,
               child: _TapSegment(
                 label: StringConstant.checkIn,
-                value: _formatDate(checkInDate),
-                hint: StringConstant.selectCheckInDate,
+                value: _formatWindow(checkInDate, checkInDateEnd),
+                hint: StringConstant.selectCheckInWindow,
                 errorText: checkInError,
-                onTap: () => _pickStayRange(context),
+                onTap: () => _pickCheckInWindow(context),
               ),
             ),
             _divider(colors),
@@ -122,10 +159,10 @@ class HotelSearchBar extends StatelessWidget {
               flex: 2,
               child: _TapSegment(
                 label: StringConstant.checkOut,
-                value: _formatDate(checkOutDate),
-                hint: StringConstant.selectCheckOutDate,
+                value: _formatWindow(checkOutDate, checkOutDateEnd),
+                hint: StringConstant.selectCheckOutWindow,
                 errorText: checkOutError,
-                onTap: () => _pickStayRange(context),
+                onTap: () => _pickCheckOutWindow(context),
               ),
             ),
             _divider(colors),

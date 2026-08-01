@@ -309,6 +309,8 @@ class StringConstant {
   static const String enterCityOrLocation = 'Enter city or location';
   static const String selectCheckInDate = 'Select check-in date';
   static const String selectCheckOutDate = 'Select check-out date';
+  static const String selectCheckInWindow = 'Select check-in window';
+  static const String selectCheckOutWindow = 'Select check-out window';
   static const String budgetMin = 'Min';
   static const String budgetMax = 'Max';
 

@@ -35,7 +35,9 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
     on<HotelBookingInitialized>(_onInitialized);
     on<CityChanged>(_onCityChanged);
     on<CheckInDateChanged>(_onCheckInDateChanged);
+    on<CheckInDateEndChanged>(_onCheckInDateEndChanged);
     on<CheckOutDateChanged>(_onCheckOutDateChanged);
+    on<CheckOutDateEndChanged>(_onCheckOutDateEndChanged);
     on<RoomsChanged>(_onRoomsChanged);
     on<AdultsChanged>(_onAdultsChanged);
     on<PropertyTypeToggled>(_onPropertyTypeToggled);
@@ -89,10 +91,16 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
     final checkOut = state.checkOutDate;
     final clearCheckOut =
         checkOut != null && checkOut.isBefore(event.checkInDate);
+    // Drop the check-in window end if it now precedes the new start; the range
+    // picker sets both together so this only guards edits.
+    final clearCheckInEnd = state.checkInDateEnd != null &&
+        state.checkInDateEnd!.isBefore(event.checkInDate);
     emit(state.copyWith(
       checkInDate: event.checkInDate,
       checkOutDate: clearCheckOut ? null : checkOut,
       clearCheckInError: true,
+      clearCheckInDateEnd: clearCheckInEnd,
+      clearCheckOutDateEnd: clearCheckOut,
       checkOutError: _validateCheckOut(
         clearCheckOut ? null : checkOut,
         event.checkInDate,
@@ -100,13 +108,39 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
     ));
   }
 
+  /// Handle check-in window end changed event (flexible window).
+  void _onCheckInDateEndChanged(
+    CheckInDateEndChanged event,
+    Emitter<HotelBookingState> emit,
+  ) {
+    emit(state.copyWith(
+      checkInDateEnd: event.checkInDateEnd,
+      clearCheckInDateEnd: event.checkInDateEnd == null,
+    ));
+  }
+
   void _onCheckOutDateChanged(
     CheckOutDateChanged event,
     Emitter<HotelBookingState> emit,
   ) {
+    // Drop the check-out window end if it now precedes the new start.
+    final clearCheckOutEnd = state.checkOutDateEnd != null &&
+        state.checkOutDateEnd!.isBefore(event.checkOutDate);
     emit(state.copyWith(
       checkOutDate: event.checkOutDate,
+      clearCheckOutDateEnd: clearCheckOutEnd,
       checkOutError: _validateCheckOut(event.checkOutDate, state.checkInDate),
+    ));
+  }
+
+  /// Handle check-out window end changed event (flexible window).
+  void _onCheckOutDateEndChanged(
+    CheckOutDateEndChanged event,
+    Emitter<HotelBookingState> emit,
+  ) {
+    emit(state.copyWith(
+      checkOutDateEnd: event.checkOutDateEnd,
+      clearCheckOutDateEnd: event.checkOutDateEnd == null,
     ));
   }
 
@@ -482,8 +516,10 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
       bodyParams: [
         displayName,
         destination.isEmpty ? 'To be confirmed' : destination,
-        _formatHotelDate(state.checkInDate),
-        _formatHotelDate(state.checkOutDate),
+        // Check-in / check-out are each a flexible window; show a range when an
+        // end was picked, mirroring the Air Ticket flight-inquiry template.
+        _formatHotelDateRange(state.checkInDate, state.checkInDateEnd),
+        _formatHotelDateRange(state.checkOutDate, state.checkOutDateEnd),
         rooms,
         guests,
         notes,
@@ -495,6 +531,14 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
   String _formatHotelDate(DateTime? date) {
     if (date == null) return 'To be confirmed';
     return DateFormat('d MMMM yyyy').format(date);
+  }
+
+  /// Formats a flexible window as "12 August 2026 - 15 August 2026" for the
+  /// WhatsApp template, or a single date when [end] is null / not after [start].
+  String _formatHotelDateRange(DateTime? start, DateTime? end) {
+    if (start == null) return 'To be confirmed';
+    if (end == null || !end.isAfter(start)) return _formatHotelDate(start);
+    return '${_formatHotelDate(start)} - ${_formatHotelDate(end)}';
   }
 
   /// The notes body param, falling back to "-" when empty (Meta rejects empty
@@ -520,14 +564,29 @@ class HotelBookingBloc extends Bloc<HotelBookingEvent, HotelBookingState> {
     return date.toUtc().toIso8601String();
   }
 
+  /// ISO 8601 for a flexible-window end, or null when it isn't a real day after
+  /// [start] (same-day / unset picks carry no window end).
+  String? _windowEndIso(DateTime? start, DateTime? end) {
+    if (start == null || end == null || !end.isAfter(start)) return null;
+    return _toIso8601(end);
+  }
+
   CreateInquiryRequest _buildCreateInquiryRequest(
     HotelBookingState state,
     dynamic inquiryState,
   ) {
+    // Only send a window end when it's a real, later day than the start; a
+    // same-day pick means "no flexibility", so we omit it.
+    final checkInDateEnd = _windowEndIso(state.checkInDate, state.checkInDateEnd);
+    final checkOutDateEnd =
+        _windowEndIso(state.checkOutDate, state.checkOutDateEnd);
+
     final hotelBooking = HotelBookingRequest(
       city: state.city.trim(),
       checkInDate: _toIso8601(state.checkInDate),
+      checkInDateEnd: checkInDateEnd,
       checkOutDate: _toIso8601(state.checkOutDate),
+      checkOutDateEnd: checkOutDateEnd,
       rooms: state.rooms,
       adults: state.adults,
       propertyType: state.propertyType.map((p) => p.label).toList(),
